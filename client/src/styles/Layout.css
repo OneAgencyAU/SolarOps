@@ -3,27 +3,30 @@
   min-height: 100vh;
   background: #080810;
   position: relative;
-  isolation: isolate;
 }
 
-.app-shell::before {
-  content: '';
+/* ── Background layer — gives backdrop-filter something to blur ── */
+.bg-layer {
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse 60% 55% at 70% 20%, rgba(37, 99, 235, 0.13) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(79, 142, 247, 0.07) 0%, transparent 60%);
-  pointer-events: none;
   z-index: 0;
-  animation: ambientShift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(79, 142, 247, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(120, 80, 255, 0.10) 0%, transparent 50%);
 }
 
-@keyframes ambientShift {
-  0%   { opacity: 1; transform: scale(1) translate(0, 0); }
-  50%  { opacity: 0.75; transform: scale(1.04) translate(-1%, 1%); }
-  100% { opacity: 1; transform: scale(1.02) translate(1%, -1%); }
+.bg-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.80' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
 }
 
+/* ── Sidebar ── */
 .sidebar {
   width: 224px;
   flex-shrink: 0;
@@ -72,14 +75,13 @@
   gap: 10px;
   padding: 9px 12px;
   border-radius: 9px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.50);
   text-decoration: none;
   font-size: 0.86rem;
   font-weight: 500;
   letter-spacing: 0.1px;
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
-  border-left: 2px solid transparent;
-  position: relative;
+  border-left: 3px solid transparent;
 }
 
 .sidebar-nav-item:hover {
@@ -88,7 +90,7 @@
 }
 
 .sidebar-nav-item.active {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(79, 142, 247, 0.10);
   color: #ffffff;
   border-left-color: #4F8EF7;
 }
@@ -98,13 +100,13 @@
   width: 18px;
   text-align: center;
   flex-shrink: 0;
-  opacity: 0.85;
 }
 
 .nav-label {
   flex: 1;
 }
 
+/* ── Main area ── */
 .main-area {
   flex: 1;
   display: flex;
@@ -114,19 +116,20 @@
   z-index: 5;
 }
 
+/* ── Topbar ── */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
   height: 58px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
   position: relative;
   z-index: 20;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .topbar-tenant {
@@ -148,7 +151,6 @@
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.18);
   object-fit: cover;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .topbar-signout {
@@ -171,12 +173,10 @@
   box-shadow: 0 0 16px rgba(255, 255, 255, 0.06);
 }
 
+/* ── Main content ── */
 .main-content {
   flex: 1;
   position: relative;
+  z-index: 5;
   overflow: auto;
-}
-
-.content-gradient {
-  display: none;
 }

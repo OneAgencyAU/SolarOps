@@ -16,6 +16,8 @@ export default function Layout() {
 
   return (
     <div className="app-shell">
+      <div className="bg-layer" aria-hidden="true" />
+
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="sidebar-logo-sun">☀</span>
@@ -55,7 +57,6 @@ export default function Layout() {
         </header>
 
         <main className="main-content">
-          <div className="content-gradient" />
           <Outlet />
         </main>
       </div>
