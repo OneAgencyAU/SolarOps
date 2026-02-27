@@ -45,6 +45,24 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
+  const { data: existingMembership, error: memberCheckErr } = await supabase
+    .from('tenant_memberships')
+    .select('tenant_id')
+    .eq('user_id', user_id)
+    .maybeSingle();
+
+  if (memberCheckErr) {
+    console.error('[POST /api/onboarding] membership check error:', memberCheckErr);
+    res.status(500).json({ error: memberCheckErr.message, code: memberCheckErr.code, details: memberCheckErr.details, hint: memberCheckErr.hint });
+    return;
+  }
+
+  if (existingMembership) {
+    console.log('[POST /api/onboarding] user already has tenant, skipping creation:', user_id);
+    res.json({ already_exists: true });
+    return;
+  }
+
   const slug = business_name
     .toLowerCase()
     .trim()

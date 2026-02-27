@@ -30,9 +30,8 @@ export default function OnboardingPage() {
       console.log('[Onboarding] API response:', res.status, data);
 
       if (!res.ok) {
-        const msg = `Error ${res.status}: ${data.error ?? 'Unknown error'}${data.hint ? ` — ${data.hint}` : ''}${data.code ? ` (code: ${data.code})` : ''}`;
         console.error('[Onboarding] Full error payload:', data);
-        setError(msg);
+        setError(data.error ?? 'Unknown error');
         return;
       }
 
