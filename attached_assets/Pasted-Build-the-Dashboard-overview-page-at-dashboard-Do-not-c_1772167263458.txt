@@ -1,0 +1,70 @@
+Build the Dashboard overview page at /dashboard. 
+Do not change any other pages, routing, or logic.
+
+This is a static demo page with hardcoded placeholder data — 
+no backend connection needed yet.
+
+LAYOUT:
+- Page title "Dashboard" top left, subtitle "Good morning, [user first name]"
+- Time period selector top right (This Week / This Month / All Time) 
+  — static, no functionality yet
+- 4 KPI cards in a row below the header
+- Activity feed section below the KPI cards
+- Quick actions section at the bottom
+
+KPI CARDS (4 cards in a grid row):
+Each card is a glass card matching the app's existing glassmorphism style.
+
+Card 1 — Calls Answered
+- Large number: 47
+- Label: "Calls Answered"
+- Subtext: "↑ 12 from last week"
+- Icon: phone icon, #4F8EF7
+
+Card 2 — Emails Drafted
+- Large number: 134
+- Label: "Emails Drafted"
+- Subtext: "↑ 28 from last week"
+- Icon: mail icon, #4F8EF7
+
+Card 3 — Avg Response Time
+- Large number: 4.2m
+- Label: "Avg Response Time"
+- Subtext: "↓ 1.8m faster than last week"
+- Icon: clock icon, green (#34C759)
+
+Card 4 — Time Saved
+- Large number: 18.4h
+- Label: "Time Saved This Week"
+- Subtext: "Based on 47 calls + 134 emails"
+- Icon: sparkle/lightning icon, #4F8EF7
+- This card should have a subtle blue glow — it's the hero metric
+
+ACTIVITY FEED:
+- Section title: "Recent Activity"
+- Glass card container
+- 6 hardcoded activity items in a list, each with:
+  - Icon (phone or mail)
+  - Title (e.g. "Inbound call handled — John Smith")
+  - Subtitle (e.g. "Callback requested · Commercial · 2 mins ago")
+  - Timestamp right aligned
+- Mix of call and email activity types
+- Use realistic solar business names and scenarios
+
+QUICK ACTIONS:
+- Section title: "Quick Actions"
+- 3 glass pill buttons in a row:
+  - "Configure Voice Agent"
+  - "Connect Google Workspace"  
+  - "View Helpdesk"
+- Each links to the relevant nav page (/voice-agent, /connections, /helpdesk)
+- Glass style matching the rest of the app
+
+DESIGN:
+- Match the existing glassmorphism style exactly
+- Cards should feel light, airy, premium
+- Numbers should be large and bold (font-weight 600, ~2.5rem)
+- Labels in rgba(0,0,0,0.5)
+- Subtle hover lift effect on KPI cards (transform: translateY(-2px))
+- Smooth 200ms transitions
+- Responsive — cards stack on smaller screens
