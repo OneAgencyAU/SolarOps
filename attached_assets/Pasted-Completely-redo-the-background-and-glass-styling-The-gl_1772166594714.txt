@@ -1,0 +1,56 @@
+Completely redo the background and glass styling. The glass effects 
+were invisible because the background was too dark. We are switching 
+to a light background so the frosted glass effect is actually visible — 
+like Apple Settings app or macOS System Preferences.
+
+BACKGROUND:
+- Root background: #f0f2f5 (light cool grey)
+- Add a fixed full-viewport background layer (z-index: 0) with:
+  - radial-gradient(ellipse at 30% 40%, rgba(79,142,247,0.12) 0%, transparent 55%)
+  - radial-gradient(ellipse at 75% 70%, rgba(120,80,255,0.08) 0%, transparent 50%)
+- This gives a subtle colour tint to the light background
+
+SIDEBAR:
+- background: rgba(255,255,255,0.55)
+- backdrop-filter: blur(40px) saturate(180%)
+- -webkit-backdrop-filter: blur(40px) saturate(180%)
+- border-right: 1px solid rgba(255,255,255,0.7)
+- box-shadow: 2px 0 20px rgba(0,0,0,0.06)
+- z-index: 10
+- Nav item text: #1a1a2e (dark, readable)
+- Nav item hover: background rgba(0,0,0,0.05)
+- Nav item active: background rgba(79,142,247,0.12), 
+  border-left: 3px solid #4F8EF7, text #4F8EF7
+- SolarOps logo text: #1a1a2e
+
+TOPBAR:
+- background: rgba(255,255,255,0.5)
+- backdrop-filter: blur(20px) saturate(180%)
+- -webkit-backdrop-filter: blur(20px) saturate(180%)
+- border-bottom: 1px solid rgba(255,255,255,0.6)
+- box-shadow: 0 1px 20px rgba(0,0,0,0.06)
+- Tenant name text: #1a1a2e
+- Sign out button: background rgba(0,0,0,0.06), 
+  border: 1px solid rgba(0,0,0,0.10), 
+  color: #1a1a2e,
+  hover: background rgba(0,0,0,0.10)
+
+MAIN CONTENT CARDS (placeholder pages):
+- background: rgba(255,255,255,0.60)
+- backdrop-filter: blur(30px) saturate(150%)
+- -webkit-backdrop-filter: blur(30px) saturate(150%)
+- border: 1px solid rgba(255,255,255,0.80)
+- border-radius: 24px
+- box-shadow: 0 8px 32px rgba(0,0,0,0.08), 
+  inset 0 1px 0 rgba(255,255,255,0.9)
+- Page title: #1a1a2e, font-weight 300, large
+- Coming soon badge: background rgba(79,142,247,0.10), 
+  color #4F8EF7, border 1px solid rgba(79,142,247,0.25)
+
+OVERALL:
+- All text on light background must be dark and readable
+- Inter font throughout
+- 200ms ease transitions on all interactive elements
+- The overall feel: clean, airy, frosted glass floating over 
+  a soft light background — exactly like Apple Settings app
+- Do not change any functionality, routing, or logic
