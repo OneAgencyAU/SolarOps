@@ -50,6 +50,12 @@
   gap: 16px;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

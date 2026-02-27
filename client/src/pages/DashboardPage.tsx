@@ -90,32 +90,24 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, firstName } = useAuth();
   const [period, setPeriod] = useState<Period>('This Week');
 
-  const getFirstName = (): string => {
+  const getGreetingName = (): string => {
+    if (firstName) return firstName;
     const emailUsername = user?.email?.split('@')[0]?.split('.')[0] ?? '';
     const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-    if (!user?.displayName) return emailUsername ? cap(emailUsername) : 'there';
-
-    const companyTerms = ['agency', 'inc', 'llc', 'ltd', 'corp', 'company', 'co.', 'group', 'solutions', 'services', 'studio', 'labs', 'ventures'];
-    const lower = user.displayName.toLowerCase();
-    const isCompany = companyTerms.some((t) => lower.includes(t));
-
-    if (isCompany) return emailUsername ? cap(emailUsername) : user.displayName.split(' ')[0];
-
-    return user.displayName.split(' ')[0];
+    return emailUsername ? cap(emailUsername) : 'there';
   };
 
-  const firstName = getFirstName();
+  const greetingName = getGreetingName();
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
         <div>
           <h1 className="dashboard-title">Dashboard</h1>
-          <p className="dashboard-subtitle">Good morning, {firstName}</p>
+          <p className="dashboard-subtitle">Good morning, {greetingName}</p>
         </div>
         <div className="period-selector">
           {(['This Week', 'This Month', 'All Time'] as Period[]).map((p) => (

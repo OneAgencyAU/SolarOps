@@ -12,6 +12,8 @@ interface Tenant {
 interface AuthContextValue {
   user: FirebaseUser | null;
   tenant: Tenant | null;
+  firstName: string | null;
+  lastName: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -21,6 +23,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [firstName, setFirstName] = useState<string | null>(null);
+  const [lastName, setLastName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,20 +32,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        const { data: membership } = await supabase
-          .from('tenant_memberships')
-          .select('tenant_id, tenants(id, name, slug)')
-          .eq('user_id', firebaseUser.uid)
-          .maybeSingle();
+        const [membershipResult, userResult] = await Promise.all([
+          supabase
+            .from('tenant_memberships')
+            .select('tenant_id, tenants(id, name, slug)')
+            .eq('user_id', firebaseUser.uid)
+            .maybeSingle(),
+          supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('id', firebaseUser.uid)
+            .maybeSingle(),
+        ]);
 
-        if (membership?.tenants) {
-          const t = membership.tenants as unknown as Tenant;
+        if (membershipResult.data?.tenants) {
+          const t = membershipResult.data.tenants as unknown as Tenant;
           setTenant(t);
         } else {
           setTenant(null);
         }
+
+        if (userResult.data) {
+          setFirstName(userResult.data.first_name ?? null);
+          setLastName(userResult.data.last_name ?? null);
+        } else {
+          setFirstName(null);
+          setLastName(null);
+        }
       } else {
         setTenant(null);
+        setFirstName(null);
+        setLastName(null);
       }
 
       setLoading(false);
@@ -54,10 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth);
     setUser(null);
     setTenant(null);
+    setFirstName(null);
+    setLastName(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, tenant, loading, signOut }}>
+    <AuthContext.Provider value={{ user, tenant, firstName, lastName, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -38,7 +38,7 @@ app.post('/api/users', async (req: Request, res: Response) => {
 });
 
 app.post('/api/onboarding', async (req: Request, res: Response) => {
-  const { user_id, email, display_name, avatar_url, business_name } = req.body;
+  const { user_id, email, display_name, avatar_url, first_name, last_name, business_name } = req.body;
 
   if (!user_id || !email || !business_name) {
     res.status(400).json({ error: 'user_id, email, and business_name are required' });
@@ -48,7 +48,7 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
   // Step 1: upsert the user record so the FK on tenant_memberships is satisfied
   const { error: userErr } = await supabase
     .from('users')
-    .upsert({ id: user_id, email, display_name, avatar_url }, { onConflict: 'id' });
+    .upsert({ id: user_id, email, display_name, avatar_url, first_name, last_name }, { onConflict: 'id' });
 
   if (userErr) {
     console.error('[POST /api/onboarding] user upsert error:', userErr);

@@ -21,7 +21,7 @@ Solar operations management platform.
 │       ├── main.tsx           # Entry point
 │       ├── App.tsx            # Router + AuthProvider
 │       ├── contexts/
-│       │   └── AuthContext.tsx  # user, tenant, loading, signOut
+│       │   └── AuthContext.tsx  # user, tenant, firstName, lastName, loading, signOut
 │       ├── components/
 │       │   ├── Layout.tsx     # Sidebar + topbar shell
 │       │   └── ProtectedRoute.tsx
@@ -41,7 +41,8 @@ Solar operations management platform.
 │   └── migrations/
 │       ├── 001_initial_schema.sql   # tables + RLS enabled
 │       ├── 002_rls_policies.sql     # permissive SELECT policies for anon key
-│       └── 003_fix_user_id_type.sql # users.id and tenant_memberships.user_id changed to TEXT
+│       ├── 003_fix_user_id_type.sql # users.id and tenant_memberships.user_id changed to TEXT
+│       └── 004_add_name_fields.sql  # users.first_name and users.last_name columns added
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -84,7 +85,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 ### Schema (Supabase)
 
 - `tenants` — organisations (`id UUID`, `name TEXT`, `slug TEXT UNIQUE`, `created_at`)
-- `users` — mirrors Firebase Auth users (`id TEXT` = Firebase UID, `email`, `display_name`, `avatar_url`)
+- `users` — mirrors Firebase Auth users (`id TEXT` = Firebase UID, `email`, `display_name`, `avatar_url`, `first_name TEXT`, `last_name TEXT`)
 - `tenant_memberships` — links users to tenants (`tenant_id UUID`, `user_id TEXT`, `role TEXT`)
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
