@@ -1,0 +1,48 @@
+Redesign the entire app shell to match Apple Liquid Glass / glassmorphism aesthetic. 
+Reference: frosted glass panels with real blur, light borders that catch light, 
+depth and layers. Do not change any functionality, routes, or logic — visual only.
+
+Design system to apply:
+
+BACKGROUND:
+- Deep dark base: #080810
+- Animated subtle radial gradient: deep blue/purple glow behind main content area
+- Add a very subtle noise/grain texture overlay (CSS or SVG filter)
+
+SIDEBAR:
+- Background: rgba(255,255,255,0.04) with backdrop-filter: blur(40px) saturate(180%)
+- Right border: 1px solid rgba(255,255,255,0.08)
+- Nav items default: rgba(255,255,255,0.55) text, no background
+- Nav items hover: background rgba(255,255,255,0.07), text white, smooth 150ms transition
+- Nav item active: background rgba(255,255,255,0.10), left border 2px solid #4F8EF7, text white
+- SolarOps logo: white wordmark with a small glowing sun icon in #4F8EF7
+
+TOPBAR:
+- Background: rgba(255,255,255,0.03) with backdrop-filter: blur(20px)
+- Bottom border: 1px solid rgba(255,255,255,0.06)
+- Tenant name: white, medium weight
+- Sign out button: glass style — rgba(255,255,255,0.08) background, white text, 
+  border 1px solid rgba(255,255,255,0.12), hover glow
+
+MAIN CONTENT AREA:
+- Placeholder pages: centered glass card
+- Card: background rgba(255,255,255,0.05), backdrop-filter blur(30px) saturate(150%)
+- Border: 1px solid rgba(255,255,255,0.10)
+- Border radius: 20px
+- Subtle inner shadow: inset 0 1px 0 rgba(255,255,255,0.10)
+- Box shadow: 0 8px 32px rgba(0,0,0,0.4)
+- Page title: white, large, light weight
+- Coming soon badge: glass pill, rgba(79,142,247,0.15) background, #4F8EF7 text, 
+  border 1px solid rgba(79,142,247,0.3)
+
+TYPOGRAPHY:
+- Font: Inter (already imported)
+- Headings: font-weight 300-400, white
+- Body: rgba(255,255,255,0.6)
+- Letter spacing: slight tracking on labels (0.5px)
+
+OVERALL FEEL:
+- Everything should feel like it's floating on frosted glass
+- Layers should have depth — sidebar sits behind topbar visually
+- No solid colors anywhere except text
+- Smooth, premium, like Apple Vision Pro UI
