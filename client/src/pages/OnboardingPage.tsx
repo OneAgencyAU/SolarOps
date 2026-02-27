@@ -23,7 +23,13 @@ export default function OnboardingPage() {
       const res = await fetch('/api/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.uid, business_name: businessName.trim() }),
+        body: JSON.stringify({
+          user_id: user.uid,
+          email: user.email,
+          display_name: user.displayName,
+          avatar_url: user.photoURL,
+          business_name: businessName.trim(),
+        }),
       });
 
       const data = await res.json();

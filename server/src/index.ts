@@ -38,13 +38,25 @@ app.post('/api/users', async (req: Request, res: Response) => {
 });
 
 app.post('/api/onboarding', async (req: Request, res: Response) => {
-  const { user_id, business_name } = req.body;
+  const { user_id, email, display_name, avatar_url, business_name } = req.body;
 
-  if (!user_id || !business_name) {
-    res.status(400).json({ error: 'user_id and business_name are required' });
+  if (!user_id || !email || !business_name) {
+    res.status(400).json({ error: 'user_id, email, and business_name are required' });
     return;
   }
 
+  // Step 1: upsert the user record so the FK on tenant_memberships is satisfied
+  const { error: userErr } = await supabase
+    .from('users')
+    .upsert({ id: user_id, email, display_name, avatar_url }, { onConflict: 'id' });
+
+  if (userErr) {
+    console.error('[POST /api/onboarding] user upsert error:', userErr);
+    res.status(500).json({ error: userErr.message, code: userErr.code, details: userErr.details, hint: userErr.hint });
+    return;
+  }
+
+  // Step 2: check for existing membership to prevent duplicates
   const { data: existingMembership, error: memberCheckErr } = await supabase
     .from('tenant_memberships')
     .select('tenant_id')
@@ -63,6 +75,7 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
+  // Step 3: create the tenant
   const slug = business_name
     .toLowerCase()
     .trim()
