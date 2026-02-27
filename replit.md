@@ -39,7 +39,9 @@ Solar operations management platform.
 │       └── index.ts           # Express API (Supabase secret key)
 ├── supabase/
 │   └── migrations/
-│       └── 001_initial_schema.sql
+│       ├── 001_initial_schema.sql   # tables + RLS enabled
+│       ├── 002_rls_policies.sql     # permissive SELECT policies for anon key
+│       └── 003_fix_user_id_type.sql # users.id and tenant_memberships.user_id changed to TEXT
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -54,22 +56,37 @@ Solar operations management platform.
    - New user → insert into Supabase `users` → redirect to `/onboarding`
    - Existing user with tenant → redirect to `/dashboard`
    - Existing user without tenant → redirect to `/onboarding`
-4. Onboarding: enter business name → creates `tenants` + `tenant_memberships` (role: admin)
-5. All `/dashboard`, `/voice-agent`, etc. routes require both auth + tenant membership
+4. Onboarding: enter business name → server checks for existing `tenant_memberships` row first to prevent duplicate key errors → if none found, creates `tenants` + `tenant_memberships` (role: admin) → redirects to `/dashboard`
+5. If user already has a tenant membership, `/api/onboarding` returns `{ already_exists: true }` and the frontend redirects straight to `/dashboard` without inserting anything
+6. All `/dashboard`, `/voice-agent`, etc. routes require both auth + tenant membership
 
 ## Database Pattern
 
 **NEVER use Replit's built-in database. Always use Supabase.**
 
-- Frontend uses `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY`
-- Backend uses `VITE_SUPABASE_URL` + `SUPABASE_SECRET_KEY`
+### Write vs Read split
+
+All Supabase **writes** (INSERT, UPDATE, DELETE) go through the Express backend using `SUPABASE_SECRET_KEY`, which is the service role key and bypasses RLS entirely. Never perform writes from the frontend.
+
+Frontend **reads** (SELECT) use the anon/publishable key (`VITE_SUPABASE_PUBLISHABLE_KEY`). RLS is enabled on all tables with permissive `SELECT` policies (`USING (true)`) so the anon key can read freely.
+
+### Why this split?
+
+Supabase RLS policies use `auth.uid()` which only works with Supabase Auth sessions. This app uses Firebase Auth, so `auth.uid()` is always `null` for frontend requests. User-scoped RLS policies are therefore not usable from the frontend — writes must go through the backend service role instead.
+
+### Firebase UID type
+
+Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not UUIDs. For this reason:
+- `users.id` is `TEXT` (not `UUID`)
+- `tenant_memberships.user_id` is `TEXT` (not `UUID`)
+- Do not use `UUID` type for any column that stores a Firebase UID
 
 ### Schema (Supabase)
 
-- `tenants` — organisations (id, name, slug, created_at)
-- `users` — mirrors Firebase Auth users (id = Firebase UID)
-- `tenant_memberships` — links users to tenants with a role (agent/admin)
-- Row Level Security is enabled on all tables
+- `tenants` — organisations (`id UUID`, `name TEXT`, `slug TEXT UNIQUE`, `created_at`)
+- `users` — mirrors Firebase Auth users (`id TEXT` = Firebase UID, `email`, `display_name`, `avatar_url`)
+- `tenant_memberships` — links users to tenants (`tenant_id UUID`, `user_id TEXT`, `role TEXT`)
+- Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
 ## Environment Secrets
 
