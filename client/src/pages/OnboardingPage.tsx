@@ -1,16 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/OnboardingPage.css';
-
-function slugify(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 
 export default function OnboardingPage() {
   const { user } = useAuth();
@@ -27,25 +18,28 @@ export default function OnboardingPage() {
     setError('');
 
     try {
-      const slug = slugify(businessName);
+      console.log('[Onboarding] Submitting for user:', user.uid, 'business:', businessName.trim());
 
-      const { data: tenant, error: tenantErr } = await supabase
-        .from('tenants')
-        .insert({ name: businessName.trim(), slug })
-        .select()
-        .single();
+      const res = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.uid, business_name: businessName.trim() }),
+      });
 
-      if (tenantErr) throw tenantErr;
+      const data = await res.json();
+      console.log('[Onboarding] API response:', res.status, data);
 
-      const { error: memberErr } = await supabase
-        .from('tenant_memberships')
-        .insert({ tenant_id: tenant.id, user_id: user.uid, role: 'admin' });
-
-      if (memberErr) throw memberErr;
+      if (!res.ok) {
+        const msg = `Error ${res.status}: ${data.error ?? 'Unknown error'}${data.hint ? ` — ${data.hint}` : ''}${data.code ? ` (code: ${data.code})` : ''}`;
+        console.error('[Onboarding] Full error payload:', data);
+        setError(msg);
+        return;
+      }
 
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      const msg = err instanceof Error ? err.message : 'Network error — could not reach the server';
+      console.error('[Onboarding] Unexpected error:', err);
       setError(msg);
     } finally {
       setSubmitting(false);

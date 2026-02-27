@@ -21,31 +21,54 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const { user: fbUser } = result;
 
-      const { data: existingUser } = await supabase
+      console.log('[Login] Firebase sign-in success, uid:', fbUser.uid);
+
+      const { data: existingUser, error: selectErr } = await supabase
         .from('users')
         .select('id')
         .eq('id', fbUser.uid)
         .maybeSingle();
 
+      if (selectErr) {
+        console.error('[Login] Supabase SELECT error:', selectErr);
+      }
+
+      console.log('[Login] Existing user in Supabase:', existingUser);
+
       if (!existingUser) {
-        await supabase.from('users').insert({
-          id: fbUser.uid,
-          email: fbUser.email,
-          display_name: fbUser.displayName,
-          avatar_url: fbUser.photoURL,
+        console.log('[Login] New user — calling /api/users to insert');
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: fbUser.uid,
+            email: fbUser.email,
+            display_name: fbUser.displayName,
+            avatar_url: fbUser.photoURL,
+          }),
         });
+        const data = await res.json();
+        console.log('[Login] /api/users response:', res.status, data);
+        if (!res.ok) {
+          console.error('[Login] Failed to create user record:', data);
+        }
         navigate('/onboarding', { replace: true });
       } else {
-        const { data: membership } = await supabase
+        const { data: membership, error: memberErr } = await supabase
           .from('tenant_memberships')
           .select('id')
           .eq('user_id', fbUser.uid)
           .maybeSingle();
 
+        if (memberErr) {
+          console.error('[Login] Supabase membership SELECT error:', memberErr);
+        }
+
+        console.log('[Login] Membership:', membership);
         navigate(membership ? '/dashboard' : '/onboarding', { replace: true });
       }
     } catch (err) {
-      console.error('Sign in error:', err);
+      console.error('[Login] Sign in error:', err);
     }
   };
 
