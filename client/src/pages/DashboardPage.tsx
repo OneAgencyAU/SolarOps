@@ -93,7 +93,22 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('This Week');
 
-  const firstName = user?.displayName?.split(' ')[0] ?? 'there';
+  const getFirstName = (): string => {
+    const emailUsername = user?.email?.split('@')[0]?.split('.')[0] ?? '';
+    const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
+    if (!user?.displayName) return emailUsername ? cap(emailUsername) : 'there';
+
+    const companyTerms = ['agency', 'inc', 'llc', 'ltd', 'corp', 'company', 'co.', 'group', 'solutions', 'services', 'studio', 'labs', 'ventures'];
+    const lower = user.displayName.toLowerCase();
+    const isCompany = companyTerms.some((t) => lower.includes(t));
+
+    if (isCompany) return emailUsername ? cap(emailUsername) : user.displayName.split(' ')[0];
+
+    return user.displayName.split(' ')[0];
+  };
+
+  const firstName = getFirstName();
 
   return (
     <div className="dashboard">

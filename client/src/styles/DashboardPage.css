@@ -78,17 +78,17 @@
 
 .kpi-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.60);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.80);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 20px;
   padding: 24px 24px 22px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.07),
+    0 4px 24px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.90);
   transition: transform 200ms ease, box-shadow 200ms ease;
   cursor: default;
@@ -96,25 +96,25 @@
 }
 
 .kpi-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    0 10px 36px rgba(0, 0, 0, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .kpi-card.hero {
   border-color: rgba(79, 142, 247, 0.30);
   box-shadow:
-    0 4px 24px rgba(79, 142, 247, 0.12),
-    0 0 0 1px rgba(79, 142, 247, 0.08),
+    0 4px 24px rgba(79, 142, 247, 0.15),
+    0 0 0 1px rgba(79, 142, 247, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.90);
 }
 
 .kpi-card.hero:hover {
   box-shadow:
-    0 8px 32px rgba(79, 142, 247, 0.18),
-    0 0 0 1px rgba(79, 142, 247, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    0 10px 36px rgba(79, 142, 247, 0.20),
+    0 0 0 1px rgba(79, 142, 247, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .kpi-icon {
