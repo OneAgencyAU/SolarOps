@@ -1,0 +1,144 @@
+Build the Inbox Assistant page at /inbox-assistant. 
+Replace the placeholder page completely.
+Delete the /inbox-preview route and InboxLayoutPreview.tsx file.
+Do not change any other pages, routing, or backend.
+All data is static/hardcoded placeholder — no API connections yet.
+
+OVERALL LAYOUT:
+- Page header: "Inbox Assistant" title + "AI-drafted replies, 
+  ready for your approval" subtitle
+- Below header: full width two-panel layout, height fills 
+  remaining viewport (use calc(100vh - header height))
+- Left panel: 38% width
+- Right panel: 62% width
+- Both panels scroll independently
+
+LEFT PANEL:
+Top bar inside panel:
+- Inbox selector dropdown: "support@solenergy.com.au ▾"
+  (dropdown options: support@, sales@, info@ — UI only, no function)
+- Filter pills in a row: All (4) | Urgent (1) | New Lead (2) | Support (1)
+  Active filter pill: #1d1d1f background, white text
+  Inactive: transparent, #6e6e73, border 1px solid #e5e5e7
+
+Email list — 4 email cards stacked:
+
+Card 1 (selected/active state):
+- Sender: "James Hartley" — james@suncoastcommercial.com.au
+- Subject: "Commercial solar quote — 85kW system"
+- Preview: "Hi, we're looking to install solar across our warehouse..."
+- Time: "9:41 AM"
+- Tags: "New Lead" pill (blue), "Urgent" pill (red)
+- Selected state: blue left border (3px solid #4F8EF7), 
+  background #f0f5ff
+
+Card 2:
+- Sender: "Rachel Wong" — rachel.wong@gmail.com
+- Subject: "Re: System monitoring not showing data"
+- Preview: "Thanks for getting back to me. The app still isn't..."
+- Time: "9:22 AM"
+- Tags: "Support" pill (orange)
+
+Card 3:
+- Sender: "Mark Deluca" — mark@delucabuilders.com.au
+- Subject: "Interested in solar for new development"
+- Preview: "We have a 12-unit residential development starting..."
+- Time: "8:55 AM"
+- Tags: "New Lead" pill (blue)
+
+Card 4:
+- Sender: "Priya Sharma" — priya.sharma@hotmail.com
+- Subject: "Battery rebate question"
+- Preview: "I saw on the news that there's a new government rebate..."
+- Time: "8:30 AM"
+- Tags: "Support" pill (orange)
+
+Each card:
+- White background, border-radius 12px
+- border: 1px solid #e5e5e7
+- Padding: 16px
+- Hover: background #f9f9f9
+- Clicking a card selects it (updates right panel) — 
+  wire up all 4 cards with their own right panel content
+
+RIGHT PANEL:
+Split into TOP HALF (email thread) and BOTTOM HALF (draft reply).
+Divider: 1px solid #e5e5e7 between them.
+
+TOP HALF — EMAIL THREAD (for Card 1 — James Hartley):
+- Thread header: 
+  Subject: "Commercial solar quote — 85kW system" bold
+  Row below: "James Hartley" · james@suncoastcommercial.com.au · 
+  "Today 9:41 AM"
+  Right side: Urgency badge "URGENT" red pill + 
+  "New Lead" blue pill
+
+- AI Summary box (light blue background rgba(79,142,247,0.08), 
+  border 1px solid rgba(79,142,247,0.15), border-radius 10px):
+  ✦ "AI Summary: Commercial enquiry for an 85kW system across 
+  a warehouse facility. Decision maker is James (Operations Manager). 
+  Budget not yet discussed. Requesting quote and site visit."
+
+- Email body:
+  "Hi Sol Energy team,
+  We've been considering going solar for our warehouse in Bibra Lake 
+  for a while now. We're looking at roughly an 85kW system across 
+  the main roof. I'm the operations manager here and have sign-off 
+  authority for this kind of project.
+  Could you provide a quote and potentially arrange a site visit? 
+  We'd like to move fairly quickly on this.
+  Thanks,
+  James Hartley
+  Operations Manager — Suncoast Commercial"
+
+BOTTOM HALF — DRAFT REPLY:
+- Section header: "✦ AI Draft" with small "Regenerate" text button 
+  (right aligned, #4F8EF7)
+- Draft textarea (pre-filled, editable):
+  "Hi James,
+  
+  Thanks for reaching out — an 85kW system for a warehouse in Bibra 
+  Lake sounds like a great fit for what we do.
+  
+  I'd love to arrange a site visit and put together a detailed quote 
+  for you. Could I grab a few details first?
+  
+  - What's the best number to reach you on?
+  - Are you the primary contact for this project?
+  - Do you have a rough timeline in mind?
+  
+  Looking forward to connecting.
+  
+  Warm regards,
+  Sol Energy Team"
+
+- Textarea style: no border, full width, min-height 200px, 
+  resize vertical, font matches app, #1d1d1f text
+
+- Action row below textarea:
+  Left side: 
+    "Create Ticket" button — white, border 1px solid #e5e5e7, 
+    border-radius 8px, #1d1d1f text
+    "Link to Ticket" button — same style
+  Right side:
+    "Approve & Send" button — #4F8EF7 background, white text, 
+    border-radius 8px, padding 10px 24px, font-weight 600
+    On click: show a success toast "Draft approved and sent via 
+    Outlook" — green, bottom right, fades after 3 seconds
+
+MAKE ALL 4 EMAIL CARDS CLICKABLE:
+Each card shows relevant placeholder content in the right panel 
+when clicked. Cards 2-4 can have simpler right panel content 
+(just thread + a pre-filled draft). The important thing is 
+clicking each card updates the right panel reactively.
+
+DESIGN:
+- Left panel background: #f5f5f7
+- Right panel background: #ffffff
+- Panel wrapper: white card, border-radius 20px, 
+  box-shadow 0 2px 12px rgba(0,0,0,0.06)
+- All text: Inter font
+- Smooth transitions when switching between email cards (150ms)
+- Stats bar above the two panels (3 small inline stats):
+  "4 in queue" · "134 drafted this week" · "Avg 4.2min response time"
+  Style: small grey text, separated by dots, right aligned
