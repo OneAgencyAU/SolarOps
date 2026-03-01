@@ -110,8 +110,13 @@ All required secrets are stored in Replit's Secrets pane:
 - `/login` — Google Sign-In only, clean Apple-style white card on `#f5f5f7`
 - `/onboarding` — First name, Last name, Business name form; submits to `/api/onboarding`
 - `/dashboard` — Bento grid layout with: Time Saved hero card (blue), Weekly Activity line chart (recharts), Emails Drafted, Emails Sent, Avg Response Time stat cards, Voice Agent Live Status card with pulsing dot, Top Enquiry Types donut chart (recharts), Open/Resolved Tickets split card, Recent Activity feed. All static placeholder data. Time period selector (This Week / This Month / All Time) — UI only, not yet functional.
-- `/voice-agent` — Two-column config + preview layout. Left: collapsible cards for Agent Identity (name, greeting, tone), Business Hours (toggle + schedule + after-hours message), Call Routing (New Enquiry / Existing Customer paths), Escalation Settings (phone, safety keywords tag input, escalation message), Phone Number Setup (step indicators + info box). Right: Live Script Preview (chat bubbles reactive to greeting), 3 mini stats (Calls Handled, Avg Duration, Callback Requests), Recent Calls log with outcome pills. Status toggle (LIVE/OFFLINE) top right. All state-only, no API.
+- `/voice-agent` — Full configuration UI with two-column layout. Left column: Agent Identity (name, greeting, tone), Business Hours (toggle + time range), Call Routing (New Enquiry + Existing Customer paths), Escalation Settings (phone number, safety keywords tags, escalation message). Right column: Live Script Preview (reactive to greeting input), 3 stat cards (Calls Handled, Avg Call Duration, Callback Requests), Recent Calls log with outcome pills, Phone Number Setup with progress steps, Quick Tips card. Status toggle (LIVE/OFFLINE) in header. Save Configuration button. All UI only — no Vapi/Telnyx integration yet.
 - All other routes (`/inbox-assistant`, `/helpdesk`, `/connections`, `/settings`) — placeholder cards via `PlaceholderPage.tsx`
+
+## Integrations Pending
+- Voice Agent: Vapi.ai or Telnyx (decision: use Vapi for prototype, migrate to Telnyx for production). Needs: API key, phone number provisioning, webhook endpoint for call transcripts.
+- Inbox Assistant: Google Workspace OAuth (Gmail read + draft scope)
+- Connections page: Google OAuth setup flow
 
 ## UI Components & Design Tokens
 
