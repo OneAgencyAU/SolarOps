@@ -1,14 +1,13 @@
 .inbox-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
+  padding: 24px 32px 32px;
   font-family: Inter, -apple-system, sans-serif;
+  box-sizing: border-box;
 }
 
 .inbox-header-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
   margin-bottom: 20px;
   flex-shrink: 0;
 }
@@ -17,28 +16,23 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: #1d1d1f;
-  margin: 0;
+  margin: 0 0 4px;
 }
 
 .inbox-subtitle {
   font-size: 0.875rem;
   color: #6e6e73;
-  margin: 4px 0 0;
+  margin: 0 0 4px;
 }
 
 .inbox-stats-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #6e6e73;
-}
-
-.stat-dot {
-  font-weight: 700;
+  margin: 0;
 }
 
 /* ── Panel wrapper ── */
+
 .inbox-panels {
   display: flex;
   flex: 1;

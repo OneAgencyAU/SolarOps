@@ -180,17 +180,9 @@ export default function InboxAssistantPage() {
   return (
     <div className="inbox-page">
       <div className="inbox-header-row">
-        <div>
-          <h1 className="inbox-title">Inbox Assistant</h1>
-          <p className="inbox-subtitle">AI-drafted replies, ready for your approval</p>
-        </div>
-        <div className="inbox-stats-bar">
-          <span>4 in queue</span>
-          <span className="stat-dot">·</span>
-          <span>134 drafted this week</span>
-          <span className="stat-dot">·</span>
-          <span>Avg 4.2min response time</span>
-        </div>
+        <h1 className="inbox-title">Inbox Assistant</h1>
+        <p className="inbox-subtitle">AI-drafted replies, ready for your approval</p>
+        <p className="inbox-stats-bar">4 in queue · 134 drafted this week · Avg 4.2min response time</p>
       </div>
 
       <div className="inbox-panels">
