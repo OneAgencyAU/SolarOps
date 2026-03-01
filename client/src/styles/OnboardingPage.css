@@ -3,44 +3,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a0f;
-  position: relative;
-  overflow: hidden;
+  background: #f5f5f7;
 }
 
 .onboarding-bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,142,247,0.12) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 
 .onboarding-card {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #ffffff;
   border-radius: 20px;
   padding: 48px 40px;
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow:
+    0 2px 24px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .onboarding-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1d1d1f;
   margin: 0;
 }
 
 .onboarding-subtitle {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6e6e73;
   margin-bottom: 12px;
 }
 
@@ -64,34 +57,35 @@
 
 .form-group label {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #1d1d1f;
   font-weight: 500;
 }
 
 .form-group input {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #f5f5f7;
+  border: 1px solid #e5e5e7;
   border-radius: 10px;
-  color: #ffffff;
+  color: #1d1d1f;
   font-size: 0.95rem;
   font-family: inherit;
   padding: 12px 14px;
   outline: none;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: #aeaeb2;
 }
 
 .form-group input:focus {
-  border-color: rgba(79, 142, 247, 0.5);
-  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+  border-color: #4F8EF7;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
+  background: #ffffff;
 }
 
 .form-error {
   font-size: 0.85rem;
-  color: #f87171;
+  color: #ff3b30;
 }
 
 .submit-btn {
@@ -104,16 +98,16 @@
   font-family: inherit;
   padding: 13px;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: background 150ms ease, box-shadow 150ms ease;
   margin-top: 4px;
 }
 
 .submit-btn:hover:not(:disabled) {
   background: #3a7de8;
-  box-shadow: 0 0 24px rgba(79, 142, 247, 0.4);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.30);
 }
 
 .submit-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.40;
   cursor: not-allowed;
 }
