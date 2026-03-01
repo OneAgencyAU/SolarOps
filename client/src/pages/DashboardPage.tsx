@@ -68,16 +68,47 @@ export default function DashboardPage() {
       </div>
 
       <div className="bento-grid">
-        {/* Card 1 — Time Saved Hero */}
-        <div className="bento-card hero-card">
-          <div className="hero-content">
-            <div className="hero-value">18.4h</div>
-            <div className="hero-label">Time Saved This Week</div>
-            <div className="hero-sub">Equivalent to 2.3 working days</div>
+        {/* Card 1 — Today's Summary */}
+        <div className="bento-card summary-card">
+          <div className="summary-label">Today's Summary</div>
+          <div className="summary-date">
+            {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
-          <div className="hero-pills">
-            <span className="hero-pill">47 calls</span>
-            <span className="hero-pill">134 emails</span>
+          <div className="summary-rows">
+            <div className="summary-row">
+              <div className="summary-row-left">
+                <span className="summary-icon" style={{ color: '#4F8EF7' }}>📞</span>
+                <span className="summary-row-label">Calls handled today</span>
+              </div>
+              <span className="summary-row-value">14</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-row">
+              <div className="summary-row-left">
+                <span className="summary-icon" style={{ color: '#4F8EF7' }}>✉️</span>
+                <span className="summary-row-label">Emails drafted today</span>
+              </div>
+              <span className="summary-row-value">23</span>
+            </div>
+            <div className="summary-divider" />
+            <div className="summary-row">
+              <div className="summary-row-left">
+                <span className="summary-icon" style={{ color: '#34C759' }}>🕐</span>
+                <span className="summary-row-label">Time saved today</span>
+              </div>
+              <span className="summary-row-value">3.2h</span>
+            </div>
+          </div>
+          <div className="summary-footer">
+            <div className="summary-footer-divider" />
+            <Link to="/helpdesk" className="summary-alert-row">
+              <span className="summary-alert-text urgent">3 tickets need attention</span>
+              <span className="summary-arrow">→</span>
+            </Link>
+            <Link to="/inbox-assistant" className="summary-alert-row">
+              <span className="summary-alert-text muted">2 emails waiting for approval</span>
+              <span className="summary-arrow muted">→</span>
+            </Link>
           </div>
         </div>
 
