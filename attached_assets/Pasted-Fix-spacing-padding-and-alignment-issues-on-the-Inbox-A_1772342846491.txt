@@ -1,0 +1,61 @@
+Fix spacing, padding and alignment issues on the Inbox Assistant 
+page only. Do not change any content, functionality, or other pages.
+
+Specific fixes:
+
+1. RIGHT PANEL — overall padding:
+- Add consistent padding: 32px on all sides of the right panel
+- The email subject, sender row, AI summary, email body, and 
+  AI draft section should all left-align to the same 32px margin
+
+2. RIGHT PANEL — thread section:
+- Subject heading: font-size 1.25rem, font-weight 600, 
+  margin-bottom 8px
+- Sender row (name · email · time): font-size 0.875rem, 
+  color #6e6e73, margin-bottom 16px
+- Urgent/New Lead pills: vertically centered with sender row, 
+  float right
+- AI Summary box: margin-bottom 20px, padding 14px 16px
+- Email body: font-size 0.9375rem, line-height 1.7, 
+  color #1d1d1f, padding-top 8px
+
+3. RIGHT PANEL — divider between thread and draft:
+- Clear 1px solid #e5e5e7 divider with 24px margin top and bottom
+
+4. RIGHT PANEL — draft section:
+- "✦ AI Draft" label: font-size 0.875rem, font-weight 600, 
+  color #1d1d1f, padding-bottom 12px
+- "Regenerate" button: aligned to right, same row as AI Draft label
+- Draft textarea: padding 0, no border, no outline, 
+  font-size 0.9375rem, line-height 1.7, color #1d1d1f,
+  width 100%, min-height 220px
+- Action row (Create Ticket, Link to Ticket, Approve & Send): 
+  padding-top 16px, border-top 1px solid #e5e5e7
+  Approve & Send button pushed to the far right
+
+5. LEFT PANEL — email cards:
+- Card padding: 16px
+- Sender name: font-weight 600, font-size 0.9375rem, 
+  margin-bottom 2px
+- Subject: font-size 0.875rem, color #1d1d1f, margin-bottom 4px
+- Preview text: font-size 0.8125rem, color #6e6e73, 
+  white-space nowrap, overflow hidden, text-overflow ellipsis
+- Time: font-size 0.75rem, color #6e6e73, float right, 
+  aligned to sender name row
+- Tags row: margin-top 8px, gap 6px
+
+6. LEFT PANEL — top bar:
+- Inbox selector: padding 10px 14px, border 1px solid #e5e5e7,
+  border-radius 10px, font-size 0.875rem, margin-bottom 12px,
+  width 100%
+- Filter pills: margin-bottom 12px, gap 8px, 
+  padding 6px 12px each, border-radius 980px, font-size 0.8125rem
+
+7. WEBVIEW badge:
+- Remove the "webview" badge completely if it exists — 
+  that is a Replit artifact and should not be visible
+
+8. General:
+- Ensure 24px padding inside the overall two-panel wrapper card
+- Both panels should have consistent internal spacing
+- No text should appear closer than 16px to any edge

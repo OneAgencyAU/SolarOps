@@ -21,7 +21,7 @@
 }
 
 .inbox-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   color: #6e6e73;
   margin: 4px 0 0;
 }
@@ -38,6 +38,7 @@
   font-weight: 700;
 }
 
+/* ── Panel wrapper ── */
 .inbox-panels {
   display: flex;
   flex: 1;
@@ -47,6 +48,7 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
+/* ── LEFT PANEL ── */
 .inbox-left {
   width: 38%;
   flex-shrink: 0;
@@ -57,6 +59,7 @@
   border-right: 1px solid #e5e5e7;
 }
 
+/* ── RIGHT PANEL ── */
 .inbox-right {
   flex: 1;
   background: #ffffff;
@@ -68,9 +71,10 @@
 
 @keyframes fadePanel {
   from { opacity: 0.6; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
+/* ── Left: top bar ── */
 .inbox-left-topbar {
   padding: 16px 16px 12px;
   border-bottom: 1px solid #e5e5e7;
@@ -80,33 +84,33 @@
 .inbox-select {
   display: block;
   width: 100%;
-  padding: 8px 12px;
-  font-size: 0.82rem;
+  padding: 10px 14px;
+  font-size: 0.875rem;
   font-family: Inter, sans-serif;
   color: #1d1d1f;
   background: #ffffff;
   border: 1px solid #e5e5e7;
-  border-radius: 8px;
+  border-radius: 10px;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236e6e73'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 14px center;
   cursor: pointer;
   margin-bottom: 12px;
 }
 
 .inbox-filters {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .filter-pill {
   font-family: Inter, sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 980px;
   border: 1px solid #e5e5e7;
   background: transparent;
   color: #6e6e73;
@@ -120,6 +124,7 @@
   border-color: #1d1d1f;
 }
 
+/* ── Left: email list ── */
 .inbox-email-list {
   flex: 1;
   overflow-y: auto;
@@ -157,25 +162,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .email-sender {
-  font-size: 0.82rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #1d1d1f;
 }
 
 .email-time {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: #6e6e73;
   flex-shrink: 0;
 }
 
 .email-subject {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #3c3c43;
+  color: #1d1d1f;
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -183,17 +188,17 @@
 }
 
 .email-preview {
-  font-size: 0.74rem;
+  font-size: 0.8125rem;
   color: #6e6e73;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 8px;
 }
 
 .email-tags {
   display: flex;
   gap: 6px;
+  margin-top: 8px;
 }
 
 .email-tag {
@@ -203,35 +208,25 @@
   border-radius: 4px;
 }
 
-.email-tag.blue {
-  background: rgba(79, 142, 247, 0.1);
-  color: #4F8EF7;
-}
+.email-tag.blue   { background: rgba(79, 142, 247, 0.1); color: #4F8EF7; }
+.email-tag.red    { background: rgba(255, 69, 58, 0.1);  color: #FF453A; }
+.email-tag.orange { background: rgba(255, 159, 10, 0.1); color: #d48806; }
 
-.email-tag.red {
-  background: rgba(255, 69, 58, 0.1);
-  color: #FF453A;
-}
-
-.email-tag.orange {
-  background: rgba(255, 159, 10, 0.1);
-  color: #d48806;
-}
-
+/* ── Right: thread section ── */
 .thread-section {
   flex: 1;
-  padding: 28px 32px;
+  padding: 32px;
   overflow-y: auto;
   min-height: 0;
 }
 
 .thread-header {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .thread-subject {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #1d1d1f;
   margin-bottom: 8px;
 }
@@ -242,16 +237,18 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .thread-meta {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: #6e6e73;
 }
 
 .thread-badges {
   display: flex;
   gap: 6px;
+  align-items: center;
 }
 
 .thread-badge {
@@ -263,20 +260,9 @@
   letter-spacing: 0.03em;
 }
 
-.thread-badge.red {
-  background: rgba(255, 69, 58, 0.1);
-  color: #FF453A;
-}
-
-.thread-badge.blue {
-  background: rgba(79, 142, 247, 0.1);
-  color: #4F8EF7;
-}
-
-.thread-badge.orange {
-  background: rgba(255, 159, 10, 0.1);
-  color: #d48806;
-}
+.thread-badge.red    { background: rgba(255, 69, 58, 0.1);  color: #FF453A; }
+.thread-badge.blue   { background: rgba(79, 142, 247, 0.1); color: #4F8EF7; }
+.thread-badge.orange { background: rgba(255, 159, 10, 0.1); color: #d48806; }
 
 .ai-summary-box {
   background: rgba(79, 142, 247, 0.08);
@@ -295,20 +281,24 @@
 }
 
 .email-body {
-  font-size: 0.86rem;
+  font-size: 0.9375rem;
   color: #1d1d1f;
   line-height: 1.7;
   white-space: pre-line;
+  padding-top: 8px;
 }
 
+/* ── Divider ── */
 .panel-divider {
   height: 1px;
   background: #e5e5e7;
   flex-shrink: 0;
+  margin: 24px 0;
 }
 
+/* ── Right: draft section ── */
 .draft-section {
-  padding: 24px 32px 28px;
+  padding: 0 32px 32px;
   flex-shrink: 0;
 }
 
@@ -316,11 +306,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding-bottom: 12px;
 }
 
 .draft-label {
-  font-size: 0.88rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #1d1d1f;
 }
@@ -342,22 +332,25 @@
 
 .draft-textarea {
   width: 100%;
-  min-height: 200px;
+  min-height: 220px;
   resize: vertical;
   border: none;
   font-family: Inter, sans-serif;
-  font-size: 0.86rem;
+  font-size: 0.9375rem;
   color: #1d1d1f;
   line-height: 1.7;
   outline: none;
   padding: 0;
   background: transparent;
+  box-sizing: border-box;
 }
 
 .draft-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5e7;
   margin-top: 16px;
 }
 
@@ -397,6 +390,7 @@
   background: #3d7de5;
 }
 
+/* ── Toast ── */
 .inbox-toast {
   position: fixed;
   bottom: 28px;
@@ -414,14 +408,15 @@
 
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes toastOut {
   from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 0; transform: translateY(12px); }
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .inbox-panels {
     flex-direction: column;
@@ -440,8 +435,15 @@
     gap: 10px;
   }
 
-  .thread-section,
-  .draft-section {
+  .thread-section {
     padding: 20px 16px;
+  }
+
+  .draft-section {
+    padding: 0 16px 24px;
+  }
+
+  .panel-divider {
+    margin: 0;
   }
 }
