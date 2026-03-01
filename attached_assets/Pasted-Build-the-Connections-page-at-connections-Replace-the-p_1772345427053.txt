@@ -1,0 +1,112 @@
+Build the Connections page at /connections. Replace the placeholder 
+page completely. Do not change any other pages, routing, or backend.
+
+OVERALL LAYOUT:
+- Page header: "Connections" title
+- Subtitle: "Connect your existing tools to SolarOps"
+- Two sections below: "Active Connections" and "Available Connectors"
+
+PAGE HEADER STATS (inline, below subtitle):
+- "1 connected · 4 available"
+- Small grey text, same style as Inbox Assistant stats
+
+SECTION 1 — ACTIVE CONNECTIONS:
+Section title: "Connected" (small caps, #6e6e73)
+
+Google Workspace card (CONNECTED state):
+- Left: Google logo (coloured G, use SVG or emoji 🔵 as placeholder)
+- Title: "Google Workspace"
+- Subtitle: "Gmail · Google Calendar"
+- Connected account: "support@solenergy.com.au"
+- Status pill: green dot + "Connected"
+- Last sync: "Last synced 2 minutes ago"
+- Right side buttons: 
+  "Manage" (white button, border 1px solid #e5e5e7)
+  "Disconnect" (white button, border 1px solid #e5e5e7, 
+  color #FF453A on hover)
+- Card: white, border-radius 16px, border 1px solid #e5e5e7,
+  padding 20px 24px, box-shadow 0 1px 4px rgba(0,0,0,0.04)
+
+SECTION 2 — AVAILABLE CONNECTORS:
+Section title: "Available" (small caps, #6e6e73)
+4 connector cards in a 2x2 grid:
+
+Card 1 — Microsoft 365:
+- Logo: Microsoft icon (use 🪟 as placeholder)
+- Title: "Microsoft 365"
+- Subtitle: "Outlook · Teams · Calendar"
+- Description: "Connect your Microsoft inbox and calendar 
+  to enable the Inbox Assistant for Outlook users."
+- Button: "Connect" — #4F8EF7 background, white text
+- Badge: "Coming Soon" — grey pill, button disabled
+
+Card 2 — Simpro CRM:
+- Logo: use ⚡ as placeholder
+- Title: "Simpro"
+- Subtitle: "Jobs · Customers · Quotes"
+- Description: "Sync customer records, job data, and quotes 
+  directly from Simpro into SolarOps."
+- Button: "Connect" disabled
+- Badge: "Coming Soon"
+
+Card 3 — Vapi / Telnyx:
+- Logo: use 📞 as placeholder
+- Title: "Voice Platform"
+- Subtitle: "Vapi · Telnyx"
+- Description: "Connect your voice AI provider to enable 
+  live call handling and transcripts."
+- Button: "Connect" disabled
+- Badge: "Coming Soon"
+
+Card 4 — Xero:
+- Logo: use 💙 as placeholder
+- Title: "Xero"
+- Subtitle: "Invoicing · Accounting"
+- Description: "Sync invoices and customer billing data 
+  between SolarOps and Xero."
+- Button: "Connect" disabled
+- Badge: "Coming Soon"
+
+AVAILABLE CONNECTOR CARD DESIGN:
+- White background, border-radius 16px
+- Border: 1px solid #e5e5e7
+- Padding: 24px
+- Box-shadow: 0 1px 4px rgba(0,0,0,0.04)
+- Logo: 40px × 40px, border-radius 10px, 
+  background #f5f5f7, centered icon
+- Title: #1d1d1f, font-weight 600, font-size 1rem
+- Subtitle: #6e6e73, font-size 0.8125rem
+- Description: #6e6e73, font-size 0.875rem, 
+  margin: 12px 0 16px 0, line-height 1.5
+- Coming Soon badge: background #f5f5f7, 
+  color #6e6e73, border-radius 980px, 
+  font-size 0.75rem, padding 4px 10px
+- Connect button: disabled state — 
+  background #f5f5f7, color #6e6e73, cursor not-allowed
+
+GOOGLE WORKSPACE — MANAGE MODAL:
+When "Manage" is clicked, show a simple modal:
+- Title: "Google Workspace Settings"
+- Connected account: support@solenergy.com.au
+- Monitored inboxes section:
+  Toggle list — each inbox with on/off toggle:
+  ✅ support@solenergy.com.au
+  ✅ sales@solenergy.com.au  
+  ☐ info@solenergy.com.au
+- Permissions granted list:
+  ✅ Read emails
+  ✅ Create drafts
+  ✅ Send on behalf (requires approval)
+- "Save Changes" button — #4F8EF7
+- "Close" button — grey
+- Modal: white, border-radius 20px, 
+  max-width 480px, centered with overlay
+
+DESIGN:
+- Match existing app design system exactly
+- Background: #f5f5f7
+- Consistent padding: 32px page padding
+- Section titles: font-size 0.75rem, 
+  font-weight 600, letter-spacing 0.05em,
+  color #6e6e73, text-transform uppercase,
+  margin-bottom 12px
