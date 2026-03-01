@@ -110,7 +110,8 @@ All required secrets are stored in Replit's Secrets pane:
 - `/login` — Google Sign-In only, clean Apple-style white card on `#f5f5f7`
 - `/onboarding` — First name, Last name, Business name form; submits to `/api/onboarding`
 - `/dashboard` — Bento grid layout with: Time Saved hero card (blue), Weekly Activity line chart (recharts), Emails Drafted, Emails Sent, Avg Response Time stat cards, Voice Agent Live Status card with pulsing dot, Top Enquiry Types donut chart (recharts), Open/Resolved Tickets split card, Recent Activity feed. All static placeholder data. Time period selector (This Week / This Month / All Time) — UI only, not yet functional.
-- All other routes (`/voice-agent`, `/inbox-assistant`, `/helpdesk`, `/connections`, `/settings`) — placeholder cards via `PlaceholderPage.tsx`
+- `/voice-agent` — Two-column config + preview layout. Left: collapsible cards for Agent Identity (name, greeting, tone), Business Hours (toggle + schedule + after-hours message), Call Routing (New Enquiry / Existing Customer paths), Escalation Settings (phone, safety keywords tag input, escalation message), Phone Number Setup (step indicators + info box). Right: Live Script Preview (chat bubbles reactive to greeting), 3 mini stats (Calls Handled, Avg Duration, Callback Requests), Recent Calls log with outcome pills. Status toggle (LIVE/OFFLINE) top right. All state-only, no API.
+- All other routes (`/inbox-assistant`, `/helpdesk`, `/connections`, `/settings`) — placeholder cards via `PlaceholderPage.tsx`
 
 ## UI Components & Design Tokens
 

@@ -1,0 +1,114 @@
+Build the Voice Agent page at /voice-agent. This is UI only — 
+no live API connections yet. All configuration saves to state only.
+Do not change any other pages, routing, or backend.
+
+PAGE LAYOUT:
+Two column layout:
+- Left column (40%): Configuration panel
+- Right column (60%): Live preview + stats
+
+PAGE HEADER:
+- Title: "Voice Agent"
+- Subtitle: "Configure and manage your AI phone receptionist"
+- Top right: Status toggle — "LIVE" (green) / "OFFLINE" (grey)
+  Clicking toggles the status visually (state only, no API call yet)
+
+LEFT COLUMN — CONFIGURATION PANEL:
+A vertical stack of glass/white cards, each collapsible.
+
+Card 1 — AGENT IDENTITY:
+Title: "Agent Identity"
+Fields:
+- Agent name (text input, default: "Sol Energy Assistant")
+- Greeting message (textarea, default: "Hi, thanks for calling Sol 
+  Energy. I'm here to help — are you an existing customer or is 
+  this a new enquiry?")
+- Tone selector (pill buttons): Professional | Friendly | Formal
+  Default: Friendly
+
+Card 2 — BUSINESS HOURS:
+Title: "Business Hours"
+- Toggle: "Only answer during business hours" (default: off)
+- When on, show: Mon–Fri time range pickers (9:00 AM – 5:00 PM default)
+- After hours message (textarea): "Thanks for calling Sol Energy. 
+  We're currently closed but leave your details and we'll call 
+  you back next business day."
+
+Card 3 — CALL ROUTING:
+Title: "Call Routing"
+Two routing paths shown as cards:
+Path A — New Enquiry:
+  - Collect: Name, Phone, Suburb, System type interest 
+    (Commercial/Residential), Callback window
+Path B — Existing Customer:
+  - Collect: Name, Phone, Issue description, Urgency level
+Show these as read-only info cards (editable in a future version)
+
+Card 4 — ESCALATION:
+Title: "Escalation Settings"
+- Escalation phone number (text input, placeholder: "+61 4XX XXX XXX")
+- Safety keywords (tags input — user can add keywords):
+  Default tags: "fire", "smoke", "outage", "emergency", "sparks"
+  Add tag on Enter key
+  Each tag has an X to remove
+- Escalation message (textarea): "I'm going to connect you with 
+  our team right away. Please hold."
+
+Card 5 — PHONE SETUP:
+Title: "Phone Number Setup"
+Status indicator showing setup steps:
+Step 1: ✅ Agent configured
+Step 2: ⏳ Connect phone number
+Step 3: 🔒 Test call
+Step 4: 🔒 Go live
+Below: info box explaining:
+"Forward your existing business number to your SolarOps number. 
+We'll provide your forwarding number once your agent is configured."
+Button: "Get My Forwarding Number" (disabled, greyed out for now)
+
+RIGHT COLUMN — PREVIEW + STATS:
+
+Top section — CALL SCRIPT PREVIEW:
+White card, title "Live Script Preview"
+Shows a simulated conversation preview based on the greeting 
+and tone settings from the left panel. Updates reactively as 
+user edits the greeting field.
+Show as a chat bubble UI:
+- Agent bubble (blue): the greeting message
+- Customer bubble (grey): "Hi, I'm interested in getting solar 
+  panels for my business"
+- Agent bubble (blue): "Great! I'd love to help. Could I start 
+  by getting your name and the suburb you're based in?"
+
+Middle section — THIS WEEK'S STATS:
+3 small stat cards in a row:
+- Calls Handled: 47
+- Avg Call Duration: 2.4 mins  
+- Callback Requests: 31
+
+Bottom section — RECENT CALLS LOG:
+White card, title "Recent Calls"
+5 rows, each showing:
+- Caller name (or "Unknown Caller")
+- Route taken (New Enquiry / Existing Customer)
+- Duration
+- Outcome (Callback Requested / Escalated / Completed)
+- Timestamp
+Outcome pill colours:
+- Callback Requested: blue
+- Escalated: red  
+- Completed: green
+
+DESIGN:
+- Match existing app design system exactly
+- White cards, border-radius 20px, box-shadow 0 2px 12px rgba(0,0,0,0.06)
+- Background: #f5f5f7
+- All form inputs: clean, minimal, border 1px solid #e5e5e7, 
+  border-radius 10px, padding 10px 14px
+- Input focus: border-color #4F8EF7, box-shadow 0 0 0 3px rgba(79,142,247,0.15)
+- Section cards: collapsible with a chevron icon, smooth animation
+- Active status toggle: green pill with pulsing dot
+- Offline status toggle: grey pill
+- Save button at bottom of left column: 
+  "Save Configuration" — #4F8EF7 background, white text, 
+  full width, border-radius 12px

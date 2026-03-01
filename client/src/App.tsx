@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import PlaceholderPage from './pages/PlaceholderPage';
+import VoiceAgentPage from './pages/VoiceAgentPage';
 
 export default function App() {
   return (
@@ -31,7 +32,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/voice-agent" element={<PlaceholderPage title="Voice Agent" />} />
+            <Route path="/voice-agent" element={<VoiceAgentPage />} />
             <Route path="/inbox-assistant" element={<PlaceholderPage title="Inbox Assistant" />} />
             <Route path="/helpdesk" element={<PlaceholderPage title="Helpdesk" />} />
             <Route path="/connections" element={<PlaceholderPage title="Connections" />} />
