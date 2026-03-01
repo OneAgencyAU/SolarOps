@@ -599,6 +599,32 @@
   color: #34C759;
 }
 
+/* ── Quick Tips ── */
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tip-bullet {
+  color: #4F8EF7;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.tip-text {
+  font-size: 0.86rem;
+  color: #1d1d1f;
+  line-height: 1.5;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .va-columns {

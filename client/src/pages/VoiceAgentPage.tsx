@@ -152,20 +152,6 @@ export default function VoiceAgentPage() {
             <textarea className="va-textarea" rows={2} value={escalationMsg} onChange={(e) => setEscalationMsg(e.target.value)} />
           </Section>
 
-          {/* Phone Setup */}
-          <Section title="Phone Number Setup" open={openSections.phone} onToggle={() => toggle('phone')}>
-            <div className="steps">
-              <Step icon="✅" label="Agent configured" />
-              <Step icon="⏳" label="Connect phone number" />
-              <Step icon="🔒" label="Test call" />
-              <Step icon="🔒" label="Go live" />
-            </div>
-            <div className="info-box">
-              Forward your existing business number to your SolarOps number. We'll provide your forwarding number once your agent is configured.
-            </div>
-            <button className="va-btn disabled" disabled>Get My Forwarding Number</button>
-          </Section>
-
           <button className="va-btn primary full">Save Configuration</button>
         </div>
 
@@ -218,6 +204,39 @@ export default function VoiceAgentPage() {
                   <span className="calls-time">{c.time}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Phone Number Setup */}
+          <Section title="Phone Number Setup" open={openSections.phone} onToggle={() => toggle('phone')}>
+            <div className="steps">
+              <Step icon="✅" label="Agent configured" />
+              <Step icon="⏳" label="Connect phone number" />
+              <Step icon="🔒" label="Test call" />
+              <Step icon="🔒" label="Go live" />
+            </div>
+            <div className="info-box">
+              Forward your existing business number to your SolarOps number. We'll provide your forwarding number once your agent is configured.
+            </div>
+            <button className="va-btn disabled" disabled>Get My Forwarding Number</button>
+          </Section>
+
+          {/* Quick Tips */}
+          <div className="va-card">
+            <div className="card-title" style={{ marginBottom: 14 }}>Quick Tips</div>
+            <div className="tips-list">
+              <div className="tip-row">
+                <span className="tip-bullet">•</span>
+                <span className="tip-text">Test your agent with a real call before going live</span>
+              </div>
+              <div className="tip-row">
+                <span className="tip-bullet">•</span>
+                <span className="tip-text">Update your greeting seasonally — e.g. mention battery rebates when they're available</span>
+              </div>
+              <div className="tip-row">
+                <span className="tip-bullet">•</span>
+                <span className="tip-text">Check your escalation number is always reachable during business hours</span>
+              </div>
             </div>
           </div>
         </div>
