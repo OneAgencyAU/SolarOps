@@ -73,7 +73,7 @@
   display: grid;
   grid-template-columns: 2fr 3fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .va-left,
@@ -81,6 +81,16 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.va-left .section-card.grow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.va-left .section-card.grow .section-body {
+  flex: 1;
 }
 
 /* ── Shared card ── */

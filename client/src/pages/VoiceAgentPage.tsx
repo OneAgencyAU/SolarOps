@@ -129,7 +129,7 @@ export default function VoiceAgentPage() {
           </Section>
 
           {/* Escalation */}
-          <Section title="Escalation Settings" open={openSections.escalation} onToggle={() => toggle('escalation')}>
+          <Section title="Escalation Settings" open={openSections.escalation} onToggle={() => toggle('escalation')} className="grow">
             <label className="va-label">Escalation phone number</label>
             <input className="va-input" value={escalationPhone} onChange={(e) => setEscalationPhone(e.target.value)} placeholder="+61 4XX XXX XXX" />
             <label className="va-label">Safety keywords</label>
@@ -245,9 +245,9 @@ export default function VoiceAgentPage() {
   );
 }
 
-function Section({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+function Section({ title, open, onToggle, children, className }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode; className?: string }) {
   return (
-    <div className="va-card section-card">
+    <div className={`va-card section-card${className ? ` ${className}` : ''}`}>
       <button className="section-header" onClick={onToggle}>
         <span className="card-title">{title}</span>
         <span className={`chevron ${open ? 'open' : ''}`}>‹</span>
