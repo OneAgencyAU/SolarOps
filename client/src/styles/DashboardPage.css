@@ -102,6 +102,8 @@
   padding: 28px;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .summary-label {
@@ -122,6 +124,8 @@
 .summary-rows {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
 }
 
 .summary-row {
