@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import PlaceholderPage from './pages/PlaceholderPage';
 import VoiceAgentPage from './pages/VoiceAgentPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
+import HelpdeskPage from './pages/HelpdeskPage';
 
 export default function App() {
   return (
@@ -35,7 +36,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/voice-agent" element={<VoiceAgentPage />} />
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
-            <Route path="/helpdesk" element={<PlaceholderPage title="Helpdesk" />} />
+            <Route path="/helpdesk" element={<HelpdeskPage />} />
             <Route path="/connections" element={<PlaceholderPage title="Connections" />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
           </Route>

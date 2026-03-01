@@ -1,0 +1,248 @@
+Build the Helpdesk page at /helpdesk. Replace the placeholder 
+page completely. Do not change any other pages, routing, or backend.
+All data is static/hardcoded placeholder — no backend connection yet.
+
+OVERALL LAYOUT:
+- Page header: "Helpdesk" title + "Manage and resolve customer 
+  tickets" subtitle
+- Quick stats bar below header
+- Search bar + filter row
+- Kanban board (main content)
+- Ticket detail slide-in panel (when ticket clicked)
+
+QUICK STATS BAR:
+4 inline stat pills in a row:
+- "12 Open" — blue (#4F8EF7)
+- "3 Urgent" — red (#FF453A)
+- "2 Overdue" — orange (#FF9F0A)
+- "8 Resolved Today" — green (#34C759)
+Each pill: coloured dot + number + label, 
+background white, border-radius 980px, 
+border 1px solid #e5e5e7, padding 8px 16px,
+box-shadow 0 1px 4px rgba(0,0,0,0.06)
+
+SEARCH + FILTER ROW:
+- Search input (left): placeholder "Search tickets...", 
+  width 280px, border 1px solid #e5e5e7, border-radius 10px,
+  padding 10px 14px, search icon inside left
+- Filter pills (right): 
+  Source: All | Voice | Email | Manual
+  Priority: All | Normal | Urgent
+  Active filter: #1d1d1f background, white text
+  Inactive: transparent, border 1px solid #e5e5e7
+
+KANBAN BOARD:
+4 columns side by side, equal width, horizontal scroll if needed:
+Columns: "New" | "In Progress" | "Waiting on Customer" | "Closed"
+
+Each column:
+- Column header: title + count badge 
+  (e.g. "New 4" — count in grey pill)
+- Column background: #f5f5f7, border-radius 16px, padding 12px
+- Cards stack vertically with 8px gap
+- Column is scrollable vertically if cards overflow
+
+TICKET CARDS (populate each column with realistic data):
+
+NEW column (4 cards):
+Card 1:
+- ID: #1042
+- Title: "Commercial solar quote — 85kW warehouse"
+- Customer: James Hartley
+- Source: Email (mail icon)
+- Priority: URGENT (red pill)
+- Assignee: Unassigned
+- SLA: "2h remaining" (orange)
+- Time: "9:41 AM"
+
+Card 2:
+- ID: #1041  
+- Title: "Battery rebate eligibility question"
+- Customer: Priya Sharma
+- Source: Email (mail icon)
+- Priority: Normal
+- Assignee: Unassigned
+- SLA: "4h remaining" (green)
+- Time: "8:30 AM"
+
+Card 3:
+- ID: #1040
+- Title: "Inbound call — new residential enquiry"
+- Customer: Unknown Caller
+- Source: Voice (phone icon)
+- Priority: Normal
+- Assignee: Unassigned
+- SLA: "5h remaining" (green)
+- Time: "8:15 AM"
+
+Card 4:
+- ID: #1039
+- Title: "Solar monitoring app not loading"
+- Customer: Rachel Wong
+- Source: Email (mail icon)
+- Priority: URGENT (red pill)
+- Assignee: Sarah
+- SLA: "OVERDUE" (red, bold)
+- Time: "Yesterday"
+
+IN PROGRESS column (3 cards):
+Card 5:
+- ID: #1038
+- Title: "Site visit scheduling — Bibra Lake"
+- Customer: James Hartley
+- Source: Manual
+- Priority: Normal
+- Assignee: Nat
+- SLA: "1d remaining" (green)
+- Time: "Yesterday"
+
+Card 6:
+- ID: #1037
+- Title: "Inverter fault — system offline"
+- Customer: Mike Chen
+- Source: Voice (phone icon)
+- Priority: URGENT (red pill)
+- Assignee: Sarah
+- SLA: "OVERDUE" (red, bold)
+- Time: "2 days ago"
+
+Card 7:
+- ID: #1036
+- Title: "Quote follow-up — 12 unit development"
+- Customer: Mark Deluca
+- Source: Email (mail icon)
+- Priority: Normal
+- Assignee: Nat
+- SLA: "3h remaining" (orange)
+- Time: "2 days ago"
+
+WAITING ON CUSTOMER column (3 cards):
+Card 8:
+- ID: #1035
+- Title: "Awaiting electricity bill — residential"
+- Customer: Tom Henderson
+- Source: Email (mail icon)
+- Priority: Normal
+- Assignee: Sarah
+- SLA: "Paused"
+- Time: "3 days ago"
+
+Card 9:
+- ID: #1034
+- Title: "Pending site access confirmation"
+- Customer: Suncoast Commercial
+- Source: Manual
+- Priority: Normal
+- Assignee: Nat
+- SLA: "Paused"
+- Time: "3 days ago"
+
+Card 10:
+- ID: #1033
+- Title: "Awaiting strata approval — rooftop install"
+- Customer: Maria Torres
+- Source: Email (mail icon)
+- Priority: Normal
+- Assignee: Unassigned
+- SLA: "Paused"
+- Time: "4 days ago"
+
+CLOSED column (3 cards, slightly faded opacity 0.7):
+Card 11:
+- ID: #1032
+- Title: "Battery installation complete"
+- Customer: David Park
+- Resolved: "Today 8:00 AM"
+- green "Resolved" pill
+
+Card 12:
+- ID: #1031
+- Title: "Monitoring setup assistance"
+- Customer: Lisa Nguyen
+- Resolved: "Yesterday"
+- green "Resolved" pill
+
+Card 13:
+- ID: #1030
+- Title: "Commercial quote sent — 45kW"
+- Customer: Coastal Retail Group
+- Resolved: "2 days ago"
+- green "Resolved" pill
+
+TICKET CARD DESIGN:
+- Background: white
+- Border-radius: 12px
+- Border: 1px solid #e5e5e7
+- Padding: 14px
+- Box-shadow: 0 1px 4px rgba(0,0,0,0.04)
+- Hover: shadow increases, cursor pointer
+- Ticket ID: #6e6e73, font-size 0.75rem, top left
+- Title: #1d1d1f, font-weight 500, font-size 0.875rem, 
+  margin: 4px 0 8px 0
+- Customer name: #6e6e73, font-size 0.8125rem
+- Bottom row: source icon + priority pill left, 
+  assignee avatar/name + SLA right
+- URGENT pill: background rgba(255,69,58,0.10), 
+  color #FF453A, border 1px solid rgba(255,69,58,0.20)
+- OVERDUE text: #FF453A, font-weight 600
+
+TICKET DETAIL SLIDE-IN PANEL:
+When any ticket card is clicked, a panel slides in from the right.
+Panel width: 480px, fixed position, full height, 
+background white, box-shadow -4px 0 24px rgba(0,0,0,0.10)
+Overlay: rgba(0,0,0,0.20) behind panel, clicking overlay closes panel
+Smooth slide animation: 250ms ease
+
+Panel content (use Card 1 — #1042 James Hartley as default):
+
+Header:
+- Close button (×) top right
+- Ticket ID + title
+- Status pill + Priority pill in a row
+- Assignee dropdown (static): "Unassigned ▾"
+
+AI Summary box (same blue style as Inbox Assistant):
+"✦ AI Summary: Commercial enquiry for an 85kW warehouse system 
+in Bibra Lake. Decision maker confirmed. No budget discussed yet. 
+Callback requested for site visit."
+
+Tabs row: "Details" | "Transcript" | "Notes" | "Timeline"
+Default active: Details
+
+DETAILS TAB:
+- Customer: James Hartley
+- Email: james@suncoastcommercial.com.au
+- Phone: Not provided
+- Source: Email
+- Created: Today 9:41 AM
+- SLA: 2h remaining (orange)
+- Queue: New Enquiries
+
+TRANSCRIPT TAB (show when clicked):
+Simple chat-style transcript:
+Agent: "Hi, thanks for calling Sol Energy..."
+Customer: "Hi, I'm looking to get solar for our warehouse..."
+Agent: "Great, could I get your name and best callback number?"
+Customer: "Sure, it's James, 0412 345 678"
+Agent: "Perfect James, someone will call you back this afternoon."
+
+NOTES TAB:
+- Text area: "Add internal note..." 
+- "Add Note" button below
+- One existing note:
+  "Sarah — 9:45 AM: Forwarded to Nat for follow-up. 
+  High-value commercial lead."
+
+TIMELINE TAB:
+Vertical timeline with dots:
+- 9:41 AM — "Ticket created via email"
+- 9:42 AM — "AI draft generated"
+- 9:45 AM — "Note added by Sarah"
+- 10:00 AM — "Assigned to Nat"
+
+DESIGN:
+- Match existing app design system exactly
+- Kanban columns: #f5f5f7 background
+- All cards white with subtle shadow
+- Smooth hover and click interactions
+- Mobile: columns scroll horizontally
