@@ -1,0 +1,124 @@
+The dashboard layout has not changed from before. I need you to 
+COMPLETELY REPLACE the dashboard page with a proper bento grid. 
+Delete all existing dashboard component code and start fresh.
+
+First install recharts if not already installed.
+
+The layout must use CSS Grid — not flexbox rows. It must look like 
+the Apple marketing bento grids in the attached reference images: 
+different sized cards arranged in an asymmetric grid, some tall, 
+some wide, some small.
+
+Use this exact grid structure in CSS:
+display: grid;
+grid-template-columns: repeat(12, 1fr);
+grid-template-rows: auto;
+gap: 16px;
+
+CARD GRID POSITIONS (use grid-column and grid-row):
+
+Card 1 — TIME SAVED HERO: grid-column: 1 / 5, grid-row: 1 / 3
+Card 2 — WEEKLY CHART: grid-column: 5 / 13, grid-row: 1 / 2
+Card 3 — EMAILS DRAFTED: grid-column: 5 / 8, grid-row: 2 / 3
+Card 4 — EMAILS SENT: grid-column: 8 / 10, grid-row: 2 / 3
+Card 5 — AVG RESPONSE: grid-column: 10 / 13, grid-row: 2 / 3
+Card 6 — LIVE STATUS: grid-column: 1 / 4, grid-row: 3 / 4
+Card 7 — ENQUIRY TYPES: grid-column: 4 / 8, grid-row: 3 / 4
+Card 8 — TICKETS: grid-column: 8 / 13, grid-row: 3 / 4
+Card 9 — ACTIVITY FEED: grid-column: 1 / 13, grid-row: 4 / 5
+
+CARD DESIGNS:
+
+Card 1 — TIME SAVED HERO:
+- background: #4F8EF7
+- color: white
+- border-radius: 24px
+- padding: 32px
+- Display "18.4h" in 5rem, font-weight 700
+- Label: "Time Saved This Week" 
+- Subtext: "Equivalent to 2.3 working days"
+- Bottom: two white pill badges — "47 calls" and "134 emails"
+- Subtle white radial gradient top-right: 
+  radial-gradient(circle at 90% 10%, rgba(255,255,255,0.15), transparent 60%)
+- min-height: 280px
+
+Card 2 — WEEKLY ACTIVITY CHART:
+- White card, border-radius: 20px
+- Title "Weekly Activity" top left, bold
+- Subtitle "Calls + emails · last 7 days" in #6e6e73
+- Recharts LineChart, two lines:
+  Blue (#4F8EF7) for Calls: [8,12,6,15,11,9,14]
+  Green (#34C759) for Emails: [22,18,25,30,20,15,28]
+  X axis: Mon Tue Wed Thu Fri Sat Sun
+- No grid lines, smooth curves (type="monotone")
+- height: 180px for the chart area
+
+Card 3 — EMAILS DRAFTED:
+- White card, border-radius: 20px, padding: 24px
+- Mail icon (#4F8EF7) top left
+- "134" in 2.5rem bold, #1d1d1f
+- "Emails Drafted" in #6e6e73
+- "↑ 28 this week" in #34C759
+
+Card 4 — EMAILS SENT:
+- Same style as Card 3
+- Send icon (#4F8EF7)
+- "89" 
+- "Emails Sent"
+- "↑ 19 this week" green
+
+Card 5 — AVG RESPONSE TIME:
+- Same style
+- Clock icon (#34C759)
+- "4.2m"
+- "Avg Response Time"
+- "↓ 1.8m faster" green
+
+Card 6 — LIVE STATUS:
+- White card, border-radius: 20px, padding: 24px
+- "Voice Agent" label in #6e6e73, small caps
+- Large green pulsing dot + "LIVE" text in green, bold, large
+- CSS keyframe animation on the dot: pulse opacity 1→0.4→1, 2s infinite
+- "47 calls this week" below in #6e6e73
+
+Card 7 — TOP ENQUIRY TYPES:
+- White card, border-radius: 20px, padding: 24px
+- Title: "Top Enquiry Types"
+- Recharts PieChart (donut, innerRadius 50, outerRadius 80):
+  New Commercial: 38% — #4F8EF7
+  Existing Support: 27% — #34C759
+  New Residential: 20% — #FF9F0A
+  Maintenance: 15% — #FF453A
+- Legend as a simple list below the chart with colour dots
+
+Card 8 — TICKETS:
+- White card, border-radius: 20px, padding: 24px
+- Split into two halves with a dividing line:
+  Left: "12" large bold, "Open Tickets", "3 urgent" in red small
+  Right: "94" large bold, "Resolved", "this month" in green small
+- Divider: 1px solid #e5e5e7 vertically centered
+
+Card 9 — ACTIVITY FEED:
+- White card, border-radius: 20px, padding: 24px
+- Title: "Recent Activity" bold
+- 5 activity rows, compact, with icon + title + subtitle + timestamp
+- Row hover: background #f5f5f7
+- Subtle dividers between rows: 1px solid #f5f5f7
+
+ALL CARDS SHARED STYLES:
+- background: #ffffff (except hero card)
+- box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)
+- Hover (stat cards only): transform translateY(-2px), 
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10)
+- transition: all 200ms ease
+
+PAGE HEADER (above the grid):
+- "Dashboard" h1, font-weight 600, #1d1d1f
+- "Good morning, [firstName]" subtitle in #6e6e73
+- Time period pills top right: This Week / This Month / All Time
+  Active pill: #1d1d1f background, white text
+  Inactive: transparent, #6e6e73 text
+
+PAGE BACKGROUND: #f5f5f7
+
+On mobile (under 768px): all cards stack to grid-column: 1 / -1
