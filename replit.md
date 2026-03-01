@@ -105,6 +105,26 @@ All required secrets are stored in Replit's Secrets pane:
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend |
 | `SUPABASE_SECRET_KEY` | Backend |
 
+## Pages Built
+
+- `/login` — Google Sign-In only, clean Apple-style white card on `#f5f5f7`
+- `/onboarding` — First name, Last name, Business name form; submits to `/api/onboarding`
+- `/dashboard` — Bento grid layout with: Time Saved hero card (blue), Weekly Activity line chart (recharts), Emails Drafted, Emails Sent, Avg Response Time stat cards, Voice Agent Live Status card with pulsing dot, Top Enquiry Types donut chart (recharts), Open/Resolved Tickets split card, Recent Activity feed. All static placeholder data. Time period selector (This Week / This Month / All Time) — UI only, not yet functional.
+- All other routes (`/voice-agent`, `/inbox-assistant`, `/helpdesk`, `/connections`, `/settings`) — placeholder cards via `PlaceholderPage.tsx`
+
+## UI Components & Design Tokens
+
+- **recharts** installed for `LineChart` and `PieChart` (donut)
+- **Bento grid**: CSS Grid 12-column, `gap: 16px`, named grid positions per card
+- **Hero card**: `#4F8EF7` background, white text, radial white glow top-right
+- **Stat cards**: white, `border-radius: 20px`, `box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)`
+- **Hover effect on stat cards**: `transform: translateY(-2px)`, shadow increase
+- **Pulsing dot animation**: CSS `@keyframes pulse`, opacity `1→0.4→1`, 2s infinite
+- **Activity feed rows**: hover background `#f5f5f7`, bottom border `1px solid #f5f5f7`
+- **Time period pills**: active = `#1d1d1f` background + white text; inactive = transparent + `#6e6e73`
+- **Design colours**: `#1d1d1f` (primary text), `#6e6e73` (secondary), `#4F8EF7` (accent blue), `#34C759` (green), `#FF453A` (red), `#f5f5f7` (page bg), `#ffffff` (card bg), `#e5e5e7` (borders)
+- **Mobile**: all bento cards stack to `grid-column: 1 / -1` under 768px
+
 ## Development
 
 ```bash
