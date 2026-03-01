@@ -1,15 +1,15 @@
 .inbox-page {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-  padding: 24px 32px 32px;
+  height: 100vh;
+  overflow: hidden;
   font-family: Inter, -apple-system, sans-serif;
   box-sizing: border-box;
 }
 
 .inbox-header-row {
-  margin-bottom: 20px;
   flex-shrink: 0;
+  padding: 24px 32px 16px;
 }
 
 .inbox-title {
@@ -32,11 +32,11 @@
 }
 
 /* ── Panel wrapper ── */
-
 .inbox-panels {
   display: flex;
   flex: 1;
   min-height: 0;
+  margin: 0 32px 24px 32px;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -60,6 +60,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  padding: 32px;
   animation: fadePanel 150ms ease;
 }
 
@@ -234,7 +235,6 @@
 
 /* ── Right: thread section ── */
 .thread-section {
-  padding: 32px;
   flex-shrink: 0;
 }
 
@@ -316,7 +316,6 @@
 
 /* ── Right: draft section ── */
 .draft-section {
-  padding: 0 32px 32px;
   flex-shrink: 0;
 }
 
@@ -454,15 +453,11 @@
     gap: 10px;
   }
 
-  .thread-section {
+  .inbox-right {
     padding: 20px 16px;
   }
 
-  .draft-section {
-    padding: 0 16px 24px;
-  }
-
-  .panel-divider {
-    margin: 0;
+  .inbox-panels {
+    margin: 0 16px 16px;
   }
 }
