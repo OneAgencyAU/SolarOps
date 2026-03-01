@@ -59,13 +59,39 @@
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   animation: fadePanel 150ms ease;
 }
 
 @keyframes fadePanel {
   from { opacity: 0.6; }
   to   { opacity: 1; }
+}
+
+/* ── Custom scrollbars ── */
+.inbox-left::-webkit-scrollbar,
+.inbox-email-list::-webkit-scrollbar,
+.thread-section::-webkit-scrollbar {
+  width: 4px;
+}
+
+.inbox-left::-webkit-scrollbar-track,
+.inbox-email-list::-webkit-scrollbar-track,
+.thread-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.inbox-left::-webkit-scrollbar-thumb,
+.inbox-email-list::-webkit-scrollbar-thumb,
+.thread-section::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+.inbox-left::-webkit-scrollbar-thumb:hover,
+.inbox-email-list::-webkit-scrollbar-thumb:hover,
+.thread-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* ── Left: top bar ── */
