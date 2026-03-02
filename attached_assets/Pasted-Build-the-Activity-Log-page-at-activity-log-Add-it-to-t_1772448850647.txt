@@ -1,0 +1,241 @@
+Build the Activity Log page at /activity-log. Add it to the 
+sidebar navigation between Helpdesk and Connections.
+Replace any placeholder page. Do not change any other pages.
+All data is static/hardcoded placeholder — no backend yet.
+
+SIDEBAR NAV UPDATE:
+Add "Activity Log" link between Helpdesk and Connections.
+Icon: use a clock or list icon matching existing nav style.
+
+PAGE LAYOUT:
+- Page header: "Activity Log" title
+- Subtitle: "Every action taken by SolarOps AI — fully transparent"
+- Stats bar + filter row
+- Full width activity table/list
+
+STATS BAR (4 inline pills, same style as Helpdesk):
+- "247 Actions Today" — blue
+- "12 Pending Review" — orange  
+- "3 Errors" — red
+- "99.2% Success Rate" — green
+
+FILTER ROW:
+Left side:
+- Search input: "Search activity..." 
+- Date range pill: "Today ▾" 
+  (options: Today, Yesterday, Last 7 days, Last 30 days)
+
+Right side filter pills:
+- Module: All | Voice | Inbox | Helpdesk | Connections
+- Type: All | AI Action | System | Error
+- Status: All | Success | Pending | Failed
+
+ACTIVITY TABLE:
+Full width white card, border-radius 20px, 
+box-shadow 0 2px 12px rgba(0,0,0,0.06)
+
+Table headers (sticky):
+TIME | MODULE | ACTION | DETAILS | USER/TRIGGER | STATUS
+
+Populate with 15 realistic activity rows:
+
+Row 1:
+- Time: 10:23 AM
+- Module: Inbox (mail icon, blue)
+- Action: "Draft generated"
+- Details: "Reply drafted for James Hartley — 
+  Commercial solar quote"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 2:
+- Time: 10:21 AM
+- Module: Voice (phone icon, purple)
+- Action: "Call handled"
+- Details: "Inbound call from +61 412 345 678 — 
+  New enquiry, callback requested"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 3:
+- Time: 10:18 AM
+- Module: Inbox (mail icon, blue)
+- Action: "Email classified"
+- Details: "Tagged as 'New Lead' — Mark Deluca, 
+  12-unit development enquiry"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 4:
+- Time: 10:15 AM
+- Module: Helpdesk (ticket icon, orange)
+- Action: "Ticket created"
+- Details: "Ticket #1042 created from email — 
+  James Hartley"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 5:
+- Time: 10:12 AM
+- Module: Inbox (mail icon, blue)
+- Action: "Draft approved & sent"
+- Details: "Sarah approved and sent reply to 
+  Rachel Wong"
+- Trigger: Sarah
+- Status: Success (green pill)
+
+Row 6:
+- Time: 10:08 AM
+- Module: Voice (phone icon, purple)
+- Action: "Transcript saved"
+- Details: "Call transcript saved — Maria Torres, 
+  2m 14s"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 7:
+- Time: 10:05 AM
+- Module: Connections (link icon, grey)
+- Action: "Gmail sync"
+- Details: "Inbox synced — 3 new emails processed"
+- Trigger: System
+- Status: Success (green pill)
+
+Row 8:
+- Time: 9:58 AM
+- Module: Inbox (mail icon, blue)
+- Action: "Draft generated"
+- Details: "Reply drafted for Priya Sharma — 
+  Battery rebate question"
+- Trigger: AI Auto
+- Status: Pending (orange pill)
+
+Row 9:
+- Time: 9:52 AM
+- Module: Helpdesk (ticket icon, orange)
+- Action: "SLA warning"
+- Details: "Ticket #1037 — Inverter fault, 
+  SLA breached by 2 hours"
+- Trigger: System
+- Status: Failed (red pill)
+
+Row 10:
+- Time: 9:45 AM
+- Module: Voice (phone icon, purple)
+- Action: "Escalation triggered"
+- Details: "Call escalated — keyword 'smoke' 
+  detected, transferred to Nat"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 11:
+- Time: 9:41 AM
+- Module: Inbox (mail icon, blue)
+- Action: "Email received"
+- Details: "New email from james@suncoastcommercial.com.au"
+- Trigger: System
+- Status: Success (green pill)
+
+Row 12:
+- Time: 9:38 AM
+- Module: Helpdesk (ticket icon, orange)
+- Action: "Ticket assigned"
+- Details: "Ticket #1038 assigned to Nat by Sarah"
+- Trigger: Sarah
+- Status: Success (green pill)
+
+Row 13:
+- Time: 9:30 AM
+- Module: Connections (link icon, grey)
+- Action: "Gmail sync failed"
+- Details: "Connection timeout — retrying in 5 minutes"
+- Trigger: System
+- Status: Failed (red pill)
+
+Row 14:
+- Time: 9:22 AM
+- Module: Voice (phone icon, purple)
+- Action: "Call handled"
+- Details: "Inbound call — James Park, 
+  existing customer support"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+Row 15:
+- Time: 9:15 AM
+- Module: Inbox (mail icon, blue)
+- Action: "AI summary generated"
+- Details: "Summary generated for ticket #1041 — 
+  Priya Sharma battery rebate"
+- Trigger: AI Auto
+- Status: Success (green pill)
+
+TABLE DESIGN:
+- Header row: background #f5f5f7, font-size 0.75rem, 
+  font-weight 600, color #6e6e73, letter-spacing 0.05em,
+  text-transform uppercase, padding 12px 20px
+- Data rows: padding 14px 20px, border-bottom 1px solid #f5f5f7
+- Hover: background #fafafa
+- Time: font-size 0.8125rem, color #6e6e73, 
+  white-space nowrap, width 90px
+- Module cell: icon + module name, font-size 0.875rem
+- Module icon: 28px circle with light background, 
+  centered icon
+  Voice: purple background rgba(175,82,222,0.1), 
+  purple icon
+  Inbox: blue background rgba(79,142,247,0.1), 
+  blue icon
+  Helpdesk: orange background rgba(255,159,10,0.1), 
+  orange icon
+  Connections: grey background rgba(0,0,0,0.06), 
+  grey icon
+- Action: font-weight 500, color #1d1d1f, font-size 0.875rem
+- Details: color #6e6e73, font-size 0.8125rem, 
+  max-width 320px
+- Trigger: font-size 0.8125rem, color #6e6e73
+  "AI Auto" shown as small pill: 
+  background rgba(79,142,247,0.08), color #4F8EF7
+  "System" shown as small pill: 
+  background #f5f5f7, color #6e6e73
+  Human names shown as plain text
+- Status pills:
+  Success: background rgba(52,199,89,0.1), 
+  color #34C759, border-radius 980px, 
+  padding 4px 10px, font-size 0.75rem
+  Pending: background rgba(255,159,10,0.1), 
+  color #FF9F0A
+  Failed: background rgba(255,69,58,0.1), 
+  color #FF453A
+
+ROW CLICK — DETAIL DRAWER:
+Clicking any row opens a slide-in drawer from the right 
+(same style as Helpdesk ticket panel, 420px wide).
+
+Drawer content:
+- Header: Action name + status pill + close button
+- Timestamp: full date and time
+- Module badge
+- Full details text
+- Trigger info
+- Raw log section (monospace font, grey background):
+  Show a fake JSON log like:
+  {
+    "action": "draft_generated",
+    "model": "claude-sonnet-4",
+    "tokens_used": 847,
+    "latency_ms": 1243,
+    "thread_id": "msg_abc123",
+    "confidence": 0.94
+  }
+- "Re-run Action" button (grey, disabled for now)
+- "Mark as Reviewed" button (#4F8EF7)
+
+PAGINATION:
+Below the table: "Showing 15 of 247 actions today"
+"Load more" button — white, border 1px solid #e5e5e7,
+centered, border-radius 10px
+
+DESIGN:
+- Match existing app design system exactly
+- Page padding: 32px
+- Table inside white card with overflow-x auto for mobile
