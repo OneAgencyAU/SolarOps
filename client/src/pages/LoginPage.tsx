@@ -76,17 +76,43 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <div className="login-bg-gradient" />
-      <div className="login-card">
-        <div className="login-logo">
-          <span className="login-logo-sun">☀</span>
-          <h1 className="login-wordmark">SolarOps</h1>
+      <div className="login-left">
+        <div className="login-left-grid" />
+        <div className="login-left-glow" />
+        <div className="login-left-content">
+          <div className="login-brand">
+            <span className="login-brand-icon">⊙</span>
+            <span className="login-brand-name">SolarOps</span>
+          </div>
+          <p className="login-brand-tagline">AI operations for solar businesses</p>
+          <div className="login-features">
+            <div className="login-feature"><span className="login-dot" />Answer every call. Draft every email. Track every ticket.</div>
+            <div className="login-feature"><span className="login-dot" />Built for Australian solar installers.</div>
+            <div className="login-feature"><span className="login-dot" />Your team's AI operations layer.</div>
+          </div>
         </div>
-        <p className="login-tagline">Solar operations management platform</p>
-        <button className="google-signin-btn" onClick={handleGoogleSignIn}>
-          <GoogleIcon />
-          <span>Continue with Google</span>
-        </button>
+        <div className="login-left-footer">Powered by ONE AGENCY</div>
+      </div>
+
+      <div className="login-right">
+        <div className="login-right-content">
+          <h1 className="login-welcome">Welcome back</h1>
+          <p className="login-welcome-sub">Sign in to your SolarOps workspace</p>
+          <button className="login-google-btn" onClick={handleGoogleSignIn}>
+            <GoogleIcon />
+            <span>Continue with Google</span>
+          </button>
+          <div className="login-divider">
+            <span className="login-divider-line" />
+            <span className="login-divider-text">or</span>
+            <span className="login-divider-line" />
+          </div>
+          <div className="login-access">
+            <span className="login-access-text">New to SolarOps?</span>
+            <span className="login-access-link">Request access →</span>
+          </div>
+        </div>
+        <div className="login-right-footer">By signing in, you agree to our Terms of Service and Privacy Policy</div>
       </div>
     </div>
   );

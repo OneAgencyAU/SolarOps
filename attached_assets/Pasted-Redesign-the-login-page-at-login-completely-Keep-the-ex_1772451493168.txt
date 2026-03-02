@@ -1,0 +1,89 @@
+Redesign the login page at /login completely. Keep the exact 
+same Firebase Google Sign-In functionality — only change the 
+visual design. Do not touch any auth logic, routing, or other pages.
+
+DESIGN DIRECTION:
+Split screen layout — two columns, full viewport height.
+
+LEFT COLUMN (55% width):
+Dark background: #0a0a0f
+Atmospheric background effect: subtle radial gradient glow 
+in deep blue (#4F8EF7 at 8% opacity) centered slightly 
+left-of-center, creating a soft halo effect on dark background.
+Add a very subtle grid pattern overlay (1px lines, 
+rgba(255,255,255,0.03)) for texture.
+
+Content centered vertically in left column:
+- SolarOps wordmark: "SolarOps" in large, confident type
+  Font: use Google Fonts — 'DM Sans' (700 weight)
+  Font-size: 2.5rem, color: white, letter-spacing: -0.02em
+  Small sun icon (⊙ or SVG) before the name in #4F8EF7
+  
+- Tagline below: "AI operations for solar businesses"
+  Font: DM Sans 400, font-size: 1.125rem, 
+  color: rgba(255,255,255,0.5)
+  margin-top: 12px
+
+- Spacer: 48px
+
+- 3 feature highlights stacked vertically, 20px gap each:
+  Each row: small blue dot (6px, #4F8EF7) + text
+  "Answer every call. Draft every email. Track every ticket."
+  "Built for Australian solar installers."
+  "Your team's AI operations layer."
+  Text: DM Sans 400, font-size 0.9375rem, 
+  color rgba(255,255,255,0.6)
+
+- Bottom of left column (absolute positioned):
+  "Powered by ONE AGENCY" — font-size 0.75rem, 
+  color rgba(255,255,255,0.25), padding-bottom 32px
+
+RIGHT COLUMN (45% width):
+Background: #ffffff
+Content centered vertically and horizontally.
+
+Content card (no card background — just content floating):
+Max-width: 360px, margin: auto
+
+- "Welcome back" — DM Sans 700, font-size 1.75rem, 
+  color #1d1d1f, margin-bottom 8px
+- "Sign in to your SolarOps workspace" — 
+  DM Sans 400, font-size 0.9375rem, color #6e6e73,
+  margin-bottom 40px
+
+- Google Sign-In button (keep existing onClick handler):
+  Full width, height 52px, border-radius 12px
+  Background: white
+  Border: 1.5px solid #e5e5e7
+  Box-shadow: 0 2px 8px rgba(0,0,0,0.06)
+  Hover: border-color #4F8EF7, 
+  box-shadow 0 4px 16px rgba(79,142,247,0.15)
+  Transition: all 200ms ease
+  Content: Google "G" SVG logo (coloured) + 
+  "Continue with Google" in DM Sans 500, 
+  font-size 0.9375rem, color #1d1d1f
+
+- Below button, 24px margin:
+  Small divider line with "or" text (grey)
+  
+- Below divider:
+  Text: "New to SolarOps?" 
+  font-size 0.8125rem, color #6e6e73
+  "Request access →" link in #4F8EF7, 
+  same font size (no actual link needed)
+
+- Bottom of right column (absolute positioned):
+  "By signing in, you agree to our Terms of Service 
+  and Privacy Policy"
+  font-size 0.75rem, color #9e9e9e, text-align center
+  padding-bottom 32px
+
+MOBILE:
+Under 768px: single column, dark background, 
+centered content card (white card, border-radius 20px, 
+padding 32px), same sign-in button.
+
+Load Google Fonts: DM Sans (400, 500, 700)
+
+Do not change any auth logic, Firebase config, 
+routing, or other pages.
