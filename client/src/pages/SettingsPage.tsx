@@ -71,6 +71,9 @@ export default function SettingsPage() {
         <p className="settings-subtitle">Manage your workspace, team, and preferences</p>
       </div>
 
+      <div className="settings-grid">
+        <div className="settings-col">
+
       <div className="settings-card">
         <div className="settings-card-title">Workspace</div>
 
@@ -120,6 +123,45 @@ export default function SettingsPage() {
           <button className="settings-btn-primary">Save Changes</button>
         </div>
       </div>
+
+      <div className="settings-card">
+        <div className="settings-card-title">Notifications</div>
+
+        <div className="settings-notif-list">
+          {notifs.map((n, i) => (
+            <div key={n.id}>
+              <div className="settings-notif-row">
+                <div className="settings-notif-text">
+                  <span className="settings-notif-label">{n.label}</span>
+                  <span className="settings-notif-desc">{n.desc}</span>
+                </div>
+                <button
+                  className={`settings-toggle ${n.on ? 'on' : ''}`}
+                  onClick={() => toggleNotif(n.id)}
+                >
+                  <span className="settings-toggle-knob" />
+                </button>
+              </div>
+              {i < notifs.length - 1 && <div className="settings-notif-divider" />}
+            </div>
+          ))}
+        </div>
+
+        <div className="settings-notif-email-row">
+          <label className="settings-label">Send notifications to</label>
+          <div className="settings-inline-save">
+            <input
+              className="settings-input"
+              value={notifEmail}
+              onChange={e => setNotifEmail(e.target.value)}
+            />
+            <button className="settings-btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+
+        </div>
+        <div className="settings-col">
 
       <div className="settings-card">
         <div className="settings-card-title">Team Members</div>
@@ -232,42 +274,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="settings-card">
-        <div className="settings-card-title">Notifications</div>
-
-        <div className="settings-notif-list">
-          {notifs.map((n, i) => (
-            <div key={n.id}>
-              <div className="settings-notif-row">
-                <div className="settings-notif-text">
-                  <span className="settings-notif-label">{n.label}</span>
-                  <span className="settings-notif-desc">{n.desc}</span>
-                </div>
-                <button
-                  className={`settings-toggle ${n.on ? 'on' : ''}`}
-                  onClick={() => toggleNotif(n.id)}
-                >
-                  <span className="settings-toggle-knob" />
-                </button>
-              </div>
-              {i < notifs.length - 1 && <div className="settings-notif-divider" />}
-            </div>
-          ))}
-        </div>
-
-        <div className="settings-notif-email-row">
-          <label className="settings-label">Send notifications to</label>
-          <div className="settings-inline-save">
-            <input
-              className="settings-input"
-              value={notifEmail}
-              onChange={e => setNotifEmail(e.target.value)}
-            />
-            <button className="settings-btn-primary">Save</button>
-          </div>
-        </div>
-      </div>
-
-      <div className="settings-card">
         <div className="settings-card-title">Time Saved Calculation</div>
         <p className="settings-card-desc">These settings affect how time and salary savings are calculated across your dashboard.</p>
 
@@ -333,6 +339,9 @@ export default function SettingsPage() {
         <div className="settings-calc-preview">
           Based on your settings: {calls} calls × {minsPerCall} mins + {emails} emails × {minsPerEmail} mins
           = {hrs}hrs {mins}mins saved = ${salary} in salary costs this week
+        </div>
+      </div>
+
         </div>
       </div>
     </div>
