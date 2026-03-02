@@ -124,15 +124,13 @@
 .summary-rows {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  justify-content: space-around;
 }
 
 .summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: 10px 0;
 }
 
 .summary-row-left {
@@ -173,7 +171,33 @@
 .summary-footer-divider {
   height: 1px;
   background: #f5f5f7;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.summary-time-saved {
+  margin-bottom: 16px;
+}
+
+.summary-time-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #6e6e73;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.summary-time-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.summary-time-sub {
+  font-size: 0.8125rem;
+  color: #6e6e73;
 }
 
 .summary-alert-row {

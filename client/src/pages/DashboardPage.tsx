@@ -101,6 +101,11 @@ export default function DashboardPage() {
           </div>
           <div className="summary-footer">
             <div className="summary-footer-divider" />
+            <div className="summary-time-saved">
+              <div className="summary-time-label">TIME SAVED THIS WEEK</div>
+              <div className="summary-time-value">18.4h</div>
+              <div className="summary-time-sub">Equivalent to 2.3 working days</div>
+            </div>
             <Link to="/helpdesk" className="summary-alert-row">
               <span className="summary-alert-text urgent">3 tickets need attention</span>
               <span className="summary-arrow">→</span>
