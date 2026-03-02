@@ -104,8 +104,8 @@ export default function DashboardPage() {
             <div className="summary-time-saved">
               <div className="summary-time-label">TIME SAVED THIS WEEK</div>
               <div className="summary-time-value">
-                <span className="summary-time-hours">18h</span>
-                <span className="summary-time-mins">24m</span>
+                <span className="summary-time-hours">18hrs</span>
+                <span className="summary-time-mins">24mins</span>
               </div>
               <div className="summary-time-sub">Equivalent to 2.3 working days</div>
               <div className="summary-money-label">EST. SALARY SAVED</div>
