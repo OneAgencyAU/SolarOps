@@ -1,16 +1,20 @@
 .login-page {
   display: flex;
-  min-height: 100vh;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
   font-family: 'DM Sans', -apple-system, sans-serif;
 }
 
 .login-left {
   width: 55%;
+  height: 100vh;
   background: #0a0a0f;
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  padding: 0 64px;
   overflow: hidden;
 }
 
@@ -80,13 +84,8 @@
 .login-left-content {
   position: relative;
   z-index: 1;
-  padding: 0 48px 0 64px;
   max-width: 520px;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
 }
 
 .login-brand {
@@ -236,17 +235,19 @@
 
 .login-right {
   width: 45%;
+  height: 100vh;
   background: #ffffff;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  padding: 0 64px;
   position: relative;
 }
 
 .login-right-content {
   max-width: 360px;
   width: 100%;
-  padding: 0 32px;
 }
 
 .login-welcome {
