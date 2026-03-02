@@ -46,8 +46,10 @@ export default function SettingsPage() {
   const [notifs, setNotifs] = useState<Notif[]>(initNotifs);
   const [notifEmail, setNotifEmail] = useState(user?.email ?? '');
 
-  const [aiToggles, setAiToggles] = useState({ autoTag: true, aiSummary: true, escalation: true });
+  const [aiToggles, setAiToggles] = useState({ autoTag: true, aiSummary: true, escalation: true, signature: true, followUp: true });
   const toggleAi = (key: keyof typeof aiToggles) => setAiToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const [tone, setTone] = useState<'Professional' | 'Friendly' | 'Formal'>('Friendly');
+  const [confidence, setConfidence] = useState(75);
 
   const [hourlyRate, setHourlyRate] = useState('42');
   const [minsPerCall, setMinsPerCall] = useState('4');
@@ -219,6 +221,66 @@ export default function SettingsPage() {
             >
               <span className="settings-toggle-knob" />
             </button>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Tone preference</span>
+              <span className="settings-notif-desc">Default tone used in AI-drafted email replies</span>
+            </div>
+            <div className="settings-tone-pills">
+              {(['Professional', 'Friendly', 'Formal'] as const).map(t => (
+                <button
+                  key={t}
+                  className={`settings-tone-pill ${tone === t ? 'active' : ''}`}
+                  onClick={() => setTone(t)}
+                >{t}</button>
+              ))}
+            </div>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Signature on drafts</span>
+              <span className="settings-notif-desc">Automatically append email signature to all drafted replies</span>
+            </div>
+            <button
+              className={`settings-toggle ${aiToggles.signature ? 'on' : ''}`}
+              onClick={() => toggleAi('signature')}
+            >
+              <span className="settings-toggle-knob" />
+            </button>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Smart follow-up detection</span>
+              <span className="settings-notif-desc">Flag emails that haven't received a reply after 48 hours</span>
+            </div>
+            <button
+              className={`settings-toggle ${aiToggles.followUp ? 'on' : ''}`}
+              onClick={() => toggleAi('followUp')}
+            >
+              <span className="settings-toggle-knob" />
+            </button>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row settings-notif-row--slider">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Confidence threshold</span>
+              <span className="settings-notif-desc">Minimum AI confidence before generating a draft (lower = more drafts)</span>
+            </div>
+            <div className="settings-slider-wrap">
+              <input
+                type="range"
+                min={60}
+                max={95}
+                value={confidence}
+                onChange={e => setConfidence(Number(e.target.value))}
+                className="settings-slider"
+              />
+              <span className="settings-slider-value">{confidence}%</span>
+            </div>
           </div>
         </div>
 
