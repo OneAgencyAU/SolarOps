@@ -1,0 +1,93 @@
+Enhance the login page left column with animations and more 
+content. Do not change any auth logic or the right column.
+
+LEFT COLUMN ENHANCEMENTS:
+
+1. ANIMATED BACKGROUND:
+Replace the static radial gradient with animated floating 
+orbs using CSS keyframe animations:
+
+- Orb 1: 600px circle, background radial-gradient from 
+  rgba(79,142,247,0.15) to transparent, positioned 
+  top-left area, animate slowly floating:
+  @keyframes float1 { 
+    0% { transform: translate(0,0) }
+    50% { transform: translate(40px, 30px) }
+    100% { transform: translate(0,0) }
+  }
+  Duration: 12s, infinite, ease-in-out
+
+- Orb 2: 400px circle, background radial-gradient from 
+  rgba(120,80,255,0.10) to transparent, positioned 
+  bottom-right of left column, different animation:
+  Duration: 16s, delay 4s, infinite, ease-in-out
+  float in opposite direction
+
+- Orb 3: 300px circle, rgba(79,142,247,0.08), 
+  center of column, duration 20s
+
+All orbs: position absolute, border-radius 50%, 
+pointer-events none, z-index 0
+Left column content: z-index 1 (above orbs)
+
+2. CONTENT — move content to center vertically:
+Center everything vertically (not bottom-left)
+
+3. LOGO AREA:
+- SolarOps wordmark stays
+- Add a small animated pulse ring around the sun icon:
+  ::after pseudo element, border 1px solid rgba(79,142,247,0.4),
+  border-radius 50%, animate scale from 1 to 1.5 and 
+  fade out, duration 2s infinite
+
+4. STATS ROW — add below tagline:
+3 small stat boxes in a row, gap 16px, margin-top 32px:
+Each box: 
+- background rgba(255,255,255,0.04)
+- border 1px solid rgba(255,255,255,0.08)
+- border-radius 12px, padding 16px 20px
+- Number: DM Sans 700, font-size 1.5rem, color white
+- Label: DM Sans 400, font-size 0.75rem, 
+  color rgba(255,255,255,0.45), margin-top 4px
+
+Stats:
+- "18h" / "Saved per week"
+- "99.2%" / "AI success rate"  
+- "4.2m" / "Avg response time"
+
+5. FEATURE HIGHLIGHTS — keep existing 3 bullet points 
+but add spacing and a subtle entrance animation:
+Each bullet fades in and slides up on page load:
+animation: fadeUp 0.6s ease forwards
+animation-delay: 0.2s, 0.4s, 0.6s respectively
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+Initial state: opacity 0
+
+6. TESTIMONIAL — add below feature bullets, margin-top 40px:
+Subtle quote box:
+- background rgba(255,255,255,0.03)
+- border-left 2px solid #4F8EF7
+- border-radius 0 8px 8px 0
+- padding 16px 20px
+
+Quote text: "SolarOps saves our team hours every week 
+on emails and calls."
+Font: DM Sans 400 italic, font-size 0.875rem, 
+color rgba(255,255,255,0.55)
+
+Attribution: "— Nat Elliott, Sol Energy"
+Font: DM Sans 500, font-size 0.8125rem, 
+color rgba(255,255,255,0.35), margin-top 8px
+
+7. RIGHT COLUMN — minor addition:
+Below the "Request access →" line, add 32px spacer then:
+3 small trust logos/badges in a row, centered:
+Each badge: grey pill, border 1px solid #e5e5e7, 
+padding 6px 12px, border-radius 980px, 
+font-size 0.75rem, color #6e6e73
+"🔒 SOC 2 Ready" | "🇦🇺 Australian" | "⚡ Solar-specific"
+
+Do not change auth logic, routing, or other pages.

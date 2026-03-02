@@ -78,17 +78,40 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-left">
         <div className="login-left-grid" />
-        <div className="login-left-glow" />
+        <div className="login-orb login-orb--1" />
+        <div className="login-orb login-orb--2" />
+        <div className="login-orb login-orb--3" />
         <div className="login-left-content">
           <div className="login-brand">
             <span className="login-brand-icon">⊙</span>
             <span className="login-brand-name">SolarOps</span>
           </div>
           <p className="login-brand-tagline">AI operations for solar businesses</p>
+
+          <div className="login-stats-row">
+            <div className="login-stat-box">
+              <div className="login-stat-num">18h</div>
+              <div className="login-stat-label">Saved per week</div>
+            </div>
+            <div className="login-stat-box">
+              <div className="login-stat-num">99.2%</div>
+              <div className="login-stat-label">AI success rate</div>
+            </div>
+            <div className="login-stat-box">
+              <div className="login-stat-num">4.2m</div>
+              <div className="login-stat-label">Avg response time</div>
+            </div>
+          </div>
+
           <div className="login-features">
-            <div className="login-feature"><span className="login-dot" />Answer every call. Draft every email. Track every ticket.</div>
-            <div className="login-feature"><span className="login-dot" />Built for Australian solar installers.</div>
-            <div className="login-feature"><span className="login-dot" />Your team's AI operations layer.</div>
+            <div className="login-feature login-feature--1"><span className="login-dot" />Answer every call. Draft every email. Track every ticket.</div>
+            <div className="login-feature login-feature--2"><span className="login-dot" />Built for Australian solar installers.</div>
+            <div className="login-feature login-feature--3"><span className="login-dot" />Your team's AI operations layer.</div>
+          </div>
+
+          <div className="login-testimonial">
+            <p className="login-testimonial-text">"SolarOps saves our team hours every week on emails and calls."</p>
+            <p className="login-testimonial-attr">— Nat Elliott, Sol Energy</p>
           </div>
         </div>
         <div className="login-left-footer">Powered by ONE AGENCY</div>
@@ -110,6 +133,11 @@ export default function LoginPage() {
           <div className="login-access">
             <span className="login-access-text">New to SolarOps?</span>
             <span className="login-access-link">Request access →</span>
+          </div>
+          <div className="login-trust-badges">
+            <span className="login-badge">🔒 SOC 2 Ready</span>
+            <span className="login-badge">🇦🇺 Australian</span>
+            <span className="login-badge">⚡ Solar-specific</span>
           </div>
         </div>
         <div className="login-right-footer">By signing in, you agree to our Terms of Service and Privacy Policy</div>

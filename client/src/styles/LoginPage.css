@@ -22,17 +22,59 @@
     linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
+  z-index: 0;
 }
 
-.login-left-glow {
+.login-orb {
   position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-orb--1 {
   width: 600px;
   height: 600px;
-  left: 35%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 5%;
+  left: 5%;
+  background: radial-gradient(circle, rgba(79,142,247,0.15) 0%, transparent 70%);
+  animation: loginFloat1 12s ease-in-out infinite;
+}
+
+.login-orb--2 {
+  width: 400px;
+  height: 400px;
+  bottom: 10%;
+  right: 5%;
+  background: radial-gradient(circle, rgba(120,80,255,0.10) 0%, transparent 70%);
+  animation: loginFloat2 16s ease-in-out 4s infinite;
+}
+
+.login-orb--3 {
+  width: 300px;
+  height: 300px;
+  top: 40%;
+  left: 30%;
   background: radial-gradient(circle, rgba(79,142,247,0.08) 0%, transparent 70%);
-  pointer-events: none;
+  animation: loginFloat3 20s ease-in-out infinite;
+}
+
+@keyframes loginFloat1 {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(40px, 30px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes loginFloat2 {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-35px, -25px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes loginFloat3 {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(20px, -20px); }
+  100% { transform: translate(0, 0); }
 }
 
 .login-left-content {
@@ -52,6 +94,22 @@
   font-size: 1.6rem;
   color: #4F8EF7;
   line-height: 1;
+  position: relative;
+}
+
+.login-brand-icon::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgba(79,142,247,0.4);
+  border-radius: 50%;
+  animation: loginPulseRing 2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes loginPulseRing {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
 
 .login-brand-name {
@@ -68,8 +126,36 @@
   margin: 12px 0 0;
 }
 
+.login-stats-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.login-stat-box {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.login-stat-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.login-stat-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.45);
+  margin-top: 4px;
+}
+
 .login-features {
-  margin-top: 48px;
+  margin-top: 36px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -82,6 +168,17 @@
   font-size: 0.9375rem;
   font-weight: 400;
   color: rgba(255,255,255,0.6);
+  opacity: 0;
+  animation: loginFadeUp 0.6s ease forwards;
+}
+
+.login-feature--1 { animation-delay: 0.2s; }
+.login-feature--2 { animation-delay: 0.4s; }
+.login-feature--3 { animation-delay: 0.6s; }
+
+@keyframes loginFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .login-dot {
@@ -92,6 +189,30 @@
   flex-shrink: 0;
 }
 
+.login-testimonial {
+  margin-top: 40px;
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid #4F8EF7;
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+}
+
+.login-testimonial-text {
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-style: italic;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.login-testimonial-attr {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  margin: 8px 0 0;
+}
+
 .login-left-footer {
   position: absolute;
   bottom: 32px;
@@ -100,6 +221,7 @@
   text-align: center;
   font-size: 0.75rem;
   color: rgba(255,255,255,0.25);
+  z-index: 1;
 }
 
 .login-right {
@@ -196,6 +318,23 @@
 
 .login-access-link:hover {
   text-decoration: underline;
+}
+
+.login-trust-badges {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.login-badge {
+  font-size: 0.75rem;
+  color: #6e6e73;
+  border: 1px solid #e5e5e7;
+  border-radius: 980px;
+  padding: 6px 12px;
+  white-space: nowrap;
 }
 
 .login-right-footer {
