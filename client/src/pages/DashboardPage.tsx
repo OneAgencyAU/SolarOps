@@ -105,6 +105,9 @@ export default function DashboardPage() {
               <div className="summary-time-label">TIME SAVED THIS WEEK</div>
               <div className="summary-time-value">18.4h</div>
               <div className="summary-time-sub">Equivalent to 2.3 working days</div>
+              <div className="summary-money-label">EST. SALARY SAVED</div>
+              <div className="summary-money-value">$773</div>
+              <div className="summary-money-sub">Based on $42/hr admin rate</div>
             </div>
             <Link to="/helpdesk" className="summary-alert-row">
               <span className="summary-alert-text urgent">3 tickets need attention</span>
