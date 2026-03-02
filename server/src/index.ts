@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import session from 'express-session';
+import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import passport from './config/passport';
 import authRoutes from './routes/auth';
@@ -120,6 +121,14 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
 
   res.json(tenant);
 });
+
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../../../dist/client');
+  app.use(express.static(clientDist));
+  app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`SolarOps API running on port ${PORT}`);

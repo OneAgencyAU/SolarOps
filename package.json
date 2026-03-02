@@ -6,7 +6,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/src/index.ts",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.server.json && vite build",
     "start": "node dist/server/src/index.js"
   },
   "dependencies": {
