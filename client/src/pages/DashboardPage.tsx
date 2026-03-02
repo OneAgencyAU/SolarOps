@@ -103,7 +103,10 @@ export default function DashboardPage() {
             <div className="summary-footer-divider" />
             <div className="summary-time-saved">
               <div className="summary-time-label">TIME SAVED THIS WEEK</div>
-              <div className="summary-time-value">18.4h</div>
+              <div className="summary-time-value">
+                <span className="summary-time-hours">18h</span>
+                <span className="summary-time-mins">24m</span>
+              </div>
               <div className="summary-time-sub">Equivalent to 2.3 working days</div>
               <div className="summary-money-label">EST. SALARY SAVED</div>
               <div className="summary-money-value">$773</div>
