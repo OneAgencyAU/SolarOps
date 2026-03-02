@@ -5,11 +5,11 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
-import PlaceholderPage from './pages/PlaceholderPage';
 import VoiceAgentPage from './pages/VoiceAgentPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
 import ConnectionsPage from './pages/ConnectionsPage';
+import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
@@ -39,7 +39,7 @@ export default function App() {
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
-            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

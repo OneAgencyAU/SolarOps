@@ -1,0 +1,176 @@
+Build the Settings page at /settings. Replace the placeholder 
+page completely. Do not change any other pages, routing, or backend.
+All data is static/hardcoded placeholder — no backend connection yet.
+
+OVERALL LAYOUT:
+- Page header: "Settings" title
+- Subtitle: "Manage your workspace, team, and preferences"
+- Single scrollable page with clearly separated sections
+- Each section is a white card, border-radius 20px, 
+  box-shadow 0 2px 12px rgba(0,0,0,0.06), padding 28px,
+  margin-bottom 24px
+- Section title inside each card: font-size 1rem, 
+  font-weight 600, color #1d1d1f, margin-bottom 20px,
+  padding-bottom 16px, border-bottom 1px solid #f5f5f7
+
+SECTION 1 — WORKSPACE SETTINGS:
+Title: "Workspace"
+
+Row 1 — Business name:
+- Label: "Business name"
+- Input: "Sol Energy" (pre-filled)
+- Standard input style: border 1px solid #e5e5e7, 
+  border-radius 10px, padding 10px 14px, width 100%
+- Focus: border-color #4F8EF7
+
+Row 2 — Workspace logo:
+- Label: "Logo"
+- Current logo placeholder: grey rounded square 64x64 
+  with "SE" initials in #4F8EF7
+- "Upload logo" button — white, border 1px solid #e5e5e7,
+  border-radius 8px, padding 8px 16px
+- Subtext: "Recommended: 256x256px, PNG or JPG"
+
+Row 3 — Timezone:
+- Label: "Timezone"
+- Dropdown: "Australia/Adelaide (ACST +9:30)" selected
+- Other options: Sydney, Melbourne, Brisbane, Perth
+
+Row 4 — Industry:
+- Label: "Industry"
+- Dropdown: "Solar — Commercial & Residential" selected
+
+Save button: "Save Changes" — #4F8EF7, white text, 
+border-radius 10px, padding 10px 24px, float right
+
+SECTION 2 — TEAM MEMBERS:
+Title: "Team Members"
+
+Invite row at top:
+- Email input: placeholder "Invite by email address..."
+- Role dropdown: "Agent ▾" (options: Admin, Agent)
+- "Send Invite" button — #4F8EF7, white text
+- All in a single row, flex layout
+
+Team member list (3 members):
+
+Member 1:
+- Avatar: blue circle with "A" — Admin
+- Name: "Alex" (you — pulled from auth)
+- Email: your email
+- Role pill: "Admin" — blue
+- Badge: "You" — grey pill
+- No remove button (can't remove yourself)
+
+Member 2:
+- Avatar: green circle with "N"
+- Name: "Nat Elliott"
+- Email: nat@solenergy.com.au
+- Role pill: "Admin" — blue
+- Remove button: "Remove" — text only, #FF453A, 
+  appears on hover
+
+Member 3:
+- Avatar: orange circle with "S"
+- Name: "Sarah"
+- Email: sarah@solenergy.com.au
+- Role pill: "Agent" — grey
+- Remove button: "Remove" on hover
+
+Each member row:
+- Display: flex, align-items center, padding 12px 0
+- Divider: 1px solid #f5f5f7 between rows
+
+SECTION 3 — BILLING & PLAN:
+Title: "Billing & Plan"
+
+Current plan card:
+- Background: linear-gradient(135deg, #4F8EF7, #7B61FF)
+- Border-radius: 16px, padding: 24px, color: white
+- Plan name: "Pilot Plan" — font-size 1.25rem, font-weight 700
+- Description: "Case study partnership with ONE AGENCY"
+- Status: "Active" — white pill with green dot
+- Renewal: "Valid until 31 December 2025"
+
+Usage this month (3 stats in a row below the plan card):
+- AI Processing: "$23.40 / ~$75 est."
+- Calls handled: "47 / unlimited"
+- Emails drafted: "134 / unlimited"
+Each as a simple label + value pair, grey background pill
+
+Billing note:
+- Light grey info box, border-radius 10px, padding 16px
+- Text: "During the pilot period, ONE AGENCY covers all 
+  hosting and infrastructure costs. You are only billed 
+  for AI processing usage at cost."
+
+SECTION 4 — NOTIFICATIONS:
+Title: "Notifications"
+
+Toggle list — each row has label + description + toggle:
+
+Row 1:
+- Label: "Urgent ticket alerts"
+- Description: "Get notified when a ticket is marked urgent"
+- Toggle: ON (blue)
+
+Row 2:
+- Label: "New callback requests"
+- Description: "Email alert when voice agent captures a callback"
+- Toggle: ON (blue)
+
+Row 3:
+- Label: "SLA overdue alerts"
+- Description: "Alert when a ticket breaches its SLA target"
+- Toggle: ON (blue)
+
+Row 4:
+- Label: "Daily summary email"
+- Description: "Receive a daily digest of activity and KPIs"
+- Toggle: OFF (grey)
+
+Row 5:
+- Label: "Inbox draft ready"
+- Description: "Notify when AI has drafted a reply for review"
+- Toggle: ON (blue)
+
+Notification email:
+- Label: "Send notifications to"
+- Input: pre-filled with user's email
+- "Save" button inline
+
+SECTION 5 — TIME SAVED CALCULATION:
+Title: "Time Saved Calculation"
+Subtitle (grey): "These settings affect how time and salary 
+savings are calculated across your dashboard."
+
+Row 1:
+- Label: "Admin hourly rate"
+- Description: "Used to calculate estimated salary savings"
+- Input: "$42" with "/hr" suffix label
+- "Save" button inline
+
+Row 2:
+- Label: "Minutes saved per call"
+- Description: "Estimated time saved per AI-handled call"
+- Input: "4" with "minutes" suffix
+- "Save" button inline
+
+Row 3:
+- Label: "Minutes saved per email draft"
+- Description: "Estimated time saved per AI-drafted email"
+- Input: "6" with "minutes" suffix
+- "Save" button inline
+
+Preview calculation (light blue info box):
+"Based on your settings: 47 calls × 4 mins + 134 emails × 6 mins 
+= 18hrs 24mins saved = $773 in salary costs this week"
+
+DESIGN:
+- Match existing app design system exactly
+- Background: #f5f5f7
+- All inputs: consistent style throughout
+- Toggle switches: custom CSS — blue when on, grey when off,
+  smooth transition, clickable (state changes on click)
+- Consistent 32px page padding
+- "Save Changes" buttons aligned right within each section
