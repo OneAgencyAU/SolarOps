@@ -14,6 +14,7 @@
   flex-direction: column;
   gap: 24px;
   align-self: stretch;
+  height: 100%;
 }
 
 .ai-behaviour-card {
@@ -22,7 +23,9 @@
   flex-direction: column;
 }
 
-.ai-behaviour-card .settings-notif-list {
+.settings-ai-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
 }
 

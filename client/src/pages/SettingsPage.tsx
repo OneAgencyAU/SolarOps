@@ -167,6 +167,7 @@ export default function SettingsPage() {
         <div className="settings-card-title">AI Behaviour</div>
         <p className="settings-card-desc">Control how the AI assistant behaves across your workspace</p>
 
+        <div className="settings-ai-content">
         <div className="settings-notif-list">
           <div className="settings-notif-row">
             <div className="settings-notif-text">
@@ -225,6 +226,7 @@ export default function SettingsPage() {
           <div className="settings-ai-info-inner">
             ✦ All AI actions are logged and reversible from the Activity Log.
           </div>
+        </div>
         </div>
       </div>
 
