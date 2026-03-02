@@ -6,14 +6,55 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .settings-col {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  align-self: start;
+  align-self: stretch;
+}
+
+.ai-behaviour-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-behaviour-card .settings-notif-list {
+  flex: 1;
+}
+
+.settings-ai-locked-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-toggle-locked {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.settings-lock-badge {
+  font-size: 0.75rem;
+  cursor: help;
+}
+
+.settings-ai-info-box {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.settings-ai-info-inner {
+  background: rgba(79, 142, 247, 0.06);
+  border: 1px solid rgba(79, 142, 247, 0.15);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 0.8125rem;
+  color: #4F8EF7;
+  line-height: 1.5;
 }
 
 .settings-col .settings-card {

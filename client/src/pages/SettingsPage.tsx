@@ -46,6 +46,9 @@ export default function SettingsPage() {
   const [notifs, setNotifs] = useState<Notif[]>(initNotifs);
   const [notifEmail, setNotifEmail] = useState(user?.email ?? '');
 
+  const [aiToggles, setAiToggles] = useState({ autoTag: true, aiSummary: true, escalation: true });
+  const toggleAi = (key: keyof typeof aiToggles) => setAiToggles(prev => ({ ...prev, [key]: !prev[key] }));
+
   const [hourlyRate, setHourlyRate] = useState('42');
   const [minsPerCall, setMinsPerCall] = useState('4');
   const [minsPerEmail, setMinsPerEmail] = useState('6');
@@ -156,6 +159,71 @@ export default function SettingsPage() {
               onChange={e => setNotifEmail(e.target.value)}
             />
             <button className="settings-btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-card ai-behaviour-card">
+        <div className="settings-card-title">AI Behaviour</div>
+        <p className="settings-card-desc">Control how the AI assistant behaves across your workspace</p>
+
+        <div className="settings-notif-list">
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Human approval required</span>
+              <span className="settings-notif-desc">AI drafts must be approved before sending</span>
+            </div>
+            <div className="settings-ai-locked-row">
+              <button className="settings-toggle on settings-toggle-locked" disabled>
+                <span className="settings-toggle-knob" />
+              </button>
+              <span className="settings-lock-badge" title="Required for safety">🔒</span>
+            </div>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Auto-tag enquiry type</span>
+              <span className="settings-notif-desc">Automatically classify emails as New Lead, Support, or Maintenance</span>
+            </div>
+            <button
+              className={`settings-toggle ${aiToggles.autoTag ? 'on' : ''}`}
+              onClick={() => toggleAi('autoTag')}
+            >
+              <span className="settings-toggle-knob" />
+            </button>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">AI summary on tickets</span>
+              <span className="settings-notif-desc">Generate an AI summary when a new ticket is created</span>
+            </div>
+            <button
+              className={`settings-toggle ${aiToggles.aiSummary ? 'on' : ''}`}
+              onClick={() => toggleAi('aiSummary')}
+            >
+              <span className="settings-toggle-knob" />
+            </button>
+          </div>
+          <div className="settings-notif-divider" />
+          <div className="settings-notif-row">
+            <div className="settings-notif-text">
+              <span className="settings-notif-label">Suggest escalation</span>
+              <span className="settings-notif-desc">AI flags emails or calls that should be escalated to a human</span>
+            </div>
+            <button
+              className={`settings-toggle ${aiToggles.escalation ? 'on' : ''}`}
+              onClick={() => toggleAi('escalation')}
+            >
+              <span className="settings-toggle-knob" />
+            </button>
+          </div>
+        </div>
+
+        <div className="settings-ai-info-box">
+          <div className="settings-ai-info-inner">
+            ✦ All AI actions are logged and reversible from the Activity Log.
           </div>
         </div>
       </div>
