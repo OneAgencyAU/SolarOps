@@ -1,5 +1,8 @@
 import express, { Request, Response } from 'express';
+import session from 'express-session';
 import { createClient } from '@supabase/supabase-js';
+import passport from './config/passport';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -9,6 +12,20 @@ const supabaseKey = process.env.SUPABASE_SECRET_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(express.json());
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'solarops-dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use(authRoutes);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });
@@ -45,7 +62,6 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
-  // Step 1: upsert the user record so the FK on tenant_memberships is satisfied
   const { error: userErr } = await supabase
     .from('users')
     .upsert({ id: user_id, email, display_name, avatar_url, first_name, last_name }, { onConflict: 'id' });
@@ -56,7 +72,6 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
-  // Step 2: check for existing membership to prevent duplicates
   const { data: existingMembership, error: memberCheckErr } = await supabase
     .from('tenant_memberships')
     .select('tenant_id')
@@ -75,7 +90,6 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
-  // Step 3: create the tenant
   const slug = business_name
     .toLowerCase()
     .trim()

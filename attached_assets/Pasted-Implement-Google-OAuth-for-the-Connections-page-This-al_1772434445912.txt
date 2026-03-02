@@ -1,0 +1,92 @@
+Implement Google OAuth for the Connections page. This allows 
+users to connect their Google Workspace (Gmail) account to 
+SolarOps. Do not change any other pages or functionality.
+
+BACKEND CHANGES:
+
+1. Install required packages:
+   - passport
+   - passport-google-oauth20
+   - express-session
+   - connect-pg-simple (for session storage in Supabase)
+
+2. Create server/src/config/passport.ts:
+   - Configure passport with GoogleStrategy
+   - Use GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars
+   - Callback URL: /api/auth/google/callback
+   - Scopes: profile, email, 
+     https://www.googleapis.com/auth/gmail.readonly,
+     https://www.googleapis.com/auth/gmail.compose
+   - On success: store in Supabase google_connections table
+     (tenant_id, user_id, google_email, access_token, 
+     refresh_token, scopes, connected_at)
+   - Serialize/deserialize user by Firebase UID
+
+3. Create Supabase migration for google_connections table:
+   CREATE TABLE google_connections (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+     user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+     google_email TEXT NOT NULL,
+     access_token TEXT,
+     refresh_token TEXT,
+     scopes TEXT[],
+     connected_at TIMESTAMPTZ DEFAULT NOW(),
+     last_sync TIMESTAMPTZ DEFAULT NOW()
+   );
+   ALTER TABLE google_connections ENABLE ROW LEVEL SECURITY;
+
+4. Create server/src/routes/auth.ts with these endpoints:
+   GET /api/auth/google — initiates OAuth flow
+   GET /api/auth/google/callback — handles callback, 
+     stores tokens, redirects to /connections?connected=true
+   GET /api/auth/google/status — returns connection status 
+     for current tenant
+     Response: { connected: boolean, email: string | null, 
+     lastSync: string | null }
+   DELETE /api/auth/google/disconnect — removes connection 
+     from google_connections table
+
+5. Add express-session middleware to server/src/index.ts:
+   - secret: SESSION_SECRET env var
+   - resave: false
+   - saveUninitialized: false
+   - cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+
+6. Register passport and auth routes in server/src/index.ts
+
+FRONTEND CHANGES:
+
+1. Update the Connections page Google Workspace card:
+
+   On page load: call GET /api/auth/google/status
+   
+   If NOT connected (default state — keep existing UI):
+   - Show the card in its current "Available" disconnected state
+   - Move Google Workspace card from CONNECTED section 
+     to AVAILABLE section
+   - "Connect" button calls GET /api/auth/google to 
+     start OAuth flow
+   
+   If CONNECTED (after OAuth completes):
+   - Show card in CONNECTED section with:
+     - Green "Connected" status pill
+     - The actual Google email address from the API response
+     - "Last synced X minutes ago" using lastSync timestamp
+     - "Manage" and "Disconnect" buttons
+   - "Disconnect" button calls DELETE /api/auth/google/disconnect
+     then refreshes the connection status
+   
+   On page load if URL has ?connected=true query param:
+   - Show a success toast: "Google Workspace connected 
+     successfully" — green, bottom right, 3 seconds
+
+2. The Manage modal (already built) should remain unchanged
+
+ERROR HANDLING:
+- If OAuth fails, redirect to /connections?error=auth_failed
+- Show error toast: "Connection failed. Please try again."
+- Log errors server-side
+
+Do not change any other pages, components, or functionality.
+After completing, remind Alex to run the Supabase migration.

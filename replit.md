@@ -36,13 +36,18 @@ Solar operations management platform.
 │       └── styles/            # Per-component CSS files
 ├── server/
 │   └── src/
-│       └── index.ts           # Express API (Supabase secret key)
+│       ├── index.ts           # Express API (Supabase secret key, session, passport)
+│       ├── config/
+│       │   └── passport.ts    # Google OAuth strategy (passport-google-oauth20)
+│       └── routes/
+│           └── auth.ts        # Google OAuth endpoints (/api/auth/google/*)
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql   # tables + RLS enabled
 │       ├── 002_rls_policies.sql     # permissive SELECT policies for anon key
 │       ├── 003_fix_user_id_type.sql # users.id and tenant_memberships.user_id changed to TEXT
-│       └── 004_add_name_fields.sql  # users.first_name and users.last_name columns added
+│       ├── 004_add_name_fields.sql  # users.first_name and users.last_name columns added
+│       └── 005_google_connections.sql # google_connections table + unique index + RLS
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -87,6 +92,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `tenants` — organisations (`id UUID`, `name TEXT`, `slug TEXT UNIQUE`, `created_at`)
 - `users` — mirrors Firebase Auth users (`id TEXT` = Firebase UID, `email`, `display_name`, `avatar_url`, `first_name TEXT`, `last_name TEXT`)
 - `tenant_memberships` — links users to tenants (`tenant_id UUID`, `user_id TEXT`, `role TEXT`)
+- `google_connections` — stores Google OAuth tokens (`id UUID`, `tenant_id UUID FK`, `user_id TEXT FK`, `google_email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `scopes TEXT[]`, `connected_at`, `last_sync`). Unique index on `(tenant_id, user_id)`.
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
 ## Environment Secrets
@@ -104,6 +110,9 @@ All required secrets are stored in Replit's Secrets pane:
 | `VITE_SUPABASE_URL` | Frontend + Backend |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend |
 | `SUPABASE_SECRET_KEY` | Backend |
+| `GOOGLE_CLIENT_ID` | Backend (OAuth) |
+| `GOOGLE_CLIENT_SECRET` | Backend (OAuth) |
+| `SESSION_SECRET` | Backend (express-session) |
 
 ## Pages Built
 
@@ -113,13 +122,23 @@ All required secrets are stored in Replit's Secrets pane:
 - `/voice-agent` — Full configuration UI with two-column layout. Left column: Agent Identity (name, greeting, tone), Business Hours (toggle + time range), Call Routing (New Enquiry + Existing Customer paths), Escalation Settings (phone number, safety keywords tags, escalation message). Right column: Live Script Preview (reactive to greeting input), 3 stat cards (Calls Handled, Avg Call Duration, Callback Requests), Recent Calls log with outcome pills, Phone Number Setup with progress steps, Quick Tips card. Status toggle (LIVE/OFFLINE) in header. Save Configuration button. All UI only — no Vapi/Telnyx integration yet.
 - `/inbox-assistant` — Two-panel layout filling viewport height. Left panel (38%): inbox selector dropdown (support@/sales@/info@), filter pills (All/Urgent/New Lead/Support with counts), 4 clickable email cards with sender, subject, preview, time, tag pills. Right panel (62%): thread header with subject + sender meta + urgency/action badges, AI Summary box (blue tint), email body, divider, AI Draft textarea (editable, per-email state), Regenerate button, action row (Create Ticket, Link to Ticket, Approve & Send). Green success toast on approve. Stats bar above panels. All static placeholder data — no Gmail/API integration yet.
 - `/helpdesk` — Kanban board layout with 4 columns: New, In Progress, Waiting on Customer, Closed. Quick stats bar (Open, Urgent, Overdue, Resolved Today). Search bar + Source and Priority filter pills. 13 ticket cards across columns with ID, title, customer, source icon, priority pill, assignee, SLA timer/overdue indicator. Slide-in ticket detail panel (480px, smooth animation, overlay) with AI Summary box, 4 tabs (Details, Transcript, Notes, Timeline), assignee dropdown. All static placeholder data — no backend connected yet.
-- `/connections` — Connected services page. Active Connections section showing Google Workspace card (connected status pill, last synced timestamp, Manage and Disconnect buttons). Available Connectors displayed in a 2×2 grid: Microsoft 365, Simpro, Voice Platform, Xero — all Coming Soon with disabled Connect buttons. Manage button opens a modal showing monitored inboxes (support@/sales@/info@) with toggle switches and a permissions list. All UI only — no OAuth integration yet.
+- `/connections` — Connected services page with live Google OAuth integration. Calls `GET /api/auth/google/status` on load to check connection state. If not connected: Google Workspace appears in Available grid with active Connect button that initiates OAuth flow (`GET /api/auth/google`). If connected: shows in Connected section with green status pill, real email address, relative last-synced time, Manage and Disconnect buttons. Disconnect calls `DELETE /api/auth/google/disconnect`. Success/error toasts on `?connected=true` / `?error=auth_failed` query params. Available Connectors 2×2 grid: Microsoft 365, Simpro, Voice Platform, Xero — all Coming Soon with disabled Connect buttons. Manage modal unchanged (inbox toggles + permissions).
 - `/settings` — Two-column scrollable settings page. Left column: Workspace card (business name input, logo upload placeholder, timezone dropdown, industry dropdown, Save Changes button) and Notifications card (5 toggle rows for urgent tickets, callbacks, SLA, daily summary, draft ready; notification email input with Save) and AI Behaviour card (8 rows: Human approval required — locked ON; Auto-tag enquiry type, AI summary on tickets, Suggest escalation, Signature on drafts, Smart follow-up detection — all toggles; Tone preference — pill selector: Professional / Friendly / Formal; Confidence threshold — range slider 60–95%, default 75%; blue info box at bottom). Right column: Team Members card (email + role invite row, 3 member rows with avatar circles, name, email, role pills, You badge, Remove on hover), Billing & Plan card (gradient blue→purple plan card, Active status pill, renewal date, 3 usage stat pills, pilot billing note), Time Saved Calculation card (admin hourly rate, mins per call, mins per email, working hours per day, working days per week, module checkboxes — Voice Agent / Inbox Assistant / Helpdesk, live preview calculation box). All static — no backend connected yet.
+
+## Google OAuth Flow
+
+1. User clicks "Connect" on Google Workspace card → `GET /api/auth/google?tenant_id=X&user_id=Y`
+2. Server stores `firebaseUid` in session, passes `tenant_id` as OAuth `state` parameter
+3. Redirects to Google consent screen (scopes: profile, email, gmail.readonly, gmail.compose)
+4. Google redirects back to `GET /api/auth/google/callback`
+5. Passport strategy extracts `state` (tenant_id) and `session.firebaseUid`, upserts into `google_connections`
+6. On success: redirects to `/connections?connected=true` → frontend shows green toast
+7. On failure: redirects to `/connections?error=auth_failed` → frontend shows red toast
+8. Callback URL is auto-detected from `REPLIT_DEV_DOMAIN` env var
 
 ## Integrations Pending
 - Voice Agent: Vapi.ai or Telnyx (decision: use Vapi for prototype, migrate to Telnyx for production). Needs: API key, phone number provisioning, webhook endpoint for call transcripts.
-- Inbox Assistant: Google Workspace OAuth (Gmail read + draft scope)
-- Connections page: Google OAuth setup flow
+- Inbox Assistant: Uses Google OAuth tokens stored in `google_connections` table (Gmail read + compose scopes already granted)
 
 ## UI Components & Design Tokens
 
