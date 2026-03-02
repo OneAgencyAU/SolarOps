@@ -89,17 +89,19 @@ export default function LoginPage() {
           <p className="login-brand-tagline">AI operations for solar businesses</p>
 
           <div className="login-stats-row">
-            <div className="login-stat-box">
-              <div className="login-stat-num">18h</div>
-              <div className="login-stat-label">Saved per week</div>
+            <div className="login-stat">
+              <div className="login-stat-num">18hrs</div>
+              <div className="login-stat-label">saved per week</div>
             </div>
-            <div className="login-stat-box">
+            <div className="login-stat-divider" />
+            <div className="login-stat">
               <div className="login-stat-num">99.2%</div>
               <div className="login-stat-label">AI success rate</div>
             </div>
-            <div className="login-stat-box">
+            <div className="login-stat-divider" />
+            <div className="login-stat">
               <div className="login-stat-num">4.2m</div>
-              <div className="login-stat-label">Avg response time</div>
+              <div className="login-stat-label">avg response time</div>
             </div>
           </div>
 
