@@ -15,11 +15,7 @@ passport.deserializeUser((uid: string, done) => {
   done(null, { firebaseUid: uid });
 });
 
-const callbackURL = process.env.REPLIT_DEV_DOMAIN
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`
-  : process.env.PRODUCTION_URL
-  ? `${process.env.PRODUCTION_URL}/api/auth/google/callback`
-  : 'http://localhost:5000/api/auth/google/callback';
+const callbackURL = 'https://solar-ops.replit.app/api/auth/google/callback';
 
 passport.use(
   new GoogleStrategy(
