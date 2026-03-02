@@ -54,6 +54,10 @@ export default function SettingsPage() {
   const [hourlyRate, setHourlyRate] = useState('42');
   const [minsPerCall, setMinsPerCall] = useState('4');
   const [minsPerEmail, setMinsPerEmail] = useState('6');
+  const [hoursPerDay, setHoursPerDay] = useState('8');
+  const [daysPerWeek, setDaysPerWeek] = useState('5');
+  const [trackFrom, setTrackFrom] = useState({ voice: true, inbox: true, helpdesk: true });
+  const toggleTrack = (key: keyof typeof trackFrom) => setTrackFrom(prev => ({ ...prev, [key]: !prev[key] }));
 
   const toggleNotif = (id: string) => {
     setNotifs(prev => prev.map(n => n.id === id ? { ...n, on: !n.on } : n));
@@ -465,6 +469,72 @@ export default function SettingsPage() {
               <span className="settings-suffix-text">minutes</span>
             </div>
             <button className="settings-btn-primary">Save</button>
+          </div>
+        </div>
+
+        <div className="settings-calc-divider" />
+
+        <div className="settings-calc-row">
+          <div className="settings-calc-text">
+            <span className="settings-calc-label">Working hours per day</span>
+            <span className="settings-calc-desc">Used to calculate working days equivalent</span>
+          </div>
+          <div className="settings-inline-save">
+            <div className="settings-input-suffix">
+              <input
+                className="settings-input settings-input-narrow"
+                value={hoursPerDay}
+                onChange={e => setHoursPerDay(e.target.value)}
+              />
+              <span className="settings-suffix-text">hours</span>
+            </div>
+            <button className="settings-btn-primary">Save</button>
+          </div>
+        </div>
+
+        <div className="settings-calc-divider" />
+
+        <div className="settings-calc-row">
+          <div className="settings-calc-text">
+            <span className="settings-calc-label">Working days per week</span>
+            <span className="settings-calc-desc">Used to calculate weekly working days saved</span>
+          </div>
+          <div className="settings-inline-save">
+            <div className="settings-input-suffix">
+              <input
+                className="settings-input settings-input-narrow"
+                value={daysPerWeek}
+                onChange={e => setDaysPerWeek(e.target.value)}
+              />
+              <span className="settings-suffix-text">days</span>
+            </div>
+            <button className="settings-btn-primary">Save</button>
+          </div>
+        </div>
+
+        <div className="settings-calc-divider" />
+
+        <div className="settings-calc-row settings-calc-row--track">
+          <div className="settings-calc-text">
+            <span className="settings-calc-label">Track savings from</span>
+            <span className="settings-calc-desc">Which modules to include in time saved calculation</span>
+          </div>
+          <div className="settings-track-checks">
+            {([
+              { key: 'voice', label: 'Voice Agent' },
+              { key: 'inbox', label: 'Inbox Assistant' },
+              { key: 'helpdesk', label: 'Helpdesk' },
+            ] as { key: keyof typeof trackFrom; label: string }[]).map(({ key, label }) => (
+              <label key={key} className="settings-track-check">
+                <input
+                  type="checkbox"
+                  checked={trackFrom[key]}
+                  onChange={() => toggleTrack(key)}
+                  className="settings-checkbox"
+                />
+                <span className="settings-track-check-label">{label}</span>
+              </label>
+            ))}
           </div>
         </div>
 
