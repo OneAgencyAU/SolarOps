@@ -28,10 +28,6 @@ app.use(passport.session());
 
 app.use(authRoutes);
 
-app.get('/', (_req: Request, res: Response) => {
-  res.status(200).send('OK');
-});
-
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });
 });
@@ -126,13 +122,11 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
   res.json(tenant);
 });
 
-if (process.env.NODE_ENV === 'production') {
-  const clientDist = path.join(__dirname, '../../../dist/client');
-  app.use(express.static(clientDist));
-  app.get('*', (_req: Request, res: Response) => {
-    res.sendFile(path.join(clientDist, 'index.html'));
-  });
-}
+const clientDist = path.join(__dirname, '../../../dist/client');
+app.use(express.static(clientDist));
+app.get('*', (_req: Request, res: Response) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`SolarOps API running on port ${PORT}`);
