@@ -6,7 +6,7 @@ import passport from './config/passport';
 import authRoutes from './routes/auth';
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 5000;
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SECRET_KEY!;
@@ -27,6 +27,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(authRoutes);
+
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).send('OK');
+});
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });
