@@ -9,9 +9,27 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 );
 
+const ALLOWED_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/tiff',
+  'image/gif',
+  'application/pdf',
+]);
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIMES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type: ${file.mimetype}`));
+    }
+  },
 });
 
 const router = Router();
@@ -26,6 +44,24 @@ function getVisionClient() {
 
 function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+
+async function convertHeicToJpeg(buffer: Buffer): Promise<Buffer> {
+  const convert = (await import('heic-convert')).default;
+  const result = await convert({
+    buffer,
+    format: 'JPEG',
+    quality: 0.9,
+  });
+  return Buffer.from(result);
+}
+
+async function getImageBuffer(file: Express.Multer.File): Promise<{ buffer: Buffer; mimetype: string }> {
+  if (file.mimetype === 'image/heic' || file.mimetype === 'image/heif') {
+    const jpegBuffer = await convertHeicToJpeg(file.buffer);
+    return { buffer: jpegBuffer, mimetype: 'image/jpeg' };
+  }
+  return { buffer: file.buffer, mimetype: file.mimetype };
 }
 
 router.post('/api/bill-reader/check', upload.single('file'), async (req: Request, res: Response) => {
@@ -57,8 +93,9 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       const page = result.responses?.[0]?.responses?.[0];
       sampleText = (page?.fullTextAnnotation?.text || '').slice(0, 500);
     } else {
+      const { buffer } = await getImageBuffer(req.file);
       const [result] = await visionClient.textDetection({
-        image: { content: req.file.buffer.toString('base64') },
+        image: { content: buffer.toString('base64') },
       });
       sampleText = (result.fullTextAnnotation?.text || '').slice(0, 500);
     }
@@ -112,8 +149,9 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       const responses = result.responses?.[0]?.responses || [];
       fullText = responses.map((r) => r.fullTextAnnotation?.text || '').join('\n');
     } else {
+      const { buffer } = await getImageBuffer(req.file);
       const [result] = await visionClient.textDetection({
-        image: { content: req.file.buffer.toString('base64') },
+        image: { content: buffer.toString('base64') },
       });
       fullText = result.fullTextAnnotation?.text || '';
     }

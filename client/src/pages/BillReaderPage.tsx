@@ -327,7 +327,7 @@ export default function BillReaderPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,application/pdf"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/tiff,image/gif,application/pdf"
             style={{ display: 'none' }}
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -345,7 +345,7 @@ export default function BillReaderPage() {
             >
               <div className="br-upload-icon">⬒</div>
               <h3>Drop a bill here or click to upload</h3>
-              <p>Supports JPG, PNG, PDF · Max 10MB</p>
+              <p>Supports JPG, PNG, PDF, HEIC, WebP · Max 10MB</p>
             </div>
           ) : (
             <div className="br-upload-zone has-file">
