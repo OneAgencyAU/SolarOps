@@ -135,10 +135,10 @@ All required secrets are stored in Replit's Secrets pane:
 5. Passport strategy extracts `state` (tenant_id) and `session.firebaseUid`, upserts into `google_connections`
 6. On success: redirects to `/connections?connected=true` → frontend shows green toast
 7. On failure: redirects to `/connections?error=auth_failed` → frontend shows red toast
-8. Callback URL hardcoded to `https://solar-ops.replit.app/api/auth/google/callback`
+8. Callback URL hardcoded to `https://solarops.com.au/api/auth/google/callback` (register both this and `https://solar-ops.replit.app/api/auth/google/callback` in GCP)
 
 ## Integrations Complete
-- **Google OAuth (Gmail)**: `passport-google-oauth20` + `express-session`. Scopes: profile, email, gmail.readonly, gmail.compose. Tokens upserted into Supabase `google_connections` table. Callback URL: `https://solar-ops.replit.app/api/auth/google/callback`. Working on production deployment.
+- **Google OAuth (Gmail)**: `passport-google-oauth20` + `express-session`. Scopes: profile, email, gmail.readonly, gmail.compose. Tokens upserted into Supabase `google_connections` table. Callback URL: `https://solarops.com.au/api/auth/google/callback` (also register `https://solar-ops.replit.app/api/auth/google/callback` in GCP for Replit domain access). Working on production deployment.
 
 ## Integrations Pending
 - Voice Agent: Vapi.ai or Telnyx (decision: use Vapi for prototype, migrate to Telnyx for production). Needs: API key, phone number provisioning, webhook endpoint for call transcripts.

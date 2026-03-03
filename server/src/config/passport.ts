@@ -15,7 +15,7 @@ passport.deserializeUser((uid: string, done) => {
   done(null, { firebaseUid: uid });
 });
 
-const callbackURL = 'https://solar-ops.replit.app/api/auth/google/callback';
+const callbackURL = 'https://solarops.com.au/api/auth/google/callback';
 
 passport.use(
   new GoogleStrategy(
