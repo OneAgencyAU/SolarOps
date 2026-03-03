@@ -164,3 +164,15 @@ npm run dev        # Start both frontend and backend
 npm run dev:client # Vite only
 npm run dev:server # Express only (tsx watch)
 ```
+
+## Deployment
+
+- **Production URL**: https://solarops.com.au
+- **Backup URL**: https://solar-ops.replit.app
+- **Platform**: Replit Autoscale (1 vCPU, 0.5 GB RAM, 1 max machine)
+- **Google OAuth callback**: https://solarops.com.au/api/auth/google/callback
+- **Firebase authorised domain**: solarops.com.au (add in Firebase Console → Authentication → Settings → Authorised domains)
+- **Google Cloud authorised origins**: solarops.com.au (add in GCP → APIs & Services → OAuth 2.0 credentials → Authorised JavaScript origins)
+- **Build command**: `npm install && npx vite build && npx tsc -p tsconfig.server.json`
+- **Run command**: `node dist/server/src/index.js`
+- **Static files**: React builds to `dist/client/`, served by Express in production
