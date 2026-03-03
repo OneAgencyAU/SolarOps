@@ -48,8 +48,12 @@ function getAnthropicClient() {
 
 async function convertHeicToJpeg(buffer: Buffer): Promise<Buffer> {
   const convert = (await import('heic-convert')).default;
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength
+  ) as ArrayBuffer;
   const result = await convert({
-    buffer,
+    buffer: arrayBuffer,
     format: 'JPEG',
     quality: 0.9,
   });
