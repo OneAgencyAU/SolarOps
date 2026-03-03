@@ -44,7 +44,6 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
 
-          <Route path="/onboarding-preview" element={<OnboardingPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
