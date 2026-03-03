@@ -1,0 +1,112 @@
+Redesign the onboarding page completely. Keep all existing 
+form logic, field names, and the Create Workspace submit 
+handler exactly as-is. Only change the visual design.
+Do not touch any other pages or auth logic.
+
+LAYOUT:
+Same split screen as the login page:
+- Left column (55%): dark background, same style as login
+- Right column (45%): white, contains the form
+- Full viewport height, overflow hidden
+
+LEFT COLUMN:
+Reuse exact same left column design as the login page:
+- Dark background #0a0a0f
+- Animated floating orbs (same CSS)
+- Grid texture overlay
+- SolarOps wordmark centered
+- Tagline: "AI operations for solar businesses"
+- Stats row: 18hrs / 99.2% / 4.2m (same as login)
+
+Replace the feature bullets and testimonial with:
+
+Progress indicator:
+- "Step 1 of 2" in small caps, 
+  color rgba(255,255,255,0.4), font-size 0.75rem
+- Below: two pill steps in a row:
+  Step 1 pill: "Workspace Setup" — 
+  background #4F8EF7, white text, active
+  Step 2 pill: "Connect Tools" — 
+  background rgba(255,255,255,0.08), 
+  color rgba(255,255,255,0.4), inactive
+  Gap: 8px, border-radius 980px, 
+  padding 6px 16px, font-size 0.8125rem
+
+Below progress, a short description:
+"You're 2 minutes away from your AI operations dashboard."
+color rgba(255,255,255,0.5), font-size 0.9rem,
+margin-top 16px, text-align center
+
+"Powered by ONE AGENCY" pinned to bottom center.
+
+RIGHT COLUMN:
+White background, content centered vertically.
+Max-width 380px, margin auto.
+
+Header:
+- "Set up your workspace" — DM Sans 700, 
+  font-size 1.75rem, color #1d1d1f, 
+  text-align center, margin-bottom 8px
+- "Tell us about your solar business" — 
+  DM Sans 400, font-size 0.9375rem, 
+  color #6e6e73, text-align center,
+  margin-bottom 32px
+
+FORM FIELDS (keep existing field names and handlers):
+
+Row 1 — First name + Last name side by side:
+- Two inputs, equal width, gap 12px
+- Label: font-size 0.8125rem, font-weight 500, 
+  color #1d1d1f, margin-bottom 6px
+- Input: border 1.5px solid #e5e5e7, 
+  border-radius 10px, padding 12px 14px,
+  font-size 0.9375rem, width 100%
+- Focus: border-color #4F8EF7, 
+  box-shadow 0 0 0 3px rgba(79,142,247,0.12)
+
+Row 2 — Business name (full width):
+- Same input style
+- Placeholder: "e.g. Sol Energy"
+
+Row 3 — Industry (full width):
+- Add this new field: dropdown select
+- Label: "Industry"
+- Options: 
+  "Solar — Commercial & Residential" (default)
+  "Solar — Commercial Only"
+  "Solar — Residential Only"
+  "Solar + Battery Storage"
+  "Solar EPC / Contractor"
+- Same input style as other fields
+
+Row 4 — Team size (full width):
+- Add this new field: dropdown select
+- Label: "Team size"
+- Options:
+  "Just me"
+  "2–5 people"
+  "6–15 people"
+  "16–50 people"
+  "50+ people"
+- Same input style
+
+Submit button:
+- "Create my workspace →"
+- Full width, height 52px, border-radius 12px
+- Background: #4F8EF7, white text
+- DM Sans 600, font-size 0.9375rem
+- Hover: background #3a7de8, 
+  box-shadow 0 4px 16px rgba(79,142,247,0.3)
+- Disabled state: opacity 0.5 (when fields empty)
+- margin-top: 24px
+
+Below button:
+"Already have a workspace? Sign in →" 
+font-size 0.8125rem, color #6e6e73, 
+text-align center, margin-top 16px
+
+MOBILE: single column, white background, 
+form card with padding 32px, border-radius 20px.
+
+Load DM Sans from Google Fonts (same as login page).
+Do not change form submission logic or field names.

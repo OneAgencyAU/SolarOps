@@ -9,6 +9,8 @@ export default function OnboardingPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [industry, setIndustry] = useState('Solar — Commercial & Residential');
+  const [teamSize, setTeamSize] = useState('Just me');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,53 +60,131 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="onboarding-page">
-      <div className="onboarding-bg-gradient" />
-      <div className="onboarding-card">
-        <h2 className="onboarding-title">Set up your workspace</h2>
-        <p className="onboarding-subtitle">Tell us a bit about you and your solar business</p>
-        <form onSubmit={handleSubmit} className="onboarding-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="firstName">First name</label>
-              <input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Alex"
-                required
-                autoFocus
-              />
+    <div className="ob-page">
+      <div className="ob-left">
+        <div className="ob-left-grid" />
+        <div className="ob-orb ob-orb--1" />
+        <div className="ob-orb ob-orb--2" />
+        <div className="ob-orb ob-orb--3" />
+        <div className="ob-left-content">
+          <div className="ob-brand">
+            <span className="ob-brand-icon">⊙</span>
+            <span className="ob-brand-name">SolarOps</span>
+          </div>
+          <p className="ob-brand-tagline">AI operations for solar businesses</p>
+
+          <div className="ob-stats-row">
+            <div className="ob-stat">
+              <div className="ob-stat-num">18hrs</div>
+              <div className="ob-stat-label">saved per week</div>
             </div>
-            <div className="form-group">
-              <label htmlFor="lastName">Last name</label>
-              <input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Chen"
-                required
-              />
+            <div className="ob-stat-divider" />
+            <div className="ob-stat">
+              <div className="ob-stat-num">99.2%</div>
+              <div className="ob-stat-label">AI success rate</div>
+            </div>
+            <div className="ob-stat-divider" />
+            <div className="ob-stat">
+              <div className="ob-stat-num">4.2m</div>
+              <div className="ob-stat-label">avg response time</div>
             </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="businessName">Business name</label>
-            <input
-              id="businessName"
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="e.g. Sunrise Solar Co."
-              required
-            />
+
+          <div className="ob-progress">
+            <span className="ob-progress-label">Step 1 of 2</span>
+            <div className="ob-progress-pills">
+              <span className="ob-pill ob-pill--active">Workspace Setup</span>
+              <span className="ob-pill ob-pill--inactive">Connect Tools</span>
+            </div>
           </div>
-          {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="submit-btn" disabled={submitting || !canSubmit}>
-            {submitting ? 'Creating workspace…' : 'Create workspace'}
-          </button>
-        </form>
+          <p className="ob-progress-desc">You're 2 minutes away from your AI operations dashboard.</p>
+        </div>
+        <div className="ob-left-footer">Powered by ONE AGENCY</div>
+      </div>
+
+      <div className="ob-right">
+        <div className="ob-right-content">
+          <h1 className="ob-title">Set up your workspace</h1>
+          <p className="ob-subtitle">Tell us about your solar business</p>
+
+          <form onSubmit={handleSubmit} className="ob-form">
+            <div className="ob-form-row">
+              <div className="ob-field">
+                <label htmlFor="firstName">First name</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Alex"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="ob-field">
+                <label htmlFor="lastName">Last name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Chen"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="ob-field">
+              <label htmlFor="businessName">Business name</label>
+              <input
+                id="businessName"
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="e.g. Sol Energy"
+                required
+              />
+            </div>
+
+            <div className="ob-field">
+              <label htmlFor="industry">Industry</label>
+              <select
+                id="industry"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+              >
+                <option>Solar — Commercial & Residential</option>
+                <option>Solar — Commercial Only</option>
+                <option>Solar — Residential Only</option>
+                <option>Solar + Battery Storage</option>
+                <option>Solar EPC / Contractor</option>
+              </select>
+            </div>
+
+            <div className="ob-field">
+              <label htmlFor="teamSize">Team size</label>
+              <select
+                id="teamSize"
+                value={teamSize}
+                onChange={(e) => setTeamSize(e.target.value)}
+              >
+                <option>Just me</option>
+                <option>2–5 people</option>
+                <option>6–15 people</option>
+                <option>16–50 people</option>
+                <option>50+ people</option>
+              </select>
+            </div>
+
+            {error && <p className="ob-error">{error}</p>}
+
+            <button type="submit" className="ob-submit" disabled={submitting || !canSubmit}>
+              {submitting ? 'Creating workspace…' : 'Create my workspace →'}
+            </button>
+          </form>
+
+          <p className="ob-signin-link">Already have a workspace? <span className="ob-signin-action">Sign in →</span></p>
+        </div>
       </div>
     </div>
   );
