@@ -1,0 +1,304 @@
+Build the Bill & NMI Reader feature. This has two parts:
+1. A new full page at /bill-reader in the sidebar nav
+2. A backend pipeline for processing bills
+
+Add "Bill Reader" to the sidebar nav between Inbox Assistant 
+and Helpdesk. Use a receipt or file-scan icon.
+
+Do not change any other pages or functionality.
+
+BACKEND — create server/src/routes/billReader.ts:
+
+Install required packages:
+- @google-cloud/vision (Google Cloud Vision API)
+- multer (file upload handling)
+
+ENDPOINT 1: POST /api/bill-reader/check
+- Accepts: multipart form with file (image or PDF)
+- Purpose: quick pre-check before running OCR
+- Process:
+  1. Get the filename and file mimetype
+  2. If it's an image, use Google Vision API's 
+     TEXT_DETECTION with max 1 page to get a small 
+     sample of text (first 500 chars only)
+  3. If it's a PDF, use Google Vision API to get 
+     first page text sample only
+  4. Send sample text + filename to Claude API 
+     (claude-haiku-3-5 for speed and cost) with prompt:
+     "You are a document classifier. Based on this 
+     filename and text sample, determine if this is 
+     an Australian electricity bill. 
+     Respond with JSON only:
+     {
+       'isBill': true/false,
+       'confidence': 0.0-1.0,
+       'reason': 'brief explanation'
+     }
+     Filename: [filename]
+     Text sample: [first 500 chars]"
+  5. Return the classification result
+- Use GOOGLE_VISION_API_KEY and ANTHROPIC_API_KEY env vars
+
+ENDPOINT 2: POST /api/bill-reader/extract
+- Accepts: multipart form with file (image or PDF)
+- Purpose: full extraction after pre-check passes
+- Process:
+  1. Send full file to Google Vision API TEXT_DETECTION
+  2. Get complete extracted text
+  3. Send to Claude API (claude-sonnet-4) with prompt:
+     "You are an Australian electricity bill parser.
+     Extract the following fields from this bill text.
+     If a field is not found, return null.
+     Respond with JSON only, no other text:
+     {
+       'nmi': string | null,
+       'retailer': string | null,
+       'customerName': string | null,
+       'propertyAddress': string | null,
+       'billingPeriod': {
+         'from': string | null,
+         'to': string | null,
+         'days': number | null
+       },
+       'usage': {
+         'dailyAvgKwh': number | null,
+         'totalKwh': number | null,
+         'peakKwh': number | null,
+         'offPeakKwh': number | null,
+         'shoulderKwh': number | null
+       },
+       'rates': {
+         'supplyCharge': number | null,
+         'usageRate': number | null,
+         'peakRate': number | null,
+         'offPeakRate': number | null,
+         'feedInTariff': number | null
+       },
+       'totals': {
+         'totalAmount': number | null,
+         'gstAmount': number | null
+       },
+       'existingSolar': boolean | null,
+       'existingBattery': boolean | null,
+       'meterType': string | null,
+       'meterCondition': string | null,
+       'confidenceScore': number
+     }
+     Bill text: [full OCR text]"
+  4. Return structured JSON + raw OCR text
+
+ENDPOINT 3: POST /api/bill-reader/save
+- Accepts: extracted bill data JSON + optional jobId
+- Saves to Supabase bill_extractions table
+- Returns saved record with ID
+
+Create Supabase migration:
+CREATE TABLE bill_extractions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  file_name TEXT,
+  source TEXT DEFAULT 'manual',
+  nmi TEXT,
+  retailer TEXT,
+  customer_name TEXT,
+  property_address TEXT,
+  billing_period_from DATE,
+  billing_period_to DATE,
+  billing_days INTEGER,
+  daily_avg_kwh NUMERIC,
+  total_kwh NUMERIC,
+  supply_charge NUMERIC,
+  usage_rate NUMERIC,
+  feed_in_tariff NUMERIC,
+  total_amount NUMERIC,
+  existing_solar BOOLEAN,
+  existing_battery BOOLEAN,
+  meter_type TEXT,
+  raw_ocr_text TEXT,
+  confidence_score NUMERIC,
+  status TEXT DEFAULT 'extracted'
+);
+ALTER TABLE bill_extractions ENABLE ROW LEVEL SECURITY;
+
+Register bill reader routes in server/src/index.ts
+
+FRONTEND — create client/src/pages/BillReader.tsx:
+
+PAGE LAYOUT:
+Two column layout:
+- Left panel (45%): upload area + recent extractions list
+- Right panel (55%): extraction results
+
+PAGE HEADER:
+- Title: "Bill & NMI Reader"
+- Subtitle: "Upload an electricity bill to extract 
+  customer and usage data automatically"
+- Stats row: 
+  "247 Bills Processed" (blue)
+  "99.1% Accuracy" (green)
+  "4.2s Avg Processing" (grey)
+
+LEFT PANEL — white card, border-radius 20px:
+
+Section 1: Upload area
+- Dashed border upload zone: 
+  border: 2px dashed #e5e5e7
+  border-radius: 16px
+  padding: 40px 24px
+  text-align: center
+  background: #fafafa
+  Drag & drop or click to upload
+  Icon: document/scan icon in #4F8EF7
+  Text: "Drop a bill here or click to upload"
+  Subtext: "Supports JPG, PNG, PDF · Max 10MB"
+  Accept: image/*, application/pdf
+  On hover: border-color #4F8EF7, 
+  background rgba(79,142,247,0.03)
+  On drag over: same hover state
+
+- After file selected, show file preview row:
+  File icon + filename + file size
+  "Remove" link in red
+  
+- Processing states (show appropriate one):
+  
+  STATE 1 — Checking (after upload):
+  Blue spinner + "Checking document..."
+  Subtext: "Verifying this is an electricity bill"
+  
+  STATE 2 — Not a bill:
+  Red X icon
+  "Not an electricity bill"
+  Reason from Claude classification
+  "Try a different file" button
+  
+  STATE 3 — Extracting:
+  Blue spinner + "Extracting data..."
+  Subtext: "Reading bill with Google Vision OCR"
+  Progress bar animating
+  
+  STATE 4 — Complete:
+  Green checkmark + "Extraction complete"
+  Confidence score badge: e.g. "94% confidence"
+
+- "Extract Bill Data" button:
+  Full width, #4F8EF7, height 48px, border-radius 12px
+  Disabled until file selected
+  Shows spinner when processing
+
+Section 2: Recent Extractions (below upload)
+Title: "Recent extractions" small caps label
+List of 5 placeholder recent extractions:
+Each row: 
+- Retailer name + customer name
+- NMI (truncated: first 4 + ... + last 3 digits)
+- Date extracted
+- Status pill: Extracted (green) / Pending Review (orange)
+- Click to load into right panel
+
+Placeholder data:
+1. AGL — James Hartley, NMI: 4102...456, Today 10:23am, Extracted
+2. Origin Energy — Rachel Wong, NMI: 6305...891, Today 9:41am, Extracted
+3. Amber Electric — Mark Deluca, NMI: 4107...234, Yesterday, Pending Review
+4. AGL — Priya Sharma, NMI: 6301...567, Yesterday, Extracted
+5. Energy Australia — Mike Chen, NMI: 4103...789, 2 days ago, Extracted
+
+RIGHT PANEL — white card, border-radius 20px:
+
+Default state (no extraction yet):
+Centered empty state:
+Large document scan icon in light grey
+"Upload a bill to see extracted data"
+Subtext: "Data will appear here after extraction"
+
+After extraction — show results:
+
+HEADER ROW:
+Customer name (large, 1.25rem, font-weight 600)
+Property address (grey, 0.875rem)
+Right side: confidence badge + "Copy NMI" button + 
+"Save to Dashboard" button (#4F8EF7)
+
+EXTRACTED DATA in sections:
+
+Section 1 — "Account Details" 
+2 column grid:
+- NMI: large display, monospace font, 
+  letter-spacing 0.1em, with copy icon button
+  NMI field should be highlighted: 
+  background #f0f5ff, border 1px solid #d0e0ff,
+  border-radius 8px, padding 8px 12px
+- Retailer: with retailer logo placeholder circle
+- Customer name
+- Property address
+- Billing period: "12 Jan 2025 — 12 Apr 2025 (89 days)"
+- Total amount: green, larger font
+
+Section 2 — "Usage Data"
+Small bar chart visualization:
+- Peak usage bar (blue)
+- Off-peak usage bar (lighter blue)  
+- Daily average: large number display
+  "12.4 kWh/day" with label
+
+Section 3 — "Tariff & Rates"
+2 column grid:
+- Supply charge: $/day
+- Usage rate: c/kWh
+- Feed-in tariff: c/kWh (show "None detected" if null)
+- Peak rate / off-peak rate if available
+
+Section 4 — "System Info"
+Row of pills/badges:
+- Existing solar: green "✓ Solar detected" or 
+  grey "No solar detected"
+- Battery: green "✓ Battery detected" or 
+  grey "No battery detected"  
+- Meter type: pill with value
+- Meter condition: pill with value
+
+Section 5 — "Raw OCR Text" (collapsed by default)
+Expandable section with toggle arrow
+Shows raw text in monospace, grey background
+"Copy raw text" button
+
+BOTTOM ACTION ROW:
+- "Copy NMI" button — copies NMI to clipboard, 
+  shows "Copied!" toast
+- "Push to Simpro" button — grey, disabled, 
+  "Coming Soon" tooltip
+- "Save extraction" button — #4F8EF7
+
+DESIGN:
+Match existing app design system exactly.
+Page padding: 32px
+Two column layout with 24px gap
+Both panels: white, border-radius 20px, 
+box-shadow 0 2px 12px rgba(0,0,0,0.06), padding 28px
+Section labels: small caps, 0.75rem, #6e6e73, 
+letter-spacing 0.05em, margin-bottom 16px,
+padding-bottom 12px, border-bottom 1px solid #f5f5f7
+
+When showing placeholder extraction data in right panel 
+on load (from clicking James Hartley in recent list):
+NMI: 410200123456
+Retailer: AGL
+Customer: James Hartley
+Address: 14 Sunrise Crescent, Modbury SA 5092
+Billing period: 12 Jan 2025 — 12 Apr 2025 (89 days)
+Total: $342.18
+Daily avg: 14.2 kWh/day
+Total kWh: 1263.8
+Supply charge: $1.12/day
+Usage rate: 28.4c/kWh
+Feed-in tariff: 6.5c/kWh
+Existing solar: true
+Existing battery: false
+Meter type: Smart Meter
+Confidence: 96%
+
+After completing, remind Alex to:
+1. Run the Supabase migration for bill_extractions table
+2. Make sure GOOGLE_VISION_API_KEY and 
+   ANTHROPIC_API_KEY are in Replit Secrets

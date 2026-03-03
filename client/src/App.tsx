@@ -10,6 +10,7 @@ import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import ActivityLogPage from './pages/ActivityLogPage';
+import BillReaderPage from './pages/BillReaderPage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/voice-agent" element={<VoiceAgentPage />} />
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
+            <Route path="/bill-reader" element={<BillReaderPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />
             <Route path="/activity-log" element={<ActivityLogPage />} />
             <Route path="/connections" element={<ConnectionsPage />} />

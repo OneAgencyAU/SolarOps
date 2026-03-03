@@ -6,6 +6,7 @@ const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: '▦' },
   { label: 'Voice Agent', path: '/voice-agent', icon: '◎' },
   { label: 'Inbox Assistant', path: '/inbox-assistant', icon: '✉' },
+  { label: 'Bill Reader', path: '/bill-reader', icon: '⎘' },
   { label: 'Helpdesk', path: '/helpdesk', icon: '⊙' },
   { label: 'Activity Log', path: '/activity-log', icon: '⏱' },
   { label: 'Connections', path: '/connections', icon: '⌘' },

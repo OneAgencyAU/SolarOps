@@ -1,0 +1,27 @@
+CREATE TABLE bill_extractions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  file_name TEXT,
+  source TEXT DEFAULT 'manual',
+  nmi TEXT,
+  retailer TEXT,
+  customer_name TEXT,
+  property_address TEXT,
+  billing_period_from DATE,
+  billing_period_to DATE,
+  billing_days INTEGER,
+  daily_avg_kwh NUMERIC,
+  total_kwh NUMERIC,
+  supply_charge NUMERIC,
+  usage_rate NUMERIC,
+  feed_in_tariff NUMERIC,
+  total_amount NUMERIC,
+  existing_solar BOOLEAN,
+  existing_battery BOOLEAN,
+  meter_type TEXT,
+  raw_ocr_text TEXT,
+  confidence_score NUMERIC,
+  status TEXT DEFAULT 'extracted'
+);
+ALTER TABLE bill_extractions ENABLE ROW LEVEL SECURITY;
