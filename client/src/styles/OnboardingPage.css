@@ -1,14 +1,18 @@
 .ob-page {
   display: flex;
-  min-height: 100vh;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
   font-family: 'DM Sans', -apple-system, sans-serif;
 }
 
 .ob-left {
   width: 55%;
+  height: 100vh;
   background: #0a0a0f;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -221,9 +225,9 @@
 .ob-left-footer {
   position: absolute;
   bottom: 32px;
-  left: 0;
-  width: 100%;
-  text-align: center;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   font-size: 0.75rem;
   color: rgba(255,255,255,0.25);
   z-index: 1;
@@ -231,11 +235,14 @@
 
 .ob-right {
   width: 45%;
+  height: 100vh;
   background: #ffffff;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow-y: auto;
 }
 
 .ob-right-content {
