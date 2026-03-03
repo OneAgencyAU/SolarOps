@@ -65,7 +65,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-latest',
+      model: 'claude-haiku-4-5-20250414',
       max_tokens: 256,
       messages: [
         {
@@ -120,7 +120,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6-20250627',
       max_tokens: 2048,
       messages: [
         {
