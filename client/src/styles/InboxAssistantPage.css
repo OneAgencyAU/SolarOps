@@ -466,3 +466,11 @@
     margin: 0;
   }
 }
+
+.inbox-connection-bar { padding: 10px 0 16px; display: flex; align-items: center; }
+.inbox-connect-prompt { display: flex; align-items: center; gap: 12px; font-size: 0.875rem; color: #6e6e73; }
+.inbox-connect-btn { padding: 7px 16px; background: #4F8EF7; color: #fff; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-decoration: none; }
+.inbox-connected-status { display: flex; align-items: center; gap: 12px; }
+.inbox-connected-pill { background: #e8f5e9; color: #2e7d32; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+.inbox-sync-btn { padding: 6px 14px; border: 1.5px solid #e5e5e7; border-radius: 8px; background: #fff; font-size: 0.8rem; font-weight: 500; cursor: pointer; }
+.inbox-sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }

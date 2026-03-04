@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/InboxAssistantPage.css';
 
 type FilterType = 'All' | 'Urgent' | 'New Lead' | 'Support';
@@ -144,6 +145,7 @@ Sol Energy Team`,
 ];
 
 export default function InboxAssistantPage() {
+  const { tenant } = useAuth();
   const [selectedId, setSelectedId] = useState(1);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [drafts, setDrafts] = useState<Record<number, string>>(() => {
@@ -152,6 +154,48 @@ export default function InboxAssistantPage() {
     return d;
   });
   const [toast, setToast] = useState<string | null>(null);
+  const [connections, setConnections] = useState<{ provider: string; email: string }[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [realEmails, setRealEmails] = useState<any[]>([]);
+  const [useRealEmails, setUseRealEmails] = useState(false);
+
+  const fetchConnections = async () => {
+    if (!tenant?.id) return;
+    const res = await fetch(`/api/inbox/connections?tenant_id=${tenant.id}`);
+    if (res.ok) setConnections(await res.json());
+  };
+
+  const fetchEmails = async () => {
+    if (!tenant?.id) return;
+    const res = await fetch(`/api/inbox/emails?tenant_id=${tenant.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.length > 0) { setRealEmails(data); setUseRealEmails(true); }
+    }
+  };
+
+  const handleSync = async () => {
+    if (!tenant?.id) return;
+    setSyncing(true);
+    await fetch('/api/inbox/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenant_id: tenant.id }) });
+    await fetchEmails();
+    setSyncing(false);
+  };
+
+  useEffect(() => {
+    fetchConnections();
+    fetchEmails();
+    const interval = setInterval(() => { fetchEmails(); }, 180000);
+    return () => clearInterval(interval);
+  }, [tenant?.id]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected') === 'gmail') {
+      handleSync();
+      window.history.replaceState({}, '', '/inbox');
+    }
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -183,6 +227,28 @@ export default function InboxAssistantPage() {
         <h1 className="inbox-title">Inbox Assistant</h1>
         <p className="inbox-subtitle">AI-drafted replies, ready for your approval</p>
         <p className="inbox-stats-bar">4 in queue · 134 drafted this week · Avg 4.2min response time</p>
+      </div>
+
+      <div className="inbox-connection-bar">
+        {connections.length === 0 ? (
+          <div className="inbox-connect-prompt">
+            <span>No inbox connected</span>
+            <a href={`/api/auth/gmail?tenant_id=${tenant?.id}`} className="inbox-connect-btn">
+              Connect Gmail
+            </a>
+          </div>
+        ) : (
+          <div className="inbox-connected-status">
+            {connections.map(c => (
+              <span key={c.provider} className="inbox-connected-pill">
+                {c.email} connected
+              </span>
+            ))}
+            <button className="inbox-sync-btn" onClick={handleSync} disabled={syncing}>
+              {syncing ? 'Syncing...' : 'Sync now'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="inbox-panels">
