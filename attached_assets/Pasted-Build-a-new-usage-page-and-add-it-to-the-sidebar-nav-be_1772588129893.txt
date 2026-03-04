@@ -1,0 +1,100 @@
+Build a new /usage page and add it to the sidebar nav 
+between Activity Log and Connections. Replace any placeholder. 
+Do not change any other pages, routing, or backend.
+
+All data is static/hardcoded placeholder — no live API 
+billing connection yet.
+
+PAGE HEADER:
+- Title: "Usage & Costs"
+- Subtitle: "Track API usage and processing costs across 
+  all SolarOps modules"
+- Top right: month selector pill (← March 2026 →)
+
+STATS BAR (4 cards in a row):
+- Total Spent This Month: $4.82
+- Bills Processed: 247
+- Total API Calls: 741
+- Budget Remaining: $45.18 
+  (progress bar below, green, showing 9.6% used of $50 budget)
+
+SECTION 1 — COST BREAKDOWN BY SERVICE:
+Title: "Cost by Service" (small caps label)
+3 cards in a row:
+
+Card 1 — Google Cloud Vision:
+- Icon: eye/vision icon
+- Label: "OCR Processing"
+- Cost: $0.37
+- Calls: 247
+- Per call: $0.0015
+- Colour accent: blue
+
+Card 2 — Claude Haiku:
+- Icon: lightning bolt
+- Label: "Bill Pre-check"
+- Cost: $0.05
+- Calls: 247
+- Per call: $0.0002
+- Colour accent: purple
+
+Card 3 — Claude Sonnet:
+- Icon: brain/sparkle
+- Label: "Data Extraction"
+- Cost: $4.40
+- Calls: 247
+- Per call: $0.0178
+- Colour accent: orange
+
+SECTION 2 — DAILY COST CHART:
+Title: "Daily Spend — March 2026"
+Line chart (recharts LineChart) showing daily spend 
+over the month. 
+X axis: dates (1–31)
+Y axis: cost in dollars ($0 – $1.00)
+Line colour: #4F8EF7
+Show realistic data — busier on weekdays, 
+quiet on weekends. Values between $0.05–$0.80/day.
+Card: white, border-radius 20px, padding 24px.
+
+SECTION 3 — PER-EXTRACTION LOG:
+Title: "Extraction Cost Log"
+Table with columns:
+- Time
+- Customer (name extracted)
+- Retailer
+- Vision cost
+- Haiku cost  
+- Sonnet cost
+- Total cost
+- Status pill (Extracted / Failed / Pending Review)
+
+10 rows of realistic placeholder data using Australian 
+retailers (AGL, Origin, Amber, Energy Australia, 
+SA Power Networks) and realistic names.
+
+Total row at bottom showing column totals.
+
+Search bar above table. Export CSV button (top right, 
+disabled for now).
+
+SECTION 4 — BUDGET SETTINGS CARD:
+Title: "Monthly Budget"
+- Current budget: $50.00/month (editable input)
+- Alert threshold: 80% (editable — sends alert when 
+  spending hits this %)
+- Estimated end of month: $7.20 (based on current rate)
+- Status: "On track" green pill
+- Save Budget button: #4F8EF7
+
+DESIGN:
+- Match existing app design system exactly
+- White cards, border-radius 20px, 
+  box-shadow 0 2px 12px rgba(0,0,0,0.06)
+- Background: #f5f5f7
+- Service cards: coloured left border (4px) 
+  matching accent colour
+- Table: clean, row hover #f5f5f7, 
+  alternating subtle stripe
+- Progress bar: green fill, border-radius 980px, 
+  height 6px, background #e5e5e7

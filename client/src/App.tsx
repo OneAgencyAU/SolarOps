@@ -11,6 +11,7 @@ import HelpdeskPage from './pages/HelpdeskPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import ActivityLogPage from './pages/ActivityLogPage';
 import BillReaderPage from './pages/BillReaderPage';
+import UsagePage from './pages/UsagePage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/bill-reader" element={<BillReaderPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />
             <Route path="/activity-log" element={<ActivityLogPage />} />
+            <Route path="/usage" element={<UsagePage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

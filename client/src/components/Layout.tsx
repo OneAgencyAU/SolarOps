@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Bill Reader', path: '/bill-reader', icon: '⎘' },
   { label: 'Helpdesk', path: '/helpdesk', icon: '⊙' },
   { label: 'Activity Log', path: '/activity-log', icon: '⏱' },
+  { label: 'Usage & Costs', path: '/usage', icon: '◈' },
   { label: 'Connections', path: '/connections', icon: '⌘' },
   { label: 'Settings', path: '/settings', icon: '⚙' },
 ];
