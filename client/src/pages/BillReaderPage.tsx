@@ -203,6 +203,8 @@ export default function BillReaderPage() {
   const [toast, setToast] = useState('');
   const [saving, setSaving] = useState(false);
   const [recentExtractions, setRecentExtractions] = useState<SavedExtraction[]>([]);
+  const [stats, setStats] = useState<{ billsProcessed: number; accuracy: number | null; avgProcessingSeconds: number | null } | null>(null);
+  const [processingMs, setProcessingMs] = useState<number | null>(null);
 
   const fetchRecentExtractions = useCallback(async () => {
     if (!tenant?.id) return;
@@ -217,9 +219,18 @@ export default function BillReaderPage() {
     }
   }, [tenant?.id]);
 
+  const fetchStats = useCallback(async () => {
+    if (!tenant?.id) return;
+    try {
+      const res = await fetch(`/api/bill-reader/stats?tenant_id=${tenant.id}`);
+      if (res.ok) setStats(await res.json());
+    } catch (e) { console.error('Failed to fetch stats', e); }
+  }, [tenant?.id]);
+
   useEffect(() => {
     fetchRecentExtractions();
-  }, [fetchRecentExtractions]);
+    fetchStats();
+  }, [fetchRecentExtractions, fetchStats]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -292,12 +303,12 @@ export default function BillReaderPage() {
         return;
       }
 
-      const extractResult = await extractRes.json();
-      console.log('[BillReader] Extract result:', extractResult);
-      console.log('[BillReader] Extracted fields:', extractResult.extracted);
-      console.log('[BillReader] Raw OCR length:', extractResult.rawOcrText?.length);
+      const { extracted, rawOcrText, processingMs: pMs } = await extractRes.json();
+      console.log('[BillReader] Extracted fields:', extracted);
+      console.log('[BillReader] Raw OCR length:', rawOcrText?.length);
+      setProcessingMs(pMs ?? null);
 
-      if (!extractResult.extracted || Object.keys(extractResult.extracted).length === 0) {
+      if (!extracted || Object.keys(extracted).length === 0) {
         console.error('[BillReader] Empty extracted data');
         setStage('not-bill');
         setCheckReason('Could not parse bill data. Please try a clearer image.');
@@ -305,12 +316,12 @@ export default function BillReaderPage() {
       }
 
       const data = {
-        ...extractResult.extracted,
-        confidenceScore: normaliseConfidence(extractResult.extracted?.confidenceScore),
+        ...extracted,
+        confidenceScore: normaliseConfidence(extracted?.confidenceScore),
       };
       console.log('[BillReader] Final data going to state:', data);
       setExtractedData(data);
-      setRawOcr(extractResult.rawOcrText || '');
+      setRawOcr(rawOcrText || '');
       setStage('complete');
     } catch (err) {
       console.error('[BillReader] Extract error:', err);
@@ -344,6 +355,7 @@ export default function BillReaderPage() {
         meter_type: extractedData.meterType,
         raw_ocr_text: rawOcr,
         confidence_score: extractedData.confidenceScore,
+        processing_ms: processingMs ?? null,
       };
 
       const res = await fetch('/api/bill-reader/save', {
@@ -355,6 +367,7 @@ export default function BillReaderPage() {
       if (res.ok) {
         showToast('Extraction saved successfully');
         fetchRecentExtractions();
+        fetchStats();
       } else {
         showToast('Failed to save extraction');
       }
@@ -391,10 +404,10 @@ export default function BillReaderPage() {
       <div className="bill-reader-header">
         <h1>Bill & NMI Reader</h1>
         <p>Upload an electricity bill to extract customer and usage data automatically</p>
-        <div className="bill-reader-stats">
-          <span className="bill-reader-stat blue">247 Bills Processed</span>
-          <span className="bill-reader-stat green">99.1% Accuracy</span>
-          <span className="bill-reader-stat grey">4.2s Avg Processing</span>
+        <div className="br-stats-bar">
+          <span className="br-stat">{stats?.billsProcessed ?? '—'} Bills Processed</span>
+          <span className="br-stat green">{stats?.accuracy != null ? `${stats.accuracy}% Accuracy` : '—'}</span>
+          <span className="br-stat">{stats?.avgProcessingSeconds != null ? `${stats.avgProcessingSeconds}s Avg Processing` : '—'}</span>
         </div>
       </div>
 
@@ -504,7 +517,24 @@ export default function BillReaderPage() {
                   const nmiDisplay = item.nmi ? item.nmi.slice(0, 4) + '...' + item.nmi.slice(-3) : '—';
                   const dateDisplay = new Date(item.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
                   return (
-                    <li key={item.id} className="br-recent-item">
+                    <li key={item.id} className="br-recent-item" onClick={() => {
+                      setExtractedData({
+                        nmi: item.nmi,
+                        retailer: item.retailer,
+                        customerName: item.customer_name,
+                        propertyAddress: item.property_address,
+                        billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
+                        usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
+                        rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: null, offPeakRate: null, feedInTariff: item.feed_in_tariff },
+                        totals: { totalAmount: item.total_amount, gstAmount: null },
+                        existingSolar: item.existing_solar,
+                        existingBattery: item.existing_battery,
+                        meterType: item.meter_type,
+                        meterCondition: null,
+                        confidenceScore: item.confidence_score ?? 0.85,
+                      });
+                      setRawOcr(item.raw_ocr_text || '');
+                    }}>
                       <div className="br-retailer-badge">{retailerShort}</div>
                       <div className="br-recent-info">
                         <div className="br-recent-name">{item.retailer || 'Unknown'} — {item.customer_name || 'Unknown'}</div>

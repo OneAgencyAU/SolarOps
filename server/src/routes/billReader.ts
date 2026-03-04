@@ -211,6 +211,8 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       return;
     }
 
+    const extractStart = Date.now();
+
     const visionClient = getVisionClient();
     let fullText = '';
 
@@ -291,7 +293,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
     });
 
     console.log('[Bill Reader] Final confidenceScore:', extracted.confidenceScore);
-    res.json({ extracted, rawOcrText: fullText });
+    res.json({ extracted, rawOcrText: fullText, processingMs: Date.now() - extractStart });
   } catch (err: any) {
     console.error('[Bill Reader] Extract error:', err);
     res.status(500).json({ error: err.message || 'Extraction failed' });
@@ -321,6 +323,7 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
       meter_type,
       raw_ocr_text,
       confidence_score,
+      processing_ms,
     } = req.body;
 
     if (!tenant_id) {
@@ -352,6 +355,7 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
         meter_type,
         raw_ocr_text,
         confidence_score,
+        processing_ms: processing_ms ?? null,
         status: 'extracted',
       })
       .select()
@@ -367,6 +371,31 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('[Bill Reader] Save error:', err);
     res.status(500).json({ error: err.message || 'Save failed' });
+  }
+});
+
+router.get('/api/bill-reader/stats', async (req: Request, res: Response) => {
+  try {
+    const tenant_id = req.query.tenant_id as string;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    const { data, error } = await supabase
+      .from('bill_extractions')
+      .select('confidence_score, processing_ms')
+      .eq('tenant_id', tenant_id);
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    const total = data?.length || 0;
+    const accurate = data?.filter(r => (r.confidence_score ?? 0) >= 0.8).length || 0;
+    const withTiming = data?.filter(r => r.processing_ms != null) || [];
+    const avgMs = withTiming.length > 0
+      ? withTiming.reduce((sum: number, r: any) => sum + r.processing_ms, 0) / withTiming.length
+      : null;
+    res.json({
+      billsProcessed: total,
+      accuracy: total > 0 ? Math.round((accurate / total) * 1000) / 10 : null,
+      avgProcessingSeconds: avgMs != null ? Math.round(avgMs / 100) / 10 : null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

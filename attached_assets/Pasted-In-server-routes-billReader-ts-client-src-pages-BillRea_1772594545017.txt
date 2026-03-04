@@ -1,0 +1,82 @@
+In server/routes/billReader.ts, client/src/pages/BillReaderPage.tsx, and via Supabase SQL, make the following changes. Do not change anything else in any file.
+Step 1 — Supabase
+Run this SQL in the Supabase SQL editor:
+sqlALTER TABLE bill_extractions ADD COLUMN IF NOT EXISTS processing_ms integer;
+Step 2 — server/routes/billReader.ts
+At the very start of the /api/bill-reader/extract route handler (after the if (!req.file) check), add:
+typescriptconst extractStart = Date.now();
+At the end of the extract route, change res.json(...) to include processingMs:
+typescriptres.json({ extracted, rawOcrText: fullText, processingMs: Date.now() - extractStart });
+In the /api/bill-reader/save route, destructure processing_ms from req.body and add it to the Supabase insert object:
+typescriptprocessing_ms: processing_ms ?? null,
+Add this new stats route before export default router:
+typescriptrouter.get('/api/bill-reader/stats', async (req: Request, res: Response) => {
+  try {
+    const tenant_id = req.query.tenant_id as string;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    const { data, error } = await supabase
+      .from('bill_extractions')
+      .select('confidence_score, processing_ms')
+      .eq('tenant_id', tenant_id);
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    const total = data?.length || 0;
+    const accurate = data?.filter(r => (r.confidence_score ?? 0) >= 0.8).length || 0;
+    const withTiming = data?.filter(r => r.processing_ms != null) || [];
+    const avgMs = withTiming.length > 0
+      ? withTiming.reduce((sum, r) => sum + r.processing_ms, 0) / withTiming.length
+      : null;
+    res.json({
+      billsProcessed: total,
+      accuracy: total > 0 ? Math.round((accurate / total) * 1000) / 10 : null,
+      avgProcessingSeconds: avgMs != null ? Math.round(avgMs / 100) / 10 : null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+Step 3 — client/src/pages/BillReaderPage.tsx
+Add stats state after existing state declarations:
+typescriptconst [stats, setStats] = useState<{ billsProcessed: number; accuracy: number | null; avgProcessingSeconds: number | null } | null>(null);
+Add fetchStats alongside fetchRecentExtractions:
+typescriptconst fetchStats = useCallback(async () => {
+  if (!tenant?.id) return;
+  try {
+    const res = await fetch(`/api/bill-reader/stats?tenant_id=${tenant.id}`);
+    if (res.ok) setStats(await res.json());
+  } catch (e) { console.error('Failed to fetch stats', e); }
+}, [tenant?.id]);
+Update the useEffect to call both:
+typescriptuseEffect(() => {
+  fetchRecentExtractions();
+  fetchStats();
+}, [fetchRecentExtractions, fetchStats]);
+Call fetchStats() after a successful save alongside the existing fetchRecentExtractions() call.
+When the extract API response comes back, capture processingMs and include it in the save payload:
+typescriptconst { extracted, rawOcrText, processingMs } = await extractRes.json();
+// then in the save payload add:
+processing_ms: processingMs ?? null,
+Replace the static stats bar with:
+typescript<div className="br-stats-bar">
+  <span className="br-stat">{stats?.billsProcessed ?? '—'} Bills Processed</span>
+  <span className="br-stat green">{stats?.accuracy != null ? `${stats.accuracy}% Accuracy` : '—'}</span>
+  <span className="br-stat">{stats?.avgProcessingSeconds != null ? `${stats.avgProcessingSeconds}s Avg Processing` : '—'}</span>
+</div>
+Add an onClick handler to each item in the recentExtractions.map list so clicking a row populates the detail panel:
+typescriptonClick={() => {
+  setExtractedData({
+    nmi: item.nmi,
+    retailer: item.retailer,
+    customerName: item.customer_name,
+    propertyAddress: item.property_address,
+    billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
+    usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
+    rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: null, offPeakRate: null, feedInTariff: item.feed_in_tariff },
+    totals: { totalAmount: item.total_amount, gstAmount: null },
+    existingSolar: item.existing_solar,
+    existingBattery: item.existing_battery,
+    meterType: item.meter_type,
+    meterCondition: null,
+    confidenceScore: item.confidence_score ?? 0.85,
+  });
+  setRawOcr(item.raw_ocr_text || '');
+}}
