@@ -58,7 +58,7 @@ router.get('/api/auth/gmail/callback', async (req: Request, res: Response) => {
     }, { onConflict: 'tenant_id,provider' });
 
     if (error) { res.status(500).send('Failed to save connection'); return; }
-    res.redirect(`/inbox?connected=gmail`);
+    res.redirect(`https://solarops.com.au/inbox?connected=gmail`);
   } catch (err: any) {
     console.error('[Gmail OAuth] Callback error:', err);
     res.status(500).send('OAuth failed: ' + err.message);

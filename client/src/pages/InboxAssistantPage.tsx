@@ -205,17 +205,30 @@ export default function InboxAssistantPage() {
 
   const selected = emails.find((e) => e.id === selectedId)!;
 
+  const emailSource = useRealEmails ? realEmails.map((e: any) => ({
+    id: e.id,
+    sender: e.from_name || e.from_email,
+    email: e.from_email,
+    subject: e.subject || '(no subject)',
+    preview: e.body_preview || '',
+    time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
+    tags: [],
+    body: e.body_text || '',
+    aiSummary: '',
+    draft: '',
+  })) : connections.length === 0 ? emails : [];
+
   const filterCounts: Record<FilterType, number> = {
-    All: emails.length,
-    Urgent: emails.filter((e) => e.tags.some((t) => t.label === 'Urgent')).length,
-    'New Lead': emails.filter((e) => e.tags.some((t) => t.label === 'New Lead')).length,
-    Support: emails.filter((e) => e.tags.some((t) => t.label === 'Support')).length,
+    All: emailSource.length,
+    Urgent: emailSource.filter((e) => e.tags.some((t) => t.label === 'Urgent')).length,
+    'New Lead': emailSource.filter((e) => e.tags.some((t) => t.label === 'New Lead')).length,
+    Support: emailSource.filter((e) => e.tags.some((t) => t.label === 'Support')).length,
   };
 
   const filtered =
     activeFilter === 'All'
-      ? emails
-      : emails.filter((e) => e.tags.some((t) => t.label === activeFilter));
+      ? emailSource
+      : emailSource.filter((e) => e.tags.some((t) => t.label === activeFilter));
 
   const handleApprove = () => {
     setToast('Draft approved and sent via Outlook');
@@ -289,7 +302,12 @@ export default function InboxAssistantPage() {
           </div>
 
           <div className="inbox-email-list">
-            {filtered.map((e) => (
+            {connections.length > 0 && emailSource.length === 0 && !syncing ? (
+              <div className="inbox-sync-prompt">
+                <p>No emails loaded yet.</p>
+                <button className="inbox-connect-btn" onClick={handleSync}>Sync inbox now</button>
+              </div>
+            ) : filtered.map((e) => (
               <button
                 key={e.id}
                 className={`email-card${selectedId === e.id ? ' selected' : ''}`}
