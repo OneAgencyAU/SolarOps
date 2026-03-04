@@ -229,15 +229,8 @@ export default function InboxAssistantPage() {
         <p className="inbox-stats-bar">4 in queue · 134 drafted this week · Avg 4.2min response time</p>
       </div>
 
-      <div className="inbox-connection-bar">
-        {connections.length === 0 ? (
-          <div className="inbox-connect-prompt">
-            <span>No inbox connected</span>
-            <a href={`/api/auth/gmail?tenant_id=${tenant?.id}`} className="inbox-connect-btn">
-              Connect Gmail
-            </a>
-          </div>
-        ) : (
+      {connections.length > 0 && (
+        <div className="inbox-connection-bar">
           <div className="inbox-connected-status">
             {connections.map(c => (
               <span key={c.provider} className="inbox-connected-pill">
@@ -248,9 +241,31 @@ export default function InboxAssistantPage() {
               {syncing ? 'Syncing...' : 'Sync now'}
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
+      {connections.length === 0 && (
+        <div className="inbox-empty-state">
+          <div className="inbox-empty-icon">📭</div>
+          <h2 className="inbox-empty-title">Connect your inbox to get started</h2>
+          <p className="inbox-empty-desc">
+            SolarOps will read incoming emails and generate AI-drafted replies for your team to review and send.
+          </p>
+          <div className="inbox-provider-options">
+            <a href={`/api/auth/gmail?tenant_id=${tenant?.id}`} className="inbox-provider-btn gmail">
+              <img src="https://www.google.com/favicon.ico" width={18} height={18} />
+              Connect Gmail
+            </a>
+            <button className="inbox-provider-btn outlook" disabled>
+              <img src="https://outlook.com/favicon.ico" width={18} height={18} />
+              Outlook — Coming Soon
+            </button>
+          </div>
+          <p className="inbox-empty-note">Your emails are never stored without your permission. AI drafts require your approval before sending.</p>
+        </div>
+      )}
+
+      {connections.length > 0 && (
       <div className="inbox-panels">
         {/* ── LEFT PANEL ── */}
         <div className="inbox-left">
@@ -351,6 +366,7 @@ export default function InboxAssistantPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Toast */}
       {toast && <div className="inbox-toast">{toast}</div>}
