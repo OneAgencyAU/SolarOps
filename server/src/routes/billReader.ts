@@ -131,50 +131,53 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       return;
     }
 
-    const visionClient = getVisionClient();
-    let sampleText = '';
+    const anthropic = getAnthropicClient();
+    const { buffer, mimetype } = await getImageBuffer(req.file);
+
+    let messageContent: any[];
 
     if (req.file.mimetype === 'application/pdf') {
+      const visionClient = getVisionClient();
       const request = {
-        requests: [
-          {
-            inputConfig: {
-              content: req.file.buffer.toString('base64'),
-              mimeType: 'application/pdf',
-            },
-            features: [{ type: 'DOCUMENT_TEXT_DETECTION' as const, maxResults: 1 }],
-            pages: [1],
-          },
-        ],
+        requests: [{
+          inputConfig: { content: req.file.buffer.toString('base64'), mimeType: 'application/pdf' },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' as const, maxResults: 1 }],
+          pages: [1],
+        }],
       };
       const [result] = await visionClient.batchAnnotateFiles(request);
       const page = result.responses?.[0]?.responses?.[0];
-      sampleText = (page?.fullTextAnnotation?.text || '').slice(0, 1500);
+      const sampleText = (page?.fullTextAnnotation?.text || '').slice(0, 1500);
+      messageContent = [{
+        type: 'text',
+        text: `Filename: ${filename}\nText sample: ${sampleText}`,
+      }];
     } else {
-      const { buffer } = await getImageBuffer(req.file);
-      const [result] = await visionClient.textDetection({
-        image: { content: buffer.toString('base64') },
-      });
-      sampleText = (result.fullTextAnnotation?.text || '').slice(0, 1500);
+      messageContent = [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mimetype as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+            data: buffer.toString('base64'),
+          },
+        },
+        {
+          type: 'text',
+          text: `Filename: ${filename}\n\nIs this an Australian electricity bill or energy account document? Be generous — if there are ANY indicators like energy company names, electricity terms (kWh, NMI, supply charge, tariff, meter), or account/invoice language, classify as isBill: true. Only return false if clearly NOT an energy bill.\n\nRespond with JSON only:\n{"isBill": true/false, "confidence": 0.0-1.0, "reason": "brief explanation"}`,
+        },
+      ];
     }
 
-    const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20250414',
       max_tokens: 256,
-      messages: [
-        {
-          role: 'user',
-          content: `You are a document classifier. Based on this filename and text sample, determine if this could be an Australian electricity bill or energy account document. Be generous — if there are ANY indicators like energy company names (AGL, Origin, Amber, EnergyAustralia, ActewAGL, Powershop, Red Energy, Alinta, Ergon, Endeavour), electricity terms (kWh, NMI, supply charge, usage, tariff, meter, kilowatt), or account/invoice language, classify as isBill: true.\nOnly return false if it is clearly NOT an energy bill (e.g. a photo, receipt, or unrelated document).\nRespond with JSON only:\n{\n  "isBill": true/false,\n  "confidence": 0.0-1.0,\n  "reason": "brief explanation"\n}\nFilename: ${filename}\nText sample: ${sampleText}`,
-        },
-      ],
+      messages: [{ role: 'user', content: messageContent }],
     });
 
     const textBlock = message.content.find((b) => b.type === 'text');
     const raw = textBlock?.text || '{}';
-    console.log('[Bill Reader] Check raw Claude response:', raw);
     const classification = parseClaudeJson(raw);
-    console.log('[Bill Reader] Check parsed:', classification);
 
     if (!classification.isBill && (classification.confidence ?? 1) >= 0.3) {
       classification.isBill = true;
@@ -182,8 +185,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
 
     const haikuInputTokens = message.usage?.input_tokens ?? null;
     const haikuOutputTokens = message.usage?.output_tokens ?? null;
-    const haikuCost =
-      (haikuInputTokens ?? 0) * 0.00000025 + (haikuOutputTokens ?? 0) * 0.00000125;
+    const haikuCost = (haikuInputTokens ?? 0) * 0.00000025 + (haikuOutputTokens ?? 0) * 0.00000125;
 
     await logUsage({
       module: 'bill_reader',
