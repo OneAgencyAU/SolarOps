@@ -179,6 +179,12 @@ npm run dev:server # Express only (tsx watch)
 - **Run command**: `node dist/server/src/index.js`
 - **Static files**: React builds to `dist/client/`, served by Express in production
 
+## Version Control
+- GitHub connected
+- Commit after every major feature or fix
+- Never commit .env or secrets
+- Branch strategy: main only for now
+
 ## What's Next
 
 - **Bill Reader**: COMPLETE — file upload, OCR, AI extraction, save to Supabase all working

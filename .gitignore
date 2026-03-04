@@ -2,4 +2,9 @@ node_modules/
 dist/
 .env
 .env.local
+.replit
+replit.nix
+.cache/
+client/dist/
+server/dist/
 *.log
