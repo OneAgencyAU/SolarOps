@@ -13,6 +13,8 @@ import ActivityLogPage from './pages/ActivityLogPage';
 import BillReaderPage from './pages/BillReaderPage';
 import UsagePage from './pages/UsagePage';
 import SettingsPage from './pages/SettingsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 export default function App() {
   return (
@@ -47,6 +49,9 @@ export default function App() {
             <Route path="/connections" element={<ConnectionsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
+
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
