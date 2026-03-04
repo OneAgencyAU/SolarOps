@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/UsagePage.css';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -25,6 +26,7 @@ interface Summary {
   total_calls: number;
   bills_processed: number;
   by_service: SummaryService[];
+  by_module?: { module: string; total_cost: number; total_calls: number; per_call: number }[];
 }
 
 interface LogEntry {
@@ -91,6 +93,7 @@ interface GroupedRow {
   created_at: string;
   customer_name: string | null;
   retailer: string | null;
+  module: string;
   status: string;
   vision: number;
   haiku: number;
@@ -111,6 +114,7 @@ function groupLogsByExtraction(logs: LogEntry[]): GroupedRow[] {
       created_at: sl.created_at,
       customer_name: sl.customer_name,
       retailer: sl.retailer,
+      module: sl.module,
       status: sl.status,
       vision,
       haiku,
@@ -122,7 +126,7 @@ function groupLogsByExtraction(logs: LogEntry[]): GroupedRow[] {
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 9 }).map((_, i) => (
         <td key={i}>
           <div style={{ height: 14, borderRadius: 6, background: '#e5e5e7', width: i === 0 ? 90 : i === 1 ? 110 : 70 }} />
         </td>
@@ -131,7 +135,17 @@ function SkeletonRow() {
   );
 }
 
+const ALL_MODULES = ['bill_reader', 'inbox_assistant', 'voice_agent', 'website_chatbot', 'feasibility'];
+const MODULE_LABELS: Record<string, string> = {
+  bill_reader: 'Bill Reader',
+  inbox_assistant: 'Inbox Assistant',
+  voice_agent: 'Voice Agent',
+  website_chatbot: 'Website Chatbot',
+  feasibility: 'Feasibility',
+};
+
 export default function UsagePage() {
+  const { tenant } = useAuth();
   const now = new Date();
   const [monthIndex, setMonthIndex] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -142,6 +156,7 @@ export default function UsagePage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
   const monthParam = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 
@@ -149,9 +164,11 @@ export default function UsagePage() {
     setLoading(true);
     setError(null);
     try {
+      const modulesParam = selectedModules.length > 0 ? `&modules=${selectedModules.join(',')}` : '';
+      const tenantParam = tenant?.id ? `&tenant_id=${tenant.id}` : '';
       const [summaryRes, logRes] = await Promise.all([
-        fetch(`/api/usage/summary?month=${monthParam}`),
-        fetch(`/api/usage/log?month=${monthParam}&limit=50`),
+        fetch(`/api/usage/summary?month=${monthParam}${tenantParam}${modulesParam}`),
+        fetch(`/api/usage/log?month=${monthParam}&limit=100${tenantParam}${modulesParam}`),
       ]);
       if (!summaryRes.ok || !logRes.ok) throw new Error('Failed to fetch usage data');
       const [summaryData, logData] = await Promise.all([summaryRes.json(), logRes.json()]);
@@ -162,7 +179,7 @@ export default function UsagePage() {
     } finally {
       setLoading(false);
     }
-  }, [monthParam]);
+  }, [monthParam, tenant?.id, selectedModules]);
 
   useEffect(() => {
     fetchData();
@@ -264,6 +281,31 @@ export default function UsagePage() {
         </div>
       </div>
 
+      <div className="usage-module-filter">
+        <span className="usage-filter-label">Filter by module:</span>
+        <div className="usage-filter-pills">
+          <button
+            className={`usage-filter-pill ${selectedModules.length === 0 ? 'active' : ''}`}
+            onClick={() => setSelectedModules([])}
+          >
+            All Modules
+          </button>
+          {ALL_MODULES.map(mod => (
+            <button
+              key={mod}
+              className={`usage-filter-pill ${selectedModules.includes(mod) ? 'active' : ''}`}
+              onClick={() => setSelectedModules(prev =>
+                prev.includes(mod)
+                  ? prev.filter(m => m !== mod)
+                  : [...prev, mod]
+              )}
+            >
+              {MODULE_LABELS[mod]}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="usage-section-label">Cost by Service</div>
       <div className="usage-service-cards">
         <div className="usage-service-card blue">
@@ -336,6 +378,27 @@ export default function UsagePage() {
         </div>
       </div>
 
+      {summary?.by_module && summary.by_module.length > 0 && (
+        <div className="usage-card">
+          <div className="usage-section-label">Cost by Module</div>
+          <div className="usage-module-breakdown">
+            {summary.by_module.map(m => (
+              <div key={m.module} className="usage-module-row">
+                <div className="usage-module-name">{MODULE_LABELS[m.module] || m.module}</div>
+                <div className="usage-module-bar-wrap">
+                  <div
+                    className="usage-module-bar"
+                    style={{ width: `${Math.min((m.total_cost / (summary.total_cost || 1)) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="usage-module-cost">${m.total_cost.toFixed(4)}</div>
+                <div className="usage-module-calls">{m.total_calls} calls</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="usage-card">
         <div className="usage-section-label">Daily Spend — {MONTHS[monthIndex]} {year}</div>
         {isEmpty ? (
@@ -397,6 +460,7 @@ export default function UsagePage() {
             <thead>
               <tr>
                 <th>Time</th>
+                <th>Module</th>
                 <th>Customer</th>
                 <th>Retailer</th>
                 <th>Vision</th>
@@ -411,13 +475,13 @@ export default function UsagePage() {
                 Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
               ) : isEmpty ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
                     No extractions this month
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '24px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '24px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
                     No results matching your search
                   </td>
                 </tr>
@@ -426,6 +490,7 @@ export default function UsagePage() {
                   {filtered.map((row) => (
                     <tr key={row.id}>
                       <td style={{ color: '#6e6e73', whiteSpace: 'nowrap' }}>{formatTime(row.created_at)}</td>
+                      <td>{MODULE_LABELS[row.module] || row.module || '—'}</td>
                       <td style={{ fontWeight: 500 }}>{row.customer_name || '—'}</td>
                       <td>{row.retailer || '—'}</td>
                       <td>{fmt(row.vision)}</td>
@@ -440,7 +505,7 @@ export default function UsagePage() {
                     </tr>
                   ))}
                   <tr className="total-row">
-                    <td colSpan={3}>Total ({filtered.length} extractions)</td>
+                    <td colSpan={4}>Total ({filtered.length} extractions)</td>
                     <td>{fmt(filtered.reduce((s, r) => s + r.vision, 0))}</td>
                     <td>{fmt(filtered.reduce((s, r) => s + r.haiku, 0))}</td>
                     <td>{fmt(filtered.reduce((s, r) => s + r.sonnet, 0))}</td>

@@ -414,6 +414,20 @@
   opacity: 0.9;
 }
 
+.usage-module-filter { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.usage-filter-label { font-size: 0.8rem; font-weight: 600; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.usage-filter-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.usage-filter-pill { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #e5e5e7; background: #fff; font-size: 0.8rem; font-weight: 500; color: #3a3a3c; cursor: pointer; transition: all 0.15s; }
+.usage-filter-pill:hover { border-color: #4F8EF7; color: #4F8EF7; }
+.usage-filter-pill.active { background: #4F8EF7; border-color: #4F8EF7; color: #fff; }
+.usage-module-breakdown { display: flex; flex-direction: column; gap: 12px; }
+.usage-module-row { display: grid; grid-template-columns: 140px 1fr 80px 70px; align-items: center; gap: 12px; }
+.usage-module-name { font-size: 0.875rem; font-weight: 500; color: #1d1d1f; }
+.usage-module-bar-wrap { height: 8px; background: #f0f0f5; border-radius: 4px; overflow: hidden; }
+.usage-module-bar { height: 100%; background: #4F8EF7; border-radius: 4px; transition: width 0.3s; }
+.usage-module-cost { font-size: 0.875rem; font-weight: 600; color: #1d1d1f; text-align: right; }
+.usage-module-calls { font-size: 0.75rem; color: #6e6e73; text-align: right; }
+
 @media (max-width: 900px) {
   .usage-stats-bar {
     grid-template-columns: 1fr 1fr;
