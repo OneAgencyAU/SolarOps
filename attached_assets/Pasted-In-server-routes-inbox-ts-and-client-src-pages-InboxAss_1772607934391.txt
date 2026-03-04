@@ -1,0 +1,132 @@
+In server/routes/inbox.ts and client/src/pages/InboxAssistantPage.tsx, make the following changes. Do not change anything else.
+server/routes/inbox.ts
+Add a route to mark an email as read in Gmail before export default router:
+typescriptrouter.post('/api/inbox/mark-read', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id, email_id } = req.body;
+    if (!tenant_id || !email_id) { res.status(400).json({ error: 'tenant_id and email_id required' }); return; }
+
+    const { data: emailData } = await supabase
+      .from('inbox_emails')
+      .select('*')
+      .eq('id', email_id)
+      .eq('tenant_id', tenant_id)
+      .single();
+    if (!emailData) { res.status(404).json({ error: 'Email not found' }); return; }
+
+    // Mark as read in Supabase
+    await supabase.from('inbox_emails').update({ is_read: true }).eq('id', email_id);
+
+    // Mark as read in Gmail
+    const { data: connections } = await supabase
+      .from('inbox_connections')
+      .select('*')
+      .eq('tenant_id', tenant_id)
+      .eq('provider', 'gmail');
+
+    if (connections && connections.length > 0) {
+      const conn = connections[0];
+      const oauth2Client = getOAuthClient();
+      oauth2Client.setCredentials({
+        access_token: conn.access_token,
+        refresh_token: conn.refresh_token,
+      });
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: emailData.external_id,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Mark Read] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+client/src/pages/InboxAssistantPage.tsx
+Add sentEmails state to track which email IDs have been sent:
+typescriptconst [sentEmails, setSentEmails] = useState<Set<string>>(new Set());
+const [readEmails, setReadEmails] = useState<Set<string>>(new Set());
+Add a markAsRead function:
+typescriptconst markAsRead = async (emailId: string) => {
+  if (readEmails.has(emailId) || !tenant?.id) return;
+  setReadEmails(p => new Set([...p, emailId]));
+  await fetch('/api/inbox/mark-read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenant_id: tenant.id, email_id: emailId }),
+  });
+};
+Update the email card onClick to call markAsRead:
+typescriptonClick={() => {
+  setSelectedId(e.id);
+  if (useRealEmails) {
+    fetchOrGenerateDraft(String(e.id));
+    markAsRead(String(e.id));
+  }
+}}
+Update handleApprove — after setToast('Reply sent via Gmail ✓'), also add:
+typescriptsetSentEmails(p => new Set([...p, emailId]));
+Update emailSource map to include is_read and is_sent:
+typescriptconst emailSource = useRealEmails ? realEmails.map((e: any) => ({
+  id: e.id,
+  sender: e.from_name || e.from_email,
+  email: e.from_email,
+  subject: e.subject || '(no subject)',
+  preview: e.body_preview || '',
+  time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
+  tags: [],
+  body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• '),
+  aiSummary: '',
+  draft: '',
+  is_read: e.is_read || readEmails.has(String(e.id)),
+  is_sent: sentEmails.has(String(e.id)) || aiDrafts[String(e.id)]?.status === 'sent',
+})) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false })) : [];
+Update FilterType to include 'Completed':
+typescripttype FilterType = 'All' | 'Urgent' | 'New Lead' | 'Support' | 'Completed';
+Update filterCounts and filtered to handle Completed and hide sent from All:
+typescriptconst filterCounts: Record<FilterType, number> = {
+  All: emailSource.filter(e => !e.is_sent).length,
+  Urgent: emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'Urgent')).length,
+  'New Lead': emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'New Lead')).length,
+  Support: emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'Support')).length,
+  Completed: emailSource.filter(e => e.is_sent).length,
+};
+
+const filtered = activeFilter === 'Completed'
+  ? emailSource.filter(e => e.is_sent)
+  : activeFilter === 'All'
+  ? emailSource.filter(e => !e.is_sent)
+  : emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === activeFilter));
+Add 'Completed' to the filter pills array:
+typescript{(['All', 'Urgent', 'New Lead', 'Support', 'Completed'] as FilterType[]).map((f) => (
+Update the email card to show unread styling and sent styling:
+typescript<button
+  key={e.id}
+  className={`email-card${selectedId === e.id ? ' selected' : ''}${!e.is_read ? ' unread' : ''}${e.is_sent ? ' sent' : ''}`}
+  onClick={() => { ... }}
+>
+Update the Approve & Send button — already handled in previous phase, but also make the draft textarea readOnly when sent:
+typescript<textarea
+  className="draft-textarea"
+  readOnly={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
+  style={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? { background: '#f9f9f9', color: '#6e6e73' } : {}}
+  ...
+/>
+Update the Approve & Send button:
+typescript<button
+  className={`action-btn ${aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? 'sent' : 'primary'}`}
+  onClick={handleApprove}
+  disabled={sending || aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
+>
+  {sending ? 'Sending...' : aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? '✓ Sent' : 'Approve & Send'}
+</button>
+Add to InboxAssistantPage.css:
+css.email-card.unread .email-sender { font-weight: 700; }
+.email-card.unread .email-subject { font-weight: 600; }
+.email-card.unread::before { content: ''; display: block; width: 7px; height: 7px; background: #4F8EF7; border-radius: 50%; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+.email-card { position: relative; }
+.email-card.sent { opacity: 0.6; }
+.action-btn.sent { background: #34C759 !important; border-color: #34C759 !important; color: #fff !important; cursor: default; }

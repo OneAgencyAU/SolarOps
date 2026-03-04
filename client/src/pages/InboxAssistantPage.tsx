@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/InboxAssistantPage.css';
 
-type FilterType = 'All' | 'Urgent' | 'New Lead' | 'Support';
+type FilterType = 'All' | 'Urgent' | 'New Lead' | 'Support' | 'Completed';
 
 interface Email {
   id: number;
@@ -161,6 +161,8 @@ export default function InboxAssistantPage() {
   const [aiDrafts, setAiDrafts] = useState<Record<string, { id: string; draft_text: string; ai_summary: string; status: string }>>({});
   const [draftLoading, setDraftLoading] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
+  const [sentEmails, setSentEmails] = useState<Set<string>>(new Set());
+  const [readEmails, setReadEmails] = useState<Set<string>>(new Set());
 
   const fetchConnections = async () => {
     if (!tenant?.id) return;
@@ -212,6 +214,16 @@ export default function InboxAssistantPage() {
     setAiDrafts({});
   };
 
+  const markAsRead = async (emailId: string) => {
+    if (readEmails.has(emailId) || !tenant?.id) return;
+    setReadEmails(p => new Set([...p, emailId]));
+    await fetch('/api/inbox/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenant.id, email_id: emailId }),
+    });
+  };
+
   const handleSync = async () => {
     if (!tenant?.id) return;
     setSyncing(true);
@@ -252,21 +264,25 @@ export default function InboxAssistantPage() {
     body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• '),
     aiSummary: '',
     draft: '',
-  })) : connections.length === 0 ? emails : [];
+    is_read: e.is_read || readEmails.has(String(e.id)),
+    is_sent: sentEmails.has(String(e.id)) || aiDrafts[String(e.id)]?.status === 'sent',
+  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false })) : [];
 
   const selected = emailSource.find((e) => String(e.id) === String(selectedId)) || emailSource[0];
 
   const filterCounts: Record<FilterType, number> = {
-    All: emailSource.length,
-    Urgent: emailSource.filter((e) => e.tags.some((t) => t.label === 'Urgent')).length,
-    'New Lead': emailSource.filter((e) => e.tags.some((t) => t.label === 'New Lead')).length,
-    Support: emailSource.filter((e) => e.tags.some((t) => t.label === 'Support')).length,
+    All: emailSource.filter(e => !e.is_sent).length,
+    Urgent: emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'Urgent')).length,
+    'New Lead': emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'New Lead')).length,
+    Support: emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === 'Support')).length,
+    Completed: emailSource.filter(e => e.is_sent).length,
   };
 
-  const filtered =
-    activeFilter === 'All'
-      ? emailSource
-      : emailSource.filter((e) => e.tags.some((t) => t.label === activeFilter));
+  const filtered = activeFilter === 'Completed'
+    ? emailSource.filter(e => e.is_sent)
+    : activeFilter === 'All'
+    ? emailSource.filter(e => !e.is_sent)
+    : emailSource.filter(e => !e.is_sent && e.tags.some(t => t.label === activeFilter));
 
   const handleApprove = async () => {
     if (!tenant?.id || !selected) return;
@@ -288,6 +304,7 @@ export default function InboxAssistantPage() {
       });
       if (res.ok) {
         setToast('Reply sent via Gmail ✓');
+        setSentEmails(p => new Set([...p, emailId]));
         if (draft) {
           setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
         }
@@ -359,7 +376,7 @@ export default function InboxAssistantPage() {
         <div className="inbox-left">
           <div className="inbox-left-topbar">
             <div className="inbox-filters">
-              {(['All', 'Urgent', 'New Lead', 'Support'] as FilterType[]).map((f) => (
+              {(['All', 'Urgent', 'New Lead', 'Support', 'Completed'] as FilterType[]).map((f) => (
                 <button
                   key={f}
                   className={`filter-pill${activeFilter === f ? ' active' : ''}`}
@@ -380,10 +397,13 @@ export default function InboxAssistantPage() {
             ) : filtered.map((e) => (
               <button
                 key={e.id}
-                className={`email-card${selectedId === e.id ? ' selected' : ''}`}
+                className={`email-card${selectedId === e.id ? ' selected' : ''}${!e.is_read ? ' unread' : ''}${e.is_sent ? ' sent' : ''}`}
                 onClick={() => {
                   setSelectedId(e.id);
-                  if (useRealEmails) fetchOrGenerateDraft(String(e.id));
+                  if (useRealEmails) {
+                    fetchOrGenerateDraft(String(e.id));
+                    markAsRead(String(e.id));
+                  }
                 }}
               >
                 <div className="email-card-top">
@@ -469,6 +489,8 @@ export default function InboxAssistantPage() {
                 ) : (
                   <textarea
                     className="draft-textarea"
+                    readOnly={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
+                    style={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? { background: '#f9f9f9', color: '#6e6e73' } : {}}
                     value={aiDrafts[String(selected?.id)]?.draft_text ?? drafts[String(selected?.id)] ?? ''}
                     onChange={(ev) => {
                       const id = String(selected?.id);
@@ -487,11 +509,11 @@ export default function InboxAssistantPage() {
                     <button className="action-btn secondary">Link to Ticket</button>
                   </div>
                   <button
-                    className="action-btn primary"
+                    className={`action-btn ${aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? 'sent' : 'primary'}`}
                     onClick={handleApprove}
-                    disabled={sending || aiDrafts[String(selected?.id)]?.status === 'sent'}
+                    disabled={sending || aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
                   >
-                    {sending ? 'Sending...' : aiDrafts[String(selected?.id)]?.status === 'sent' ? '✓ Sent' : 'Approve & Send'}
+                    {sending ? 'Sending...' : aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? '✓ Sent' : 'Approve & Send'}
                   </button>
                 </div>
               </div>

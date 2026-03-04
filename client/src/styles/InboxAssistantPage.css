@@ -487,3 +487,9 @@
 .inbox-empty-note { font-size: 0.78rem; color: #aeaeb2; max-width: 380px; line-height: 1.5; }
 .inbox-sync-prompt { padding: 40px 24px; text-align: center; color: #6e6e73; font-size: 0.875rem; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .draft-generating { padding: 24px; text-align: center; color: #6e6e73; font-size: 0.875rem; font-style: italic; }
+.email-card { position: relative; }
+.email-card.unread .email-sender { font-weight: 700; }
+.email-card.unread .email-subject { font-weight: 600; }
+.email-card.unread::before { content: ''; display: block; width: 7px; height: 7px; background: #4F8EF7; border-radius: 50%; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+.email-card.sent { opacity: 0.6; }
+.action-btn.sent { background: #34C759 !important; border-color: #34C759 !important; color: #fff !important; cursor: default; }

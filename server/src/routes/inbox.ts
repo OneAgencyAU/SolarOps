@@ -416,4 +416,47 @@ router.post('/api/inbox/send', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/api/inbox/mark-read', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id, email_id } = req.body;
+    if (!tenant_id || !email_id) { res.status(400).json({ error: 'tenant_id and email_id required' }); return; }
+
+    const { data: emailData } = await supabase
+      .from('inbox_emails')
+      .select('*')
+      .eq('id', email_id)
+      .eq('tenant_id', tenant_id)
+      .single();
+    if (!emailData) { res.status(404).json({ error: 'Email not found' }); return; }
+
+    await supabase.from('inbox_emails').update({ is_read: true }).eq('id', email_id);
+
+    const { data: connections } = await supabase
+      .from('inbox_connections')
+      .select('*')
+      .eq('tenant_id', tenant_id)
+      .eq('provider', 'gmail');
+
+    if (connections && connections.length > 0) {
+      const conn = connections[0];
+      const oauth2Client = getOAuthClient();
+      oauth2Client.setCredentials({
+        access_token: conn.access_token,
+        refresh_token: conn.refresh_token,
+      });
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: emailData.external_id,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Mark Read] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
