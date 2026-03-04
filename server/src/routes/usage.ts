@@ -24,7 +24,9 @@ router.get('/api/usage/summary', async (req: Request, res: Response) => {
       .from('api_usage_log')
       .select('service, cost_usd, status, module');
 
-    if (tenant_id) query = query.eq('tenant_id', tenant_id as string);
+    if (tenant_id) {
+      query = query.or(`tenant_id.eq.${tenant_id},tenant_id.is.null`);
+    }
     if (month && typeof month === 'string') {
       const { start, end } = getMonthRange(month);
       query = query.gte('created_at', start).lt('created_at', end);
@@ -82,7 +84,9 @@ router.get('/api/usage/log', async (req: Request, res: Response) => {
       .order('created_at', { ascending: false })
       .limit(Number(limit));
 
-    if (tenant_id) query = query.eq('tenant_id', tenant_id as string);
+    if (tenant_id) {
+      query = query.or(`tenant_id.eq.${tenant_id},tenant_id.is.null`);
+    }
     if (month && typeof month === 'string') {
       const { start, end } = getMonthRange(month);
       query = query.gte('created_at', start).lt('created_at', end);
@@ -104,7 +108,9 @@ router.get('/api/usage/modules', async (req: Request, res: Response) => {
   try {
     const { tenant_id } = req.query;
     let query = supabase.from('api_usage_log').select('module');
-    if (tenant_id) query = query.eq('tenant_id', tenant_id as string);
+    if (tenant_id) {
+      query = query.or(`tenant_id.eq.${tenant_id},tenant_id.is.null`);
+    }
     const { data, error } = await query;
     if (error) { res.status(500).json({ error: error.message }); return; }
     const modules = [...new Set((data || []).map(r => r.module).filter(Boolean))];

@@ -278,6 +278,7 @@ export default function BillReaderPage() {
     try {
       const checkForm = new FormData();
       checkForm.append('file', file);
+      checkForm.append('tenant_id', tenant?.id || '');
       console.log('[BillReader] Calling /api/bill-reader/check for', file.name);
       const checkRes = await fetch('/api/bill-reader/check', { method: 'POST', body: checkForm });
       const checkData = await checkRes.json();
@@ -292,6 +293,7 @@ export default function BillReaderPage() {
       setStage('extracting');
       const extractForm = new FormData();
       extractForm.append('file', file);
+      extractForm.append('tenant_id', tenant?.id || '');
       console.log('[BillReader] Calling /api/bill-reader/extract');
       const extractRes = await fetch('/api/bill-reader/extract', { method: 'POST', body: extractForm });
 

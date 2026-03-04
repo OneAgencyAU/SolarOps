@@ -118,6 +118,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       return;
     }
 
+    const tenant_id = req.body?.tenant_id || req.query?.tenant_id || null;
     const filename = req.file.originalname;
 
     const BILL_FILENAME_KEYWORDS = [
@@ -188,6 +189,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     const haikuCost = (haikuInputTokens ?? 0) * 0.00000025 + (haikuOutputTokens ?? 0) * 0.00000125;
 
     await logUsage({
+      tenant_id,
       module: 'bill_reader',
       service: 'claude_haiku',
       model: 'claude-haiku-4-5-20251001',
@@ -211,6 +213,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       return;
     }
 
+    const tenant_id = req.body?.tenant_id || req.query?.tenant_id || null;
     const extractStart = Date.now();
 
     const visionClient = getVisionClient();
@@ -240,6 +243,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
     }
 
     await logUsage({
+      tenant_id,
       module: 'bill_reader',
       service: 'google_vision',
       model: null,
@@ -338,6 +342,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       (sonnetInputTokens ?? 0) * 0.000003 + (sonnetOutputTokens ?? 0) * 0.000015;
 
     await logUsage({
+      tenant_id,
       module: 'bill_reader',
       customer_name: extracted.customerName || null,
       retailer: extracted.retailer || null,
