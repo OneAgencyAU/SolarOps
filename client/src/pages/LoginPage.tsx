@@ -142,7 +142,7 @@ export default function LoginPage() {
             <span className="login-badge">⚡ Solar-specific</span>
           </div>
         </div>
-        <div className="login-right-footer">By signing in, you agree to our Terms of Service and Privacy Policy</div>
+        <div className="login-right-footer">By signing in, you agree to our <a href="/terms" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a></div>
       </div>
     </div>
   );
