@@ -359,7 +359,7 @@ export default function InboxAssistantPage() {
                   </div>
                 )}
 
-                <div className="email-body">{selected.body}</div>
+                <div className="email-body" style={{ whiteSpace: 'pre-wrap' }}>{selected.body}</div>
               </div>
 
               {/* Divider */}
