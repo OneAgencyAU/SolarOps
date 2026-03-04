@@ -146,11 +146,11 @@ Sol Energy Team`,
 
 export default function InboxAssistantPage() {
   const { tenant } = useAuth();
-  const [selectedId, setSelectedId] = useState(1);
+  const [selectedId, setSelectedId] = useState<string | number>(1);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
-  const [drafts, setDrafts] = useState<Record<number, string>>(() => {
-    const d: Record<number, string> = {};
-    emails.forEach((e) => (d[e.id] = e.draft));
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => {
+    const d: Record<string, string> = {};
+    emails.forEach((e) => (d[String(e.id)] = e.draft));
     return d;
   });
   const [toast, setToast] = useState<string | null>(null);
@@ -203,8 +203,6 @@ export default function InboxAssistantPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const selected = emails.find((e) => e.id === selectedId)!;
-
   const emailSource = useRealEmails ? realEmails.map((e: any) => ({
     id: e.id,
     sender: e.from_name || e.from_email,
@@ -217,6 +215,8 @@ export default function InboxAssistantPage() {
     aiSummary: '',
     draft: '',
   })) : connections.length === 0 ? emails : [];
+
+  const selected = emailSource.find((e) => String(e.id) === String(selectedId)) || emailSource[0];
 
   const filterCounts: Record<FilterType, number> = {
     All: emailSource.length,
@@ -332,56 +332,62 @@ export default function InboxAssistantPage() {
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="inbox-right" key={selected.id}>
-          {/* Thread */}
-          <div className="thread-section">
-            <div className="thread-header">
-              <div className="thread-subject">{selected.subject}</div>
-              <div className="thread-meta-row">
-                <span className="thread-meta">
-                  {selected.sender} · {selected.email} · Today {selected.time}
-                </span>
-                <div className="thread-badges">
-                  {selected.tags.map((t) => (
-                    <span key={t.label} className={`thread-badge ${t.color}`}>
-                      {t.label}
+        <div className="inbox-right" key={selected?.id}>
+          {selected && (
+            <>
+              {/* Thread */}
+              <div className="thread-section">
+                <div className="thread-header">
+                  <div className="thread-subject">{selected.subject}</div>
+                  <div className="thread-meta-row">
+                    <span className="thread-meta">
+                      {selected.sender} · {selected.email} · Today {selected.time}
                     </span>
-                  ))}
+                    <div className="thread-badges">
+                      {selected.tags.map((t) => (
+                        <span key={t.label} className={`thread-badge ${t.color}`}>
+                          {t.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {selected.aiSummary && (
+                  <div className="ai-summary-box">
+                    <span className="ai-icon">✦</span> AI Summary: {selected.aiSummary}
+                  </div>
+                )}
+
+                <div className="email-body">{selected.body}</div>
+              </div>
+
+              {/* Divider */}
+              <div className="panel-divider" />
+
+              {/* Draft */}
+              <div className="draft-section">
+                <div className="draft-header">
+                  <span className="draft-label">✦ AI Draft</span>
+                  <button className="regen-btn">Regenerate</button>
+                </div>
+                <textarea
+                  className="draft-textarea"
+                  value={drafts[String(selected?.id)] || ''}
+                  onChange={(ev) => setDrafts((p) => ({ ...p, [String(selected?.id)]: ev.target.value }))}
+                />
+                <div className="draft-actions">
+                  <div className="draft-actions-left">
+                    <button className="action-btn secondary">Create Ticket</button>
+                    <button className="action-btn secondary">Link to Ticket</button>
+                  </div>
+                  <button className="action-btn primary" onClick={handleApprove}>
+                    Approve &amp; Send
+                  </button>
                 </div>
               </div>
-            </div>
-
-            <div className="ai-summary-box">
-              <span className="ai-icon">✦</span> AI Summary: {selected.aiSummary}
-            </div>
-
-            <div className="email-body">{selected.body}</div>
-          </div>
-
-          {/* Divider */}
-          <div className="panel-divider" />
-
-          {/* Draft */}
-          <div className="draft-section">
-            <div className="draft-header">
-              <span className="draft-label">✦ AI Draft</span>
-              <button className="regen-btn">Regenerate</button>
-            </div>
-            <textarea
-              className="draft-textarea"
-              value={drafts[selected.id]}
-              onChange={(ev) => setDrafts((p) => ({ ...p, [selected.id]: ev.target.value }))}
-            />
-            <div className="draft-actions">
-              <div className="draft-actions-left">
-                <button className="action-btn secondary">Create Ticket</button>
-                <button className="action-btn secondary">Link to Ticket</button>
-              </div>
-              <button className="action-btn primary" onClick={handleApprove}>
-                Approve &amp; Send
-              </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
       )}
