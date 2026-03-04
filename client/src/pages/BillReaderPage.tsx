@@ -610,9 +610,17 @@ export default function BillReaderPage() {
                 <div className="br-field">
                   <span className="br-field-label">Billing Period</span>
                   <span className="br-field-value">
-                    {extractedData.billingPeriod?.from && extractedData.billingPeriod?.to
-                      ? `${extractedData.billingPeriod.from} — ${extractedData.billingPeriod.to} (${extractedData.billingPeriod.days || '?'} days)`
-                      : '—'}
+                    {(() => {
+                      const from = extractedData.billingPeriod?.from;
+                      const to = extractedData.billingPeriod?.to;
+                      const days = extractedData.billingPeriod?.days
+                        ?? (from && to
+                          ? Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000)
+                          : null);
+                      return from && to
+                        ? `${from} — ${to}${days ? ` (${days} days)` : ''}`
+                        : '—';
+                    })()}
                   </span>
                 </div>
                 <div className="br-field">
