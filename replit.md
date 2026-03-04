@@ -1,6 +1,6 @@
 # SolarOps
 
-Solar operations management platform.
+Solar operations management platform for Australian solar businesses.
 
 ## Tech Stack
 
@@ -8,6 +8,9 @@ Solar operations management platform.
 - **Backend**: Node.js + Express + TypeScript (port 8000)
 - **Database**: Supabase (PostgreSQL) — see database rules below
 - **Auth**: Firebase Authentication (Google Sign-In only)
+- **AI**: Anthropic Claude (Haiku for validation, Sonnet for extraction/drafting)
+- **OCR**: Google Cloud Vision API
+- **Email**: Gmail API (via Google OAuth 2.0)
 - **Routing**: React Router v6
 - **Runner**: `concurrently` starts both dev servers from `npm run dev`
 
@@ -29,7 +32,16 @@ Solar operations management platform.
 │       │   ├── LoginPage.tsx
 │       │   ├── OnboardingPage.tsx
 │       │   ├── DashboardPage.tsx
-│       │   └── PlaceholderPage.tsx
+│       │   ├── BillReaderPage.tsx
+│       │   ├── UsagePage.tsx
+│       │   ├── InboxAssistantPage.tsx
+│       │   ├── VoiceAgentPage.tsx
+│       │   ├── HelpdeskPage.tsx
+│       │   ├── ActivityLogPage.tsx
+│       │   ├── ConnectionsPage.tsx
+│       │   ├── SettingsPage.tsx
+│       │   ├── PrivacyPolicyPage.tsx  # /privacy — no auth required
+│       │   └── TermsOfServicePage.tsx # /terms — no auth required
 │       ├── lib/
 │       │   ├── firebase.ts    # app, auth, googleProvider
 │       │   └── supabase.ts    # supabase client (publishable key)
@@ -40,14 +52,20 @@ Solar operations management platform.
 │       ├── config/
 │       │   └── passport.ts    # Google OAuth strategy (passport-google-oauth20)
 │       └── routes/
-│           └── auth.ts        # Google OAuth endpoints (/api/auth/google/*)
+│           ├── auth.ts        # Google OAuth endpoints (/api/auth/google/*)
+│           ├── billReader.ts  # Bill OCR + extraction endpoints
+│           ├── usage.ts       # API usage log endpoints
+│           └── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
 ├── supabase/
 │   └── migrations/
-│       ├── 001_initial_schema.sql   # tables + RLS enabled
-│       ├── 002_rls_policies.sql     # permissive SELECT policies for anon key
-│       ├── 003_fix_user_id_type.sql # users.id and tenant_memberships.user_id changed to TEXT
-│       ├── 004_add_name_fields.sql  # users.first_name and users.last_name columns added
-│       └── 005_google_connections.sql # google_connections table + unique index + RLS
+│       ├── 001_initial_schema.sql
+│       ├── 002_rls_policies.sql
+│       ├── 003_fix_user_id_type.sql
+│       ├── 004_add_name_fields.sql
+│       ├── 005_google_connections.sql
+│       ├── 006_bill_extractions.sql
+│       ├── 007_api_usage_log.sql
+│       └── 008_bill_extractions_processing_ms.sql
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -65,6 +83,7 @@ Solar operations management platform.
 4. Onboarding: enter business name → server checks for existing `tenant_memberships` row first to prevent duplicate key errors → if none found, creates `tenants` + `tenant_memberships` (role: admin) → redirects to `/dashboard`
 5. If user already has a tenant membership, `/api/onboarding` returns `{ already_exists: true }` and the frontend redirects straight to `/dashboard` without inserting anything
 6. All `/dashboard`, `/voice-agent`, etc. routes require both auth + tenant membership
+7. `/privacy` and `/terms` are accessible without login
 
 ## Database Pattern
 
@@ -92,7 +111,12 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `tenants` — organisations (`id UUID`, `name TEXT`, `slug TEXT UNIQUE`, `created_at`)
 - `users` — mirrors Firebase Auth users (`id TEXT` = Firebase UID, `email`, `display_name`, `avatar_url`, `first_name TEXT`, `last_name TEXT`)
 - `tenant_memberships` — links users to tenants (`tenant_id UUID`, `user_id TEXT`, `role TEXT`)
-- `google_connections` — stores Google OAuth tokens (`id UUID`, `tenant_id UUID FK`, `user_id TEXT FK`, `google_email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `scopes TEXT[]`, `connected_at`, `last_sync`). Unique index on `(tenant_id, user_id)`.
+- `google_connections` — stores Google OAuth tokens for Connections page (`id UUID`, `tenant_id UUID FK`, `user_id TEXT FK`, `google_email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `scopes TEXT[]`, `connected_at`, `last_sync`). Unique index on `(tenant_id, user_id)`.
+- `bill_extractions` — OCR bill results (`id UUID`, `tenant_id UUID`, `customer_name`, `nmi`, `retailer`, `address`, `billing_period_start`, `billing_period_end`, `total_amount`, `daily_avg_kwh`, `supply_charge`, `usage_rate`, `fit_rate`, `solar_detected BOOL`, `battery_detected BOOL`, `meter_type`, `raw_ocr_text`, `confidence_score`, `status`, `processing_ms`, `created_at`)
+- `api_usage_log` — tracks all AI/OCR API calls per tenant (`id UUID`, `tenant_id UUID`, `module TEXT`, `service TEXT`, `model TEXT`, `input_tokens INT`, `output_tokens INT`, `cost_usd NUMERIC`, `status TEXT`, `created_at`). Filtered with `.or(tenant_id.eq.${id},tenant_id.is.null)` to support legacy NULL rows.
+- `inbox_connections` — Gmail OAuth tokens per tenant (`tenant_id UUID`, `provider TEXT`, `email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `token_expiry TIMESTAMPTZ`, `updated_at`). Unique on `(tenant_id, provider)`.
+- `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`). Unique on `(tenant_id, external_id)`.
+- `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
 ## Environment Secrets
@@ -110,54 +134,91 @@ All required secrets are stored in Replit's Secrets pane:
 | `VITE_SUPABASE_URL` | Frontend + Backend |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend |
 | `SUPABASE_SECRET_KEY` | Backend |
-| `GOOGLE_CLIENT_ID` | Backend (OAuth) |
-| `GOOGLE_CLIENT_SECRET` | Backend (OAuth) |
+| `GOOGLE_CLIENT_ID` | Backend (OAuth — Connections page + Gmail inbox) |
+| `GOOGLE_CLIENT_SECRET` | Backend (OAuth — Connections page + Gmail inbox) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Backend (Cloud Vision OCR) |
+| `ANTHROPIC_API_KEY` | Backend (Claude Haiku + Sonnet) |
 | `SESSION_SECRET` | Backend (express-session) |
+| `PRODUCTION_URL` | Backend |
 
-## Pages Built
+## Pages & Features
 
-- `/login` — Redesigned split screen layout. Left column: dark background (#0a0a0f) with animated floating orbs, grid texture, SolarOps wordmark, tagline, 3 stats (18hrs/99.2%/4.2m), 3 feature lines, testimonial quote (Nat Elliott, Sol Energy), Powered by ONE AGENCY footer. Right column: white, Welcome back heading, Continue with Google button, Request access link, 3 trust badges (SOC 2 Ready, Australian, Solar-specific), legal footer. DM Sans font throughout. Fully centered both columns.
-- `/onboarding` — Redesigned split screen matching login page style. Left column: dark background (#0a0a0f), animated floating orbs, SolarOps wordmark, stats row (18hrs/99.2%/4.2m), Step 1 of 2 progress indicator with active "Workspace Setup" + inactive "Connect Tools" pills, description text, Powered by ONE AGENCY footer. Right column: white, "Set up your workspace" form with First name + Last name (side by side), Business name, Industry dropdown (5 solar options), Team size dropdown (5 options), "Create my workspace →" button, "Already have a workspace? Sign in →" link. DM Sans font. Matches login page aesthetic. All existing form logic and field names preserved.
-- `/dashboard` — Bento grid layout with: Today's Summary hero card (white, grid-column 1/5, grid-row 1/2), Weekly Activity line chart (recharts, grid-column 5/13, grid-row 1/2), Emails Drafted, Emails Sent, Avg Response Time stat cards, Voice Agent Live Status card with pulsing dot, Top Enquiry Types donut chart (recharts), Open/Resolved Tickets split card, Recent Activity feed. Summary card shows section label, live date, 3 metric rows (calls/emails/time saved with dividers), and footer links to /helpdesk and /inbox-assistant. All static placeholder data. Time period selector (This Week / This Month / All Time) — UI only, not yet functional.
-- `/voice-agent` — Full configuration UI with two-column layout. Left column: Agent Identity (name, greeting, tone), Business Hours (toggle + time range), Call Routing (New Enquiry + Existing Customer paths), Escalation Settings (phone number, safety keywords tags, escalation message). Right column: Live Script Preview (reactive to greeting input), 3 stat cards (Calls Handled, Avg Call Duration, Callback Requests), Recent Calls log with outcome pills, Phone Number Setup with progress steps, Quick Tips card. Status toggle (LIVE/OFFLINE) in header. Save Configuration button. All UI only — no Vapi/Telnyx integration yet.
-- `/inbox-assistant` — Two-panel layout filling viewport height. Left panel (38%): inbox selector dropdown (support@/sales@/info@), filter pills (All/Urgent/New Lead/Support with counts), 4 clickable email cards with sender, subject, preview, time, tag pills. Right panel (62%): thread header with subject + sender meta + urgency/action badges, AI Summary box (blue tint), email body, divider, AI Draft textarea (editable, per-email state), Regenerate button, action row (Create Ticket, Link to Ticket, Approve & Send). Green success toast on approve. Stats bar above panels. All static placeholder data — no Gmail/API integration yet.
-- `/helpdesk` — Kanban board layout with 4 columns: New, In Progress, Waiting on Customer, Closed. Quick stats bar (Open, Urgent, Overdue, Resolved Today). Search bar + Source and Priority filter pills. 13 ticket cards across columns with ID, title, customer, source icon, priority pill, assignee, SLA timer/overdue indicator. Slide-in ticket detail panel (480px, smooth animation, overlay) with AI Summary box, 4 tabs (Details, Transcript, Notes, Timeline), assignee dropdown. All static placeholder data — no backend connected yet.
-- `/activity-log` — Full activity log table with 15 rows of realistic placeholder data. Stats bar (247 Actions Today, 12 Pending Review, 3 Errors, 99.2% Success Rate). Search + date range dropdown + Module/Type/Status filter pills. Table columns: Time, Module (coloured icon), Action, Details, User/Trigger, Status. Click any row opens slide-in drawer with timestamp, module, details, trigger pill, raw JSON log, Re-run Action + Mark as Reviewed buttons. Pagination footer. Added to sidebar nav between Helpdesk and Connections. All static placeholder data.
-- `/usage` — Usage & Costs page with real API cost data. Header with month selector pill that re-fetches on change. Stats bar (4 cards): Total Spent, Bills Processed, Total API Calls, Budget Remaining (with dynamic progress bar). Cost by Service (3 cards: Google Cloud Vision/blue, Claude Haiku/purple, Claude Sonnet/orange) showing real totals, call counts, and per-call averages from live data. Daily Spend recharts line chart built from real api_usage_log timestamps. Extraction Cost Log table: searches customer/retailer, groups sonnet rows with nearby vision/haiku rows by timestamp proximity; status pills; totals row; disabled Export CSV. Loading skeletons while fetching. Empty state: "No extractions this month." Monthly Budget card: editable budget + alert threshold; dynamic estimated end-of-month from daily rate; "Budget limit (USD/month)" field label (not "Monthly Budget" to avoid duplicate). Fetches GET /api/usage/summary and GET /api/usage/log on mount + month change. Migration: `007_api_usage_log.sql` (must be run manually in Supabase SQL editor). Files: `UsagePage.tsx`, `UsagePage.css`.
-- `/bill-reader` — **COMPLETE**. Two-panel layout. Left panel: file upload dropzone (drag or click, supports JPG/PNG/PDF/HEIC/WebP, max 10MB, multer with file filter); after file selection dropzone is replaced by file card showing filename + size + Remove button + processing states (Checking → Extracting → Extraction complete with confidence score badge); Extract Bill Data button; Recent Extractions list with retailer avatar, customer name, NMI preview, timestamp, and Extracted/Pending Review status pill. Right panel: extracted data view showing customer name, address, confidence score badge, Copy NMI button, Save to Dashboard button; Account Details (NMI highlighted in monospace blue box, Retailer, Customer Name, Property Address, Billing Period, Total Amount); Usage Data (peak/off-peak bar chart, kWh/day average); Tariff & Rates (Supply Charge, Usage Rate, Feed-in Tariff); System Info (solar/battery detected pills, meter type); Raw OCR Text collapsible section; Copy NMI + Push to Simpro (disabled, coming soon) + Save Extraction action buttons. Backend: POST `/api/bill-reader/check` (Google Vision OCR sample → Claude Haiku classification, filename keyword shortcut bypasses Claude, 1500-char sample, confidence threshold 0.3); POST `/api/bill-reader/extract` (Google Vision full OCR → Claude Sonnet structured JSON, markdown code-fence stripping, confidenceScore normalisation 0–1); POST `/api/bill-reader/save` (Supabase `bill_extractions` table). HEIC/HEIF auto-converted to JPEG via `heic-convert`. Model: `claude-sonnet-4-5` for extraction (corrected from invalid `claude-sonnet-4-6-20250627`), `claude-haiku-4-5-20250414` for pre-check. Packages: `@google-cloud/vision`, `multer`, `@anthropic-ai/sdk`, `heic-convert`. Migration: `006_bill_extractions.sql` (run, table exists). Sidebar nav between Inbox Assistant and Helpdesk.
-- `/connections` — Google Workspace OAuth fully integrated using passport-google-oauth20. Real OAuth flow: Connect button initiates Google consent, tokens stored in Supabase `google_connections` table. Connected state shows real email address and relative last-synced time from database. Disconnect endpoint removes row from database. Success/error toasts on redirect. Manage modal with inbox toggles and permissions. Available Connectors 2×2 grid: Microsoft 365, Simpro, Voice Platform, Xero — all Coming Soon. Deployed and working on https://solar-ops.replit.app
-- `/settings` — Two-column scrollable settings page. Left column: Workspace card (business name input, logo upload placeholder, timezone dropdown, industry dropdown, Save Changes button) and Notifications card (5 toggle rows for urgent tickets, callbacks, SLA, daily summary, draft ready; notification email input with Save) and AI Behaviour card (8 rows: Human approval required — locked ON; Auto-tag enquiry type, AI summary on tickets, Suggest escalation, Signature on drafts, Smart follow-up detection — all toggles; Tone preference — pill selector: Professional / Friendly / Formal; Confidence threshold — range slider 60–95%, default 75%; blue info box at bottom). Right column: Team Members card (email + role invite row, 3 member rows with avatar circles, name, email, role pills, You badge, Remove on hover), Billing & Plan card (gradient blue→purple plan card, Active status pill, renewal date, 3 usage stat pills, pilot billing note), Time Saved Calculation card (admin hourly rate, mins per call, mins per email, working hours per day, working days per week, module checkboxes — Voice Agent / Inbox Assistant / Helpdesk, live preview calculation box). All static — no backend connected yet.
+### Live / Production
 
-## Google OAuth Flow
+- `/login` — Split screen. Left: dark with floating orbs, stats, testimonial. Right: white, Google Sign-In, legal links to /terms and /privacy.
+- `/onboarding` — Workspace setup form (first name, last name, business name, industry, team size). Prevents duplicate tenant creation.
+- `/dashboard` — Bento grid with recharts charts. Static placeholder data.
+- `/bill-reader` — **COMPLETE & LIVE**. Full OCR pipeline: Google Cloud Vision → Claude Haiku (validation) → Claude Sonnet (extraction). Supports JPG/PNG/PDF/HEIC/WebP (max 10MB). Extracts NMI, retailer, customer, address, billing period, usage, tariffs, solar/battery detection. Saves to `bill_extractions`. Real stats per tenant (bills processed, accuracy, avg processing time). Sanitisation validates 6 field ranges; nulls out + caps confidence on ≥2 failures.
+- `/usage` — **COMPLETE & LIVE**. Real data from `api_usage_log`. Per-tenant filtering with `.or()` for legacy NULL rows. Module filter pill bar, cost by module breakdown, daily spend recharts line chart, monthly budget tracker. Extraction cost log table. Limit 100 rows.
+- `/inbox-assistant` — **COMPLETE & LIVE**. Gmail OAuth flow at `/api/auth/gmail`. Syncs 20 emails, upserts to `inbox_emails`. AI draft generation (Claude Sonnet) + summary via `/api/inbox/draft`. Approve & send via Gmail API (`/api/inbox/send`). Mark as read in Gmail (`/api/inbox/mark-read`). Unread indicator (blue dot, bold text). Completed tab for sent emails (hidden from All filter). Disconnect clears Supabase emails + drafts. Auto-polls every 3 minutes. Draft textarea is read-only after sending.
+- `/connections` — Google Workspace OAuth (passport-google-oauth20). Tokens stored in `google_connections`. Connect/disconnect working.
+- `/voice-agent` — UI only. Agent config, script preview, stats, recent calls. No Vapi/Telnyx integration.
+- `/helpdesk` — UI only. Kanban board, ticket detail panel. No backend connected.
+- `/activity-log` — UI only. Log table with drawer. No backend connected.
+- `/settings` — UI only. Workspace, notifications, AI behaviour, team, billing, time-saved cards. No backend connected.
+- `/privacy` — Privacy Policy page. No auth required.
+- `/terms` — Terms of Service page. No auth required.
 
-1. User clicks "Connect" on Google Workspace card → `GET /api/auth/google?tenant_id=X&user_id=Y`
-2. Server stores `firebaseUid` in session, passes `tenant_id` as OAuth `state` parameter
-3. Redirects to Google consent screen (scopes: profile, email, gmail.readonly, gmail.compose)
-4. Google redirects back to `GET /api/auth/google/callback`
-5. Passport strategy extracts `state` (tenant_id) and `session.firebaseUid`, upserts into `google_connections`
-6. On success: redirects to `/connections?connected=true` → frontend shows green toast
-7. On failure: redirects to `/connections?error=auth_failed` → frontend shows red toast
-8. Callback URL hardcoded to `https://solarops.com.au/api/auth/google/callback` (register both this and `https://solar-ops.replit.app/api/auth/google/callback` in GCP)
+## API Routes
 
-## Integrations Complete
-- **Google OAuth (Gmail)**: `passport-google-oauth20` + `express-session`. Scopes: profile, email, gmail.readonly, gmail.compose. Tokens upserted into Supabase `google_connections` table. Callback URL: `https://solarops.com.au/api/auth/google/callback` (also register `https://solar-ops.replit.app/api/auth/google/callback` in GCP for Replit domain access). Working on production deployment.
+### Bill Reader (`/api/bill-reader`)
+- `POST /check` — Google Vision sample OCR → Claude Haiku validation. Returns `{ isBill, confidence, reason }`.
+- `POST /extract` — Google Vision full OCR → Claude Sonnet structured extraction. Returns full bill fields + confidence score.
+- `POST /save` — Saves extraction result to `bill_extractions` table.
 
-## Integrations Pending
-- Voice Agent: Vapi.ai or Telnyx (decision: use Vapi for prototype, migrate to Telnyx for production). Needs: API key, phone number provisioning, webhook endpoint for call transcripts.
-- Inbox Assistant: Uses Google OAuth tokens stored in `google_connections` table (Gmail read + compose scopes already granted)
+### Usage (`/api/usage`)
+- `GET /summary` — Aggregated cost totals by service for a given month + tenant.
+- `GET /log` — Paginated extraction log (up to 100 rows) for a given month + tenant.
+- `GET /daily` — Daily spend aggregation for recharts chart.
+- `GET /by_module` — Cost breakdown by module (bill_reader, inbox_assistant, etc.).
 
-## UI Components & Design Tokens
+### Inbox (`/api/inbox` + `/api/auth/gmail`)
+- `GET /api/auth/gmail` — Initiates Gmail OAuth flow.
+- `GET /api/auth/gmail/callback` — OAuth callback, stores tokens in `inbox_connections`.
+- `GET /api/inbox/connections` — Lists active connections for a tenant.
+- `DELETE /api/inbox/connections/:provider` — Disconnects a provider.
+- `POST /api/inbox/sync` — Fetches 20 emails from Gmail, upserts to `inbox_emails`.
+- `GET /api/inbox/emails` — Returns stored emails for a tenant.
+- `DELETE /api/inbox/emails` — Deletes all emails + drafts for a tenant (used on disconnect).
+- `POST /api/inbox/draft` — Generates AI summary + draft reply via Claude Sonnet, saves to `inbox_drafts`. Returns existing draft if already generated.
+- `DELETE /api/inbox/drafts/:id` — Deletes a specific draft.
+- `POST /api/inbox/send` — Sends reply via Gmail API, marks draft as sent + email as read.
+- `POST /api/inbox/mark-read` — Marks email as read in Supabase + removes UNREAD label in Gmail.
 
-- **recharts** installed for `LineChart` and `PieChart` (donut)
-- **Bento grid**: CSS Grid 12-column, `gap: 16px`, named grid positions per card
-- **Hero card**: `#4F8EF7` background, white text, radial white glow top-right
-- **Stat cards**: white, `border-radius: 20px`, `box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)`
-- **Hover effect on stat cards**: `transform: translateY(-2px)`, shadow increase
-- **Pulsing dot animation**: CSS `@keyframes pulse`, opacity `1→0.4→1`, 2s infinite
-- **Activity feed rows**: hover background `#f5f5f7`, bottom border `1px solid #f5f5f7`
-- **Time period pills**: active = `#1d1d1f` background + white text; inactive = transparent + `#6e6e73`
-- **Design colours**: `#1d1d1f` (primary text), `#6e6e73` (secondary), `#4F8EF7` (accent blue), `#34C759` (green), `#FF453A` (red), `#f5f5f7` (page bg), `#ffffff` (card bg), `#e5e5e7` (borders)
-- **Mobile**: all bento cards stack to `grid-column: 1 / -1` under 768px
+## AI Models
+
+- `claude-haiku-4-5-20251001` — Bill pre-check (fast/cheap validation)
+- `claude-sonnet-4-5` — Bill extraction + inbox draft generation
+- Google Cloud Vision — Full OCR for bill images/PDFs
+
+## Sanity Check Ranges (Bill Extraction)
+
+Nulls out fields + caps confidence if ≥2 failures:
+- Supply charge: $0.30–$5/day
+- Usage rate: 5–60 c/kWh
+- Feed-in tariff: 1–20 c/kWh
+- Total amount: $10–$5,000
+- Daily avg: 0.5–150 kWh/day
+
+## Google OAuth Flows
+
+### Connections Page (google_connections)
+1. `GET /api/auth/google?tenant_id=X&user_id=Y` → Google consent
+2. Callback upserts tokens into `google_connections`
+3. Redirect to `/connections?connected=true`
+4. Callback URL: `https://solarops.com.au/api/auth/google/callback`
+
+### Gmail Inbox (inbox_connections)
+1. `GET /api/auth/gmail?tenant_id=X` → Google consent (gmail.readonly + gmail.send)
+2. Callback upserts tokens into `inbox_connections`
+3. Redirect to `https://solarops.com.au/inbox?connected=gmail`
+
+## Design Tokens
+
+- **Colours**: `#1d1d1f` (primary), `#6e6e73` (secondary), `#4F8EF7` (blue), `#34C759` (green), `#FF453A` (red), `#f5f5f7` (page bg), `#ffffff` (card bg), `#e5e5e7` (borders)
+- **Font**: Inter (UI), DM Sans (login/onboarding)
+- **Cards**: `border-radius: 20px`, `box-shadow: 0 2px 12px rgba(0,0,0,0.06)`
+- **Charts**: recharts `LineChart`, `PieChart` (donut)
 
 ## Development
 
@@ -172,12 +233,10 @@ npm run dev:server # Express only (tsx watch)
 - **Production URL**: https://solarops.com.au
 - **Backup URL**: https://solar-ops.replit.app
 - **Platform**: Replit Autoscale (1 vCPU, 0.5 GB RAM, 1 max machine)
-- **Google OAuth callback**: https://solarops.com.au/api/auth/google/callback
-- **Firebase authorised domain**: solarops.com.au (add in Firebase Console → Authentication → Settings → Authorised domains)
-- **Google Cloud authorised origins**: solarops.com.au (add in GCP → APIs & Services → OAuth 2.0 credentials → Authorised JavaScript origins)
 - **Build command**: `npm install && npx vite build && npx tsc -p tsconfig.server.json`
 - **Run command**: `node dist/server/src/index.js`
 - **Static files**: React builds to `dist/client/`, served by Express in production
+- **Dev**: Express PORT=8000, Vite on 5000. Production: Express PORT=5000 serving static `dist/client`
 
 ## Version Control
 - GitHub connected
@@ -185,9 +244,11 @@ npm run dev:server # Express only (tsx watch)
 - Never commit .env or secrets
 - Branch strategy: main only for now
 
-## What's Next
+## What's Next (Pending)
 
-- **Bill Reader**: COMPLETE — file upload, OCR, AI extraction, save to Supabase all working
-- **Next priority (choose one)**:
-  1. Push to Simpro — wire up the disabled "Push to Simpro" button on the Bill Reader to the Simpro API, creating a job/site record from extracted bill data
-  2. Inbox Assistant — connect real Gmail data using the stored Google OAuth tokens in `google_connections` table (scopes already granted: gmail.readonly, gmail.compose)
+- **Push to Simpro** — Wire up disabled "Push to Simpro" button on Bill Reader to Simpro API
+- **Voice Agent** — Vapi.ai integration for real call handling
+- **Helpdesk** — Backend ticket management (create, update, assign)
+- **Activity Log** — Real data from audit trail
+- **Settings** — Save workspace/notification/AI settings to Supabase
+- **Inbox: Outlook** — Microsoft Graph API integration (currently shows "Coming Soon")
