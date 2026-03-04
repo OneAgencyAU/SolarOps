@@ -158,6 +158,8 @@ export default function InboxAssistantPage() {
   const [syncing, setSyncing] = useState(false);
   const [realEmails, setRealEmails] = useState<any[]>([]);
   const [useRealEmails, setUseRealEmails] = useState(false);
+  const [aiDrafts, setAiDrafts] = useState<Record<string, { id: string; draft_text: string; ai_summary: string; status: string }>>({});
+  const [draftLoading, setDraftLoading] = useState<Record<string, boolean>>({});
 
   const fetchConnections = async () => {
     if (!tenant?.id) return;
@@ -172,6 +174,35 @@ export default function InboxAssistantPage() {
       const data = await res.json();
       if (data.length > 0) { setRealEmails(data); setUseRealEmails(true); }
     }
+  };
+
+  const fetchOrGenerateDraft = async (emailId: string) => {
+    if (!tenant?.id || aiDrafts[emailId]) return;
+    setDraftLoading(p => ({ ...p, [emailId]: true }));
+    try {
+      const res = await fetch('/api/inbox/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_id: emailId, tenant_id: tenant.id }),
+      });
+      if (res.ok) {
+        const draft = await res.json();
+        setAiDrafts(p => ({ ...p, [emailId]: draft }));
+      }
+    } catch (e) { console.error('Draft fetch failed', e); }
+    finally { setDraftLoading(p => ({ ...p, [emailId]: false })); }
+  };
+
+  const handleDisconnect = async (provider: string) => {
+    if (!tenant?.id) return;
+    await fetch(`/api/inbox/connections/${provider}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenant.id }),
+    });
+    setConnections([]);
+    setRealEmails([]);
+    setUseRealEmails(false);
   };
 
   const handleSync = async () => {
@@ -248,6 +279,12 @@ export default function InboxAssistantPage() {
             {connections.map(c => (
               <span key={c.provider} className="inbox-connected-pill">
                 {c.email} connected
+                <button
+                  onClick={() => handleDisconnect(c.provider)}
+                  style={{ marginLeft: 8, background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '0.75rem' }}
+                >
+                  Disconnect
+                </button>
               </span>
             ))}
             <button className="inbox-sync-btn" onClick={handleSync} disabled={syncing}>
@@ -311,7 +348,10 @@ export default function InboxAssistantPage() {
               <button
                 key={e.id}
                 className={`email-card${selectedId === e.id ? ' selected' : ''}`}
-                onClick={() => setSelectedId(e.id)}
+                onClick={() => {
+                  setSelectedId(e.id);
+                  if (useRealEmails) fetchOrGenerateDraft(String(e.id));
+                }}
               >
                 <div className="email-card-top">
                   <span className="email-sender">{e.sender}</span>
@@ -353,9 +393,9 @@ export default function InboxAssistantPage() {
                   </div>
                 </div>
 
-                {selected.aiSummary && (
+                {(selected.aiSummary || aiDrafts[String(selected?.id)]?.ai_summary) && (
                   <div className="ai-summary-box">
-                    <span className="ai-icon">✦</span> AI Summary: {selected.aiSummary}
+                    <span className="ai-icon">✦</span> AI Summary: {aiDrafts[String(selected?.id)]?.ai_summary || selected.aiSummary}
                   </div>
                 )}
 
@@ -369,13 +409,45 @@ export default function InboxAssistantPage() {
               <div className="draft-section">
                 <div className="draft-header">
                   <span className="draft-label">✦ AI Draft</span>
-                  <button className="regen-btn">Regenerate</button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="regen-btn" onClick={() => {
+                      if (useRealEmails && selected?.id) {
+                        const id = String(selected.id);
+                        setAiDrafts(p => { const n = { ...p }; delete n[id]; return n; });
+                        fetchOrGenerateDraft(id);
+                      }
+                    }}>Regenerate</button>
+                    {aiDrafts[String(selected?.id)] && (
+                      <button className="regen-btn" style={{ color: '#ff3b30' }} onClick={async () => {
+                        const draft = aiDrafts[String(selected?.id)];
+                        if (!draft || !tenant?.id) return;
+                        await fetch(`/api/inbox/drafts/${draft.id}`, {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ tenant_id: tenant.id }),
+                        });
+                        setAiDrafts(p => { const n = { ...p }; delete n[String(selected?.id)]; return n; });
+                      }}>Delete Draft</button>
+                    )}
+                  </div>
                 </div>
-                <textarea
-                  className="draft-textarea"
-                  value={drafts[String(selected?.id)] || ''}
-                  onChange={(ev) => setDrafts((p) => ({ ...p, [String(selected?.id)]: ev.target.value }))}
-                />
+                {draftLoading[String(selected?.id)] ? (
+                  <div className="draft-generating">✦ Generating AI draft...</div>
+                ) : (
+                  <textarea
+                    className="draft-textarea"
+                    value={aiDrafts[String(selected?.id)]?.draft_text ?? drafts[String(selected?.id)] ?? ''}
+                    onChange={(ev) => {
+                      const id = String(selected?.id);
+                      if (aiDrafts[id]) {
+                        setAiDrafts(p => ({ ...p, [id]: { ...p[id], draft_text: ev.target.value } }));
+                      } else {
+                        setDrafts(p => ({ ...p, [id]: ev.target.value }));
+                      }
+                    }}
+                    placeholder={useRealEmails ? 'Click an email to generate an AI draft' : ''}
+                  />
+                )}
                 <div className="draft-actions">
                   <div className="draft-actions-left">
                     <button className="action-btn secondary">Create Ticket</button>

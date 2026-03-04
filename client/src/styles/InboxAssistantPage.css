@@ -486,3 +486,4 @@
 .inbox-provider-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .inbox-empty-note { font-size: 0.78rem; color: #aeaeb2; max-width: 380px; line-height: 1.5; }
 .inbox-sync-prompt { padding: 40px 24px; text-align: center; color: #6e6e73; font-size: 0.875rem; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.draft-generating { padding: 24px; text-align: center; color: #6e6e73; font-size: 0.875rem; font-style: italic; }

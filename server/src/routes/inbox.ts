@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
+import Anthropic from '@anthropic-ai/sdk';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -8,6 +9,10 @@ const supabase = createClient(
 );
 
 const router = Router();
+
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -201,6 +206,117 @@ router.delete('/api/inbox/connections/:provider', async (req: Request, res: Resp
     .eq('provider', provider);
   if (error) { res.status(500).json({ error: error.message }); return; }
   res.json({ success: true });
+});
+
+router.post('/api/inbox/draft', async (req: Request, res: Response) => {
+  try {
+    const { email_id, tenant_id } = req.body;
+    if (!email_id || !tenant_id) { res.status(400).json({ error: 'email_id and tenant_id required' }); return; }
+
+    const { data: emailData, error: emailError } = await supabase
+      .from('inbox_emails')
+      .select('*')
+      .eq('id', email_id)
+      .eq('tenant_id', tenant_id)
+      .single();
+
+    if (emailError || !emailData) { res.status(404).json({ error: 'Email not found' }); return; }
+
+    const { data: existingDraft } = await supabase
+      .from('inbox_drafts')
+      .select('*')
+      .eq('email_id', email_id)
+      .eq('tenant_id', tenant_id)
+      .single();
+
+    if (existingDraft) { res.json(existingDraft); return; }
+
+    const anthropic = getAnthropicClient();
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: `You are an assistant for Sol Energy, an Australian solar installation company. 
+
+Read this incoming email and:
+1. Write a short AI summary (1-2 sentences, what the person wants)
+2. Write a professional, warm draft reply in Sol Energy's voice
+
+Rules for the draft:
+- Friendly but professional Australian tone
+- Never make up pricing, rebate amounts, or technical specs
+- If it's a new enquiry, ask for their electricity bill and a good time to call
+- If it's a support issue, acknowledge the problem and offer to help
+- Sign off as "Sol Energy Team"
+- Keep it concise — 3-5 short paragraphs max
+
+From: ${emailData.from_name || emailData.from_email}
+Subject: ${emailData.subject}
+Email body:
+${emailData.body_text}
+
+Respond with JSON only:
+{
+  "summary": "1-2 sentence summary",
+  "draft": "full reply text"
+}`,
+      }],
+    });
+
+    const textBlock = message.content.find(b => b.type === 'text');
+    const raw = textBlock?.text || '{}';
+    const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    let parsed: any = {};
+    try { parsed = JSON.parse(stripped); } catch { parsed = { summary: '', draft: raw }; }
+
+    const { data: draft, error: draftError } = await supabase
+      .from('inbox_drafts')
+      .insert({
+        tenant_id,
+        email_id,
+        draft_text: parsed.draft || '',
+        ai_summary: parsed.summary || '',
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (draftError) { res.status(500).json({ error: draftError.message }); return; }
+
+    const inputTokens = message.usage?.input_tokens ?? 0;
+    const outputTokens = message.usage?.output_tokens ?? 0;
+    const cost = inputTokens * 0.000003 + outputTokens * 0.000015;
+    await supabase.from('api_usage_log').insert({
+      tenant_id,
+      module: 'inbox_assistant',
+      service: 'claude_sonnet',
+      model: 'claude-sonnet-4-5',
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cost_usd: cost,
+      status: 'success',
+    });
+
+    res.json(draft);
+  } catch (err: any) {
+    console.error('[Inbox Draft] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/api/inbox/drafts/:id', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id } = req.body;
+    const { id } = req.params;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    const { error } = await supabase.from('inbox_drafts').delete().eq('id', id).eq('tenant_id', tenant_id);
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
