@@ -212,6 +212,12 @@ export default function BillReaderPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const normaliseConfidence = (score: number | undefined | null): number => {
+    if (score == null) return 0;
+    if (score > 1) return score / 100;
+    return score;
+  };
+
   const handleExtract = async () => {
     if (!file) return;
 
@@ -219,8 +225,10 @@ export default function BillReaderPage() {
     try {
       const checkForm = new FormData();
       checkForm.append('file', file);
+      console.log('[BillReader] Calling /api/bill-reader/check for', file.name);
       const checkRes = await fetch('/api/bill-reader/check', { method: 'POST', body: checkForm });
       const checkData = await checkRes.json();
+      console.log('[BillReader] Check result:', checkData);
 
       if (!checkData.isBill) {
         setStage('not-bill');
@@ -231,14 +239,39 @@ export default function BillReaderPage() {
       setStage('extracting');
       const extractForm = new FormData();
       extractForm.append('file', file);
+      console.log('[BillReader] Calling /api/bill-reader/extract');
       const extractRes = await fetch('/api/bill-reader/extract', { method: 'POST', body: extractForm });
-      const extractResult = await extractRes.json();
 
-      setExtractedData(extractResult.extracted);
+      if (!extractRes.ok) {
+        const errData = await extractRes.json();
+        console.error('[BillReader] Extract HTTP error:', extractRes.status, errData);
+        setStage('not-bill');
+        setCheckReason(errData.error || 'Extraction failed. Please try again.');
+        return;
+      }
+
+      const extractResult = await extractRes.json();
+      console.log('[BillReader] Extract result:', extractResult);
+      console.log('[BillReader] Extracted fields:', extractResult.extracted);
+      console.log('[BillReader] Raw OCR length:', extractResult.rawOcrText?.length);
+
+      if (!extractResult.extracted || Object.keys(extractResult.extracted).length === 0) {
+        console.error('[BillReader] Empty extracted data');
+        setStage('not-bill');
+        setCheckReason('Could not parse bill data. Please try a clearer image.');
+        return;
+      }
+
+      const data = {
+        ...extractResult.extracted,
+        confidenceScore: normaliseConfidence(extractResult.extracted?.confidenceScore),
+      };
+      console.log('[BillReader] Final data going to state:', data);
+      setExtractedData(data);
       setRawOcr(extractResult.rawOcrText || '');
       setStage('complete');
     } catch (err) {
-      console.error('Extract error:', err);
+      console.error('[BillReader] Extract error:', err);
       setStage('not-bill');
       setCheckReason('An error occurred during processing. Please try again.');
     }

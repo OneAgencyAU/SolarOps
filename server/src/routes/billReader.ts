@@ -46,6 +46,16 @@ function getAnthropicClient() {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
+function parseClaudeJson(raw: string): any {
+  const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  try {
+    return JSON.parse(stripped);
+  } catch {
+    console.error('[Bill Reader] JSON parse failed. Raw Claude response:', raw);
+    return {};
+  }
+}
+
 async function convertHeicToJpeg(buffer: Buffer): Promise<Buffer> {
   const convert = (await import('heic-convert')).default;
   const arrayBuffer = buffer.buffer.slice(
@@ -130,7 +140,9 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
 
     const textBlock = message.content.find((b) => b.type === 'text');
     const raw = textBlock?.text || '{}';
-    const classification = JSON.parse(raw);
+    console.log('[Bill Reader] Check raw Claude response:', raw);
+    const classification = parseClaudeJson(raw);
+    console.log('[Bill Reader] Check parsed:', classification);
 
     if (!classification.isBill && (classification.confidence ?? 1) >= 0.3) {
       classification.isBill = true;
@@ -190,8 +202,19 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
 
     const textBlock = message.content.find((b) => b.type === 'text');
     const raw = textBlock?.text || '{}';
-    const extracted = JSON.parse(raw);
+    console.log('[Bill Reader] Extract raw Claude response:', raw);
+    const extracted = parseClaudeJson(raw);
+    console.log('[Bill Reader] Extract parsed fields:', JSON.stringify(extracted, null, 2));
 
+    if (extracted.confidenceScore !== undefined) {
+      if (extracted.confidenceScore > 1) {
+        extracted.confidenceScore = extracted.confidenceScore / 100;
+      }
+    } else {
+      extracted.confidenceScore = 0.85;
+    }
+
+    console.log('[Bill Reader] Final confidenceScore:', extracted.confidenceScore);
     res.json({ extracted, rawOcrText: fullText });
   } catch (err: any) {
     console.error('[Bill Reader] Extract error:', err);
