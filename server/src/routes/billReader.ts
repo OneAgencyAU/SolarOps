@@ -76,6 +76,18 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     }
 
     const filename = req.file.originalname;
+
+    const BILL_FILENAME_KEYWORDS = [
+      'agl', 'origin', 'amber', 'energyaustralia', 'alinta', 'ergon',
+      'powershop', 'redenergy', 'actewagl', 'endeavour', 'bill',
+      'electricity', 'invoice', 'energy',
+    ];
+    const lowerFilename = filename.toLowerCase();
+    if (BILL_FILENAME_KEYWORDS.some((kw) => lowerFilename.includes(kw))) {
+      res.json({ isBill: true, confidence: 1.0, reason: 'Filename indicates an electricity bill or energy document.' });
+      return;
+    }
+
     const visionClient = getVisionClient();
 
     let sampleText = '';
