@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import passport from './config/passport';
 import authRoutes from './routes/auth';
 import billReaderRoutes from './routes/billReader';
+import usageRoutes from './routes/usage';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +30,7 @@ app.use(passport.session());
 
 app.use(authRoutes);
 app.use(billReaderRoutes);
+app.use(usageRoutes);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });

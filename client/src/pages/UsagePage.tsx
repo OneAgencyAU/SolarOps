@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -10,68 +10,205 @@ import {
 } from 'recharts';
 import '../styles/UsagePage.css';
 
-const dailyData = [
-  { day: '1', cost: 0.12 }, { day: '2', cost: 0.08 }, { day: '3', cost: 0.41 },
-  { day: '4', cost: 0.55 }, { day: '5', cost: 0.62 }, { day: '6', cost: 0.47 },
-  { day: '7', cost: 0.18 }, { day: '8', cost: 0.07 }, { day: '9', cost: 0.38 },
-  { day: '10', cost: 0.71 }, { day: '11', cost: 0.58 }, { day: '12', cost: 0.44 },
-  { day: '13', cost: 0.63 }, { day: '14', cost: 0.79 }, { day: '15', cost: 0.11 },
-  { day: '16', cost: 0.06 }, { day: '17', cost: 0.52 }, { day: '18', cost: 0.34 },
-  { day: '19', cost: 0.48 }, { day: '20', cost: 0.61 }, { day: '21', cost: 0.39 },
-  { day: '22', cost: 0.09 }, { day: '23', cost: 0.05 }, { day: '24', cost: 0.28 },
-  { day: '25', cost: 0.45 }, { day: '26', cost: 0.37 }, { day: '27', cost: 0.22 },
-  { day: '28', cost: 0.14 }, { day: '29', cost: 0.10 }, { day: '30', cost: 0.08 },
-  { day: '31', cost: 0.00 },
-];
-
-interface LogRow {
-  time: string;
-  customer: string;
-  retailer: string;
-  vision: number;
-  haiku: number;
-  sonnet: number;
-  status: 'extracted' | 'failed' | 'pending';
-}
-
-const logRows: LogRow[] = [
-  { time: 'Today 10:23am', customer: 'James Hartley', retailer: 'AGL', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: 'Today 9:41am', customer: 'Rachel Wong', retailer: 'Origin Energy', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: 'Yesterday 4:02pm', customer: 'Mark Deluca', retailer: 'Amber Electric', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'pending' },
-  { time: 'Yesterday 1:17pm', customer: 'Priya Sharma', retailer: 'AGL', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: 'Yesterday 11:55am', customer: 'Mike Chen', retailer: 'Energy Australia', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: '28 Feb 3:30pm', customer: 'Sophie Turner', retailer: 'SA Power Networks', vision: 0.0015, haiku: 0.0002, sonnet: 0.0000, status: 'failed' },
-  { time: '28 Feb 2:14pm', customer: 'Liam Nguyen', retailer: 'Red Energy', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: '27 Feb 9:03am', customer: 'Emily Zhao', retailer: 'Origin Energy', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: '26 Feb 11:40am', customer: 'Ben McAllister', retailer: 'AGL', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-  { time: '25 Feb 8:22am', customer: 'Chloe Park', retailer: 'Amber Electric', vision: 0.0015, haiku: 0.0002, sonnet: 0.0178, status: 'extracted' },
-];
-
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
+interface SummaryService {
+  service: string;
+  total_cost: number;
+  total_calls: number;
+  per_call: number;
+}
+
+interface Summary {
+  total_cost: number;
+  total_calls: number;
+  bills_processed: number;
+  by_service: SummaryService[];
+}
+
+interface LogEntry {
+  id: string;
+  created_at: string;
+  module: string;
+  customer_name: string | null;
+  retailer: string | null;
+  service: string;
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number;
+  status: string;
+}
+
+interface DailyPoint {
+  day: string;
+  cost: number;
+}
+
+function buildDailyChart(logs: LogEntry[], year: number, month: number): DailyPoint[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const map: Record<number, number> = {};
+  for (const l of logs) {
+    const d = new Date(l.created_at);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      map[day] = (map[day] || 0) + Number(l.cost_usd);
+    }
+  }
+  return Array.from({ length: daysInMonth }, (_, i) => ({
+    day: String(i + 1),
+    cost: Number((map[i + 1] || 0).toFixed(4)),
+  }));
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (diffDays === 0) return `Today ${time}`;
+  if (diffDays === 1) return `Yesterday ${time}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)} ${time}`;
+}
+
+function getServiceLabel(service: string): string {
+  if (service === 'google_vision') return 'Google Cloud Vision';
+  if (service === 'claude_haiku') return 'Claude Haiku';
+  if (service === 'claude_sonnet') return 'Claude Sonnet';
+  return service;
+}
+
+function getServiceKey(service: string): 'vision' | 'haiku' | 'sonnet' | null {
+  if (service === 'google_vision') return 'vision';
+  if (service === 'claude_haiku') return 'haiku';
+  if (service === 'claude_sonnet') return 'sonnet';
+  return null;
+}
+
+interface GroupedRow {
+  id: string;
+  created_at: string;
+  customer_name: string | null;
+  retailer: string | null;
+  status: string;
+  vision: number;
+  haiku: number;
+  sonnet: number;
+}
+
+function groupLogsByExtraction(logs: LogEntry[]): GroupedRow[] {
+  const sonnetLogs = logs.filter((l) => l.service === 'claude_sonnet');
+  return sonnetLogs.map((sl) => {
+    const near = logs.filter((l) => {
+      const diff = Math.abs(new Date(l.created_at).getTime() - new Date(sl.created_at).getTime());
+      return diff < 120000;
+    });
+    const vision = near.filter((l) => l.service === 'google_vision').reduce((s, l) => s + Number(l.cost_usd), 0);
+    const haiku = near.filter((l) => l.service === 'claude_haiku').reduce((s, l) => s + Number(l.cost_usd), 0);
+    return {
+      id: sl.id,
+      created_at: sl.created_at,
+      customer_name: sl.customer_name,
+      retailer: sl.retailer,
+      status: sl.status,
+      vision,
+      haiku,
+      sonnet: Number(sl.cost_usd),
+    };
+  });
+}
+
+function SkeletonRow() {
+  return (
+    <tr>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <td key={i}>
+          <div style={{ height: 14, borderRadius: 6, background: '#e5e5e7', width: i === 0 ? 90 : i === 1 ? 110 : 70 }} />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
 export default function UsagePage() {
-  const [monthIndex, setMonthIndex] = useState(2);
-  const [year] = useState(2026);
+  const now = new Date();
+  const [monthIndex, setMonthIndex] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
   const [search, setSearch] = useState('');
   const [budget, setBudget] = useState('50.00');
   const [alertThreshold, setAlertThreshold] = useState('80');
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const prevMonth = () => setMonthIndex((m) => (m === 0 ? 11 : m - 1));
-  const nextMonth = () => setMonthIndex((m) => (m === 11 ? 0 : m + 1));
+  const monthParam = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 
-  const filteredRows = logRows.filter(
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [summaryRes, logRes] = await Promise.all([
+        fetch(`/api/usage/summary?month=${monthParam}`),
+        fetch(`/api/usage/log?month=${monthParam}&limit=50`),
+      ]);
+      if (!summaryRes.ok || !logRes.ok) throw new Error('Failed to fetch usage data');
+      const [summaryData, logData] = await Promise.all([summaryRes.json(), logRes.json()]);
+      setSummary(summaryData);
+      setLogs(logData);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load usage data');
+    } finally {
+      setLoading(false);
+    }
+  }, [monthParam]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const prevMonth = () => {
+    setMonthIndex((m) => {
+      if (m === 0) { setYear((y) => y - 1); return 11; }
+      return m - 1;
+    });
+  };
+  const nextMonth = () => {
+    setMonthIndex((m) => {
+      if (m === 11) { setYear((y) => y + 1); return 0; }
+      return m + 1;
+    });
+  };
+
+  const dailyData = buildDailyChart(logs, year, monthIndex);
+  const chartMax = Math.max(...dailyData.map((d) => d.cost), 0.5);
+
+  const svc = (key: string) => summary?.by_service.find((s) => s.service === key);
+  const visionSvc = svc('google_vision');
+  const haikuSvc = svc('claude_haiku');
+  const sonnetSvc = svc('claude_sonnet');
+
+  const budgetNum = parseFloat(budget) || 50;
+  const spent = summary?.total_cost || 0;
+  const remaining = Math.max(budgetNum - spent, 0);
+  const spentPct = budgetNum > 0 ? Math.min((spent / budgetNum) * 100, 100) : 0;
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const dayOfMonth = year === now.getFullYear() && monthIndex === now.getMonth() ? now.getDate() : daysInMonth;
+  const dailyRate = dayOfMonth > 0 ? spent / dayOfMonth : 0;
+  const estimated = dailyRate * daysInMonth;
+
+  const grouped = groupLogsByExtraction(logs);
+  const filtered = grouped.filter(
     (r) =>
-      r.customer.toLowerCase().includes(search.toLowerCase()) ||
-      r.retailer.toLowerCase().includes(search.toLowerCase())
+      (r.customer_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.retailer || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalVision = logRows.reduce((s, r) => s + r.vision, 0);
-  const totalHaiku = logRows.reduce((s, r) => s + r.haiku, 0);
-  const totalSonnet = logRows.reduce((s, r) => s + r.sonnet, 0);
-  const grandTotal = totalVision + totalHaiku + totalSonnet;
-
   const fmt = (n: number) => `$${n.toFixed(4)}`;
+  const fmtCost = (n: number) => `$${n.toFixed(2)}`;
+
+  const isEmpty = !loading && logs.length === 0;
 
   return (
     <div className="usage-page">
@@ -87,29 +224,43 @@ export default function UsagePage() {
         </div>
       </div>
 
+      {error && (
+        <div style={{ background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: 12, padding: '12px 16px', marginBottom: 20, color: '#FF453A', fontSize: '0.85rem' }}>
+          {error}
+        </div>
+      )}
+
       <div className="usage-stats-bar">
         <div className="usage-stat-card">
           <div className="usage-stat-label">Total Spent This Month</div>
-          <div className="usage-stat-value">$4.82</div>
+          <div className="usage-stat-value">
+            {loading ? <div style={{ height: 28, width: 80, borderRadius: 6, background: '#e5e5e7' }} /> : fmtCost(spent)}
+          </div>
           <div className="usage-stat-sub">Across all API services</div>
         </div>
         <div className="usage-stat-card">
           <div className="usage-stat-label">Bills Processed</div>
-          <div className="usage-stat-value">247</div>
+          <div className="usage-stat-value">
+            {loading ? <div style={{ height: 28, width: 60, borderRadius: 6, background: '#e5e5e7' }} /> : summary?.bills_processed ?? 0}
+          </div>
           <div className="usage-stat-sub">Successful extractions</div>
         </div>
         <div className="usage-stat-card">
           <div className="usage-stat-label">Total API Calls</div>
-          <div className="usage-stat-value">741</div>
-          <div className="usage-stat-sub">3 calls per bill</div>
+          <div className="usage-stat-value">
+            {loading ? <div style={{ height: 28, width: 60, borderRadius: 6, background: '#e5e5e7' }} /> : summary?.total_calls ?? 0}
+          </div>
+          <div className="usage-stat-sub">Across all services</div>
         </div>
         <div className="usage-stat-card">
           <div className="usage-stat-label">Budget Remaining</div>
-          <div className="usage-stat-value" style={{ color: '#34C759' }}>$45.18</div>
-          <div className="usage-progress-track">
-            <div className="usage-progress-fill" style={{ width: '9.6%' }} />
+          <div className="usage-stat-value" style={{ color: '#34C759' }}>
+            {loading ? <div style={{ height: 28, width: 80, borderRadius: 6, background: '#e5e5e7' }} /> : fmtCost(remaining)}
           </div>
-          <div className="usage-stat-sub">9.6% of $50.00 budget used</div>
+          <div className="usage-progress-track">
+            <div className="usage-progress-fill" style={{ width: `${spentPct}%` }} />
+          </div>
+          <div className="usage-stat-sub">{spentPct.toFixed(1)}% of {fmtCost(budgetNum)} budget used</div>
         </div>
       </div>
 
@@ -123,15 +274,17 @@ export default function UsagePage() {
               <div className="usage-service-label">OCR Processing</div>
             </div>
           </div>
-          <div className="usage-service-cost">$0.37</div>
+          <div className="usage-service-cost">
+            {loading ? <div style={{ height: 24, width: 60, borderRadius: 6, background: '#e5e5e7' }} /> : fmtCost(visionSvc?.total_cost || 0)}
+          </div>
           <div className="usage-service-meta">
             <div className="usage-service-meta-item">
               <span className="meta-label">Calls</span>
-              <span className="meta-value">247</span>
+              <span className="meta-value">{loading ? '—' : visionSvc?.total_calls ?? 0}</span>
             </div>
             <div className="usage-service-meta-item">
               <span className="meta-label">Per Call</span>
-              <span className="meta-value">$0.0015</span>
+              <span className="meta-value">{loading ? '—' : fmt(visionSvc?.per_call || 0)}</span>
             </div>
           </div>
         </div>
@@ -144,15 +297,17 @@ export default function UsagePage() {
               <div className="usage-service-label">Bill Pre-check</div>
             </div>
           </div>
-          <div className="usage-service-cost">$0.05</div>
+          <div className="usage-service-cost">
+            {loading ? <div style={{ height: 24, width: 60, borderRadius: 6, background: '#e5e5e7' }} /> : fmtCost(haikuSvc?.total_cost || 0)}
+          </div>
           <div className="usage-service-meta">
             <div className="usage-service-meta-item">
               <span className="meta-label">Calls</span>
-              <span className="meta-value">247</span>
+              <span className="meta-value">{loading ? '—' : haikuSvc?.total_calls ?? 0}</span>
             </div>
             <div className="usage-service-meta-item">
               <span className="meta-label">Per Call</span>
-              <span className="meta-value">$0.0002</span>
+              <span className="meta-value">{loading ? '—' : fmt(haikuSvc?.per_call || 0)}</span>
             </div>
           </div>
         </div>
@@ -165,15 +320,17 @@ export default function UsagePage() {
               <div className="usage-service-label">Data Extraction</div>
             </div>
           </div>
-          <div className="usage-service-cost">$4.40</div>
+          <div className="usage-service-cost">
+            {loading ? <div style={{ height: 24, width: 60, borderRadius: 6, background: '#e5e5e7' }} /> : fmtCost(sonnetSvc?.total_cost || 0)}
+          </div>
           <div className="usage-service-meta">
             <div className="usage-service-meta-item">
               <span className="meta-label">Calls</span>
-              <span className="meta-value">247</span>
+              <span className="meta-value">{loading ? '—' : sonnetSvc?.total_calls ?? 0}</span>
             </div>
             <div className="usage-service-meta-item">
               <span className="meta-label">Per Call</span>
-              <span className="meta-value">$0.0178</span>
+              <span className="meta-value">{loading ? '—' : fmt(sonnetSvc?.per_call || 0)}</span>
             </div>
           </div>
         </div>
@@ -181,39 +338,45 @@ export default function UsagePage() {
 
       <div className="usage-card">
         <div className="usage-section-label">Daily Spend — {MONTHS[monthIndex]} {year}</div>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={dailyData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f5" vertical={false} />
-            <XAxis
-              dataKey="day"
-              tick={{ fontSize: 11, fill: '#6e6e73' }}
-              axisLine={false}
-              tickLine={false}
-              interval={2}
-            />
-            <YAxis
-              tickFormatter={(v) => `$${v.toFixed(2)}`}
-              tick={{ fontSize: 11, fill: '#6e6e73' }}
-              axisLine={false}
-              tickLine={false}
-              domain={[0, 1.0]}
-              width={48}
-            />
-            <Tooltip
-              formatter={(v: number) => [`$${v.toFixed(2)}`, 'Spend']}
-              labelFormatter={(l) => `Day ${l}`}
-              contentStyle={{ borderRadius: 10, border: '1px solid #e5e5e7', fontSize: 12 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="cost"
-              stroke="#4F8EF7"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4, fill: '#4F8EF7' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6e6e73', fontSize: '0.875rem' }}>
+            No spend data for this month
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={dailyData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f5" vertical={false} />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11, fill: '#6e6e73' }}
+                axisLine={false}
+                tickLine={false}
+                interval={2}
+              />
+              <YAxis
+                tickFormatter={(v) => `$${v.toFixed(2)}`}
+                tick={{ fontSize: 11, fill: '#6e6e73' }}
+                axisLine={false}
+                tickLine={false}
+                domain={[0, chartMax * 1.2]}
+                width={52}
+              />
+              <Tooltip
+                formatter={(v: number) => [`$${v.toFixed(4)}`, 'Spend']}
+                labelFormatter={(l) => `Day ${l}`}
+                contentStyle={{ borderRadius: 10, border: '1px solid #e5e5e7', fontSize: 12 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="cost"
+                stroke="#4F8EF7"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: '#4F8EF7' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="usage-card">
@@ -244,30 +407,48 @@ export default function UsagePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row, i) => (
-                <tr key={i}>
-                  <td style={{ color: '#6e6e73', whiteSpace: 'nowrap' }}>{row.time}</td>
-                  <td style={{ fontWeight: 500 }}>{row.customer}</td>
-                  <td>{row.retailer}</td>
-                  <td>{fmt(row.vision)}</td>
-                  <td>{fmt(row.haiku)}</td>
-                  <td>{fmt(row.sonnet)}</td>
-                  <td style={{ fontWeight: 600 }}>{fmt(row.vision + row.haiku + row.sonnet)}</td>
-                  <td>
-                    <span className={`usage-status-pill ${row.status}`}>
-                      {row.status === 'extracted' ? 'Extracted' : row.status === 'failed' ? 'Failed' : 'Pending Review'}
-                    </span>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+              ) : isEmpty ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '32px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
+                    No extractions this month
                   </td>
                 </tr>
-              ))}
-              <tr className="total-row">
-                <td colSpan={3}>Total ({filteredRows.length} extractions)</td>
-                <td>{fmt(filteredRows.reduce((s, r) => s + r.vision, 0))}</td>
-                <td>{fmt(filteredRows.reduce((s, r) => s + r.haiku, 0))}</td>
-                <td>{fmt(filteredRows.reduce((s, r) => s + r.sonnet, 0))}</td>
-                <td>{fmt(filteredRows.reduce((s, r) => s + r.vision + r.haiku + r.sonnet, 0))}</td>
-                <td />
-              </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '24px 0', color: '#6e6e73', fontSize: '0.875rem' }}>
+                    No results matching your search
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  {filtered.map((row) => (
+                    <tr key={row.id}>
+                      <td style={{ color: '#6e6e73', whiteSpace: 'nowrap' }}>{formatTime(row.created_at)}</td>
+                      <td style={{ fontWeight: 500 }}>{row.customer_name || '—'}</td>
+                      <td>{row.retailer || '—'}</td>
+                      <td>{fmt(row.vision)}</td>
+                      <td>{fmt(row.haiku)}</td>
+                      <td>{fmt(row.sonnet)}</td>
+                      <td style={{ fontWeight: 600 }}>{fmt(row.vision + row.haiku + row.sonnet)}</td>
+                      <td>
+                        <span className={`usage-status-pill ${row.status === 'success' ? 'extracted' : row.status === 'rejected' ? 'failed' : 'pending'}`}>
+                          {row.status === 'success' ? 'Extracted' : row.status === 'rejected' ? 'Failed' : 'Pending Review'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="total-row">
+                    <td colSpan={3}>Total ({filtered.length} extractions)</td>
+                    <td>{fmt(filtered.reduce((s, r) => s + r.vision, 0))}</td>
+                    <td>{fmt(filtered.reduce((s, r) => s + r.haiku, 0))}</td>
+                    <td>{fmt(filtered.reduce((s, r) => s + r.sonnet, 0))}</td>
+                    <td>{fmt(filtered.reduce((s, r) => s + r.vision + r.haiku + r.sonnet, 0))}</td>
+                    <td />
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>
@@ -278,7 +459,7 @@ export default function UsagePage() {
         <div className="usage-budget-grid">
           <div>
             <div className="usage-budget-field" style={{ marginBottom: 16 }}>
-              <label>Monthly Budget</label>
+              <label>Budget limit (USD/month)</label>
               <input
                 className="usage-budget-input"
                 value={budget}
@@ -300,15 +481,15 @@ export default function UsagePage() {
           <div>
             <div className="usage-budget-info-row">
               <span className="label">Current spend</span>
-              <span className="value">$4.82</span>
+              <span className="value">{fmtCost(spent)}</span>
             </div>
             <div className="usage-budget-info-row" style={{ marginTop: 12 }}>
               <span className="label">Estimated end of month</span>
-              <span className="value">$7.20</span>
+              <span className="value">{fmtCost(estimated)}</span>
             </div>
             <div className="usage-budget-info-row" style={{ marginTop: 12 }}>
               <span className="label">Budget remaining</span>
-              <span className="value" style={{ color: '#34C759' }}>$45.18</span>
+              <span className="value" style={{ color: '#34C759' }}>{fmtCost(remaining)}</span>
             </div>
             <div className="usage-budget-info-row" style={{ marginTop: 16 }}>
               <span className="label">Status</span>
@@ -319,11 +500,11 @@ export default function UsagePage() {
                 Budget Used
               </div>
               <div className="usage-progress-track">
-                <div className="usage-progress-fill" style={{ width: '9.6%' }} />
+                <div className="usage-progress-fill" style={{ width: `${spentPct}%` }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.75rem', color: '#6e6e73' }}>
-                <span>$4.82 used</span>
-                <span>${budget || '50.00'} budget</span>
+                <span>{fmtCost(spent)} used</span>
+                <span>{fmtCost(budgetNum)} budget</span>
               </div>
             </div>
           </div>

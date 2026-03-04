@@ -78,6 +78,39 @@ async function getImageBuffer(file: Express.Multer.File): Promise<{ buffer: Buff
   return { buffer: file.buffer, mimetype: file.mimetype };
 }
 
+async function logUsage(params: {
+  tenant_id?: string | null;
+  module: string;
+  customer_name?: string | null;
+  retailer?: string | null;
+  service: string;
+  model?: string | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cost_usd: number;
+  status?: string;
+}) {
+  try {
+    const { error } = await supabase.from('api_usage_log').insert({
+      tenant_id: params.tenant_id || null,
+      module: params.module,
+      customer_name: params.customer_name || null,
+      retailer: params.retailer || null,
+      service: params.service,
+      model: params.model || null,
+      input_tokens: params.input_tokens ?? null,
+      output_tokens: params.output_tokens ?? null,
+      cost_usd: params.cost_usd,
+      status: params.status || 'success',
+    });
+    if (error) {
+      console.error('[Usage Log] Insert error:', error.message);
+    }
+  } catch (e) {
+    console.error('[Usage Log] Failed to log usage:', e);
+  }
+}
+
 router.post('/api/bill-reader/check', upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -99,7 +132,6 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     }
 
     const visionClient = getVisionClient();
-
     let sampleText = '';
 
     if (req.file.mimetype === 'application/pdf') {
@@ -148,6 +180,21 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       classification.isBill = true;
     }
 
+    const haikuInputTokens = message.usage?.input_tokens ?? null;
+    const haikuOutputTokens = message.usage?.output_tokens ?? null;
+    const haikuCost =
+      (haikuInputTokens ?? 0) * 0.00000025 + (haikuOutputTokens ?? 0) * 0.00000125;
+
+    await logUsage({
+      module: 'bill_reader',
+      service: 'claude_haiku',
+      model: 'claude-haiku-4-5-20250414',
+      input_tokens: haikuInputTokens,
+      output_tokens: haikuOutputTokens,
+      cost_usd: haikuCost,
+      status: classification.isBill ? 'success' : 'rejected',
+    });
+
     res.json(classification);
   } catch (err: any) {
     console.error('[Bill Reader] Check error:', err);
@@ -188,6 +235,16 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       fullText = result.fullTextAnnotation?.text || '';
     }
 
+    await logUsage({
+      module: 'bill_reader',
+      service: 'google_vision',
+      model: null,
+      input_tokens: null,
+      output_tokens: null,
+      cost_usd: 0.0015,
+      status: 'success',
+    });
+
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
@@ -213,6 +270,23 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
     } else {
       extracted.confidenceScore = 0.85;
     }
+
+    const sonnetInputTokens = message.usage?.input_tokens ?? null;
+    const sonnetOutputTokens = message.usage?.output_tokens ?? null;
+    const sonnetCost =
+      (sonnetInputTokens ?? 0) * 0.000003 + (sonnetOutputTokens ?? 0) * 0.000015;
+
+    await logUsage({
+      module: 'bill_reader',
+      customer_name: extracted.customerName || null,
+      retailer: extracted.retailer || null,
+      service: 'claude_sonnet',
+      model: 'claude-sonnet-4-5',
+      input_tokens: sonnetInputTokens,
+      output_tokens: sonnetOutputTokens,
+      cost_usd: sonnetCost,
+      status: 'success',
+    });
 
     console.log('[Bill Reader] Final confidenceScore:', extracted.confidenceScore);
     res.json({ extracted, rawOcrText: fullText });

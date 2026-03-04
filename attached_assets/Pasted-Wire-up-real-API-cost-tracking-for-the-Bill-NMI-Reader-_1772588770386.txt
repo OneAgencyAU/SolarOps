@@ -1,0 +1,94 @@
+Wire up real API cost tracking for the Bill & NMI Reader. 
+Do not change any other pages or modules.
+
+1. SUPABASE — create migration file:
+supabase/migrations/005_api_usage_log.sql
+
+CREATE TABLE IF NOT EXISTS api_usage_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id UUID REFERENCES tenants(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  module TEXT NOT NULL,
+  customer_name TEXT,
+  retailer TEXT,
+  service TEXT NOT NULL,
+  model TEXT,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  cost_usd NUMERIC(10, 6) NOT NULL,
+  status TEXT DEFAULT 'success'
+);
+
+ALTER TABLE api_usage_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "tenant_isolation" ON api_usage_log
+  FOR ALL USING (tenant_id = (
+    SELECT tenant_id FROM tenant_memberships 
+    WHERE user_id = auth.uid()::text LIMIT 1
+  ));
+
+2. BACKEND — update the bill extraction route 
+(wherever the Claude and Vision API calls are made):
+
+After each API call completes, insert a row into 
+api_usage_log via the Express backend using 
+SUPABASE_SECRET_KEY.
+
+Cost calculations to use:
+- Google Cloud Vision: $0.0015 per request (flat)
+- Claude Haiku: (input_tokens * 0.00000025) + 
+  (output_tokens * 0.00000125)
+- Claude Sonnet: (input_tokens * 0.000003) + 
+  (output_tokens * 0.000015)
+
+Log 3 rows per successful extraction:
+Row 1: service="google_vision", model=null, 
+  cost=0.0015, status="success"
+Row 2: service="claude_haiku", model="claude-haiku-4-5", 
+  input_tokens=X, output_tokens=X, cost=calculated
+Row 3: service="claude_sonnet", model="claude-sonnet-4-5", 
+  input_tokens=X, output_tokens=X, cost=calculated
+
+If pre-check fails (not a bill), only log the Haiku row 
+with status="rejected".
+
+Also log: customer_name and retailer from the 
+extraction result (if available), module="bill_reader", 
+tenant_id from the authenticated session.
+
+3. BACKEND — add new API endpoints:
+
+GET /api/usage/summary?month=YYYY-MM
+Returns:
+{
+  total_cost: number,
+  total_calls: number,
+  bills_processed: number,
+  by_service: [{ service, total_cost, total_calls, per_call }]
+}
+
+GET /api/usage/log?month=YYYY-MM&limit=50
+Returns array of api_usage_log rows ordered by 
+created_at DESC.
+
+4. FRONTEND — update /usage page to fetch real data:
+
+On mount, call GET /api/usage/summary and 
+GET /api/usage/log for the current month.
+
+Replace all hardcoded placeholder values with 
+real data from the API responses.
+
+Month selector (← March 2026 →) should re-fetch 
+when changed.
+
+Show a loading skeleton while data is fetching.
+Show "No extractions this month" empty state if 
+no data exists yet.
+
+5. Fix the duplicate "Monthly Budget" label in the 
+budget settings card — the section title and the 
+field label are both showing "Monthly Budget". 
+Change the field label to "Budget limit (USD/month)".
+
+Do not change any other pages, components, 
+or backend routes.
