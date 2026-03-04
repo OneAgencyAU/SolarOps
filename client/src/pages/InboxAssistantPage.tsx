@@ -160,6 +160,7 @@ export default function InboxAssistantPage() {
   const [useRealEmails, setUseRealEmails] = useState(false);
   const [aiDrafts, setAiDrafts] = useState<Record<string, { id: string; draft_text: string; ai_summary: string; status: string }>>({});
   const [draftLoading, setDraftLoading] = useState<Record<string, boolean>>({});
+  const [sending, setSending] = useState(false);
 
   const fetchConnections = async () => {
     if (!tenant?.id) return;
@@ -267,8 +268,38 @@ export default function InboxAssistantPage() {
       ? emailSource
       : emailSource.filter((e) => e.tags.some((t) => t.label === activeFilter));
 
-  const handleApprove = () => {
-    setToast('Draft approved and sent via Outlook');
+  const handleApprove = async () => {
+    if (!tenant?.id || !selected) return;
+    const emailId = String(selected.id);
+    const draft = aiDrafts[emailId];
+    const draftText = draft?.draft_text ?? drafts[emailId] ?? '';
+    if (!draftText.trim()) { setToast('No draft to send'); return; }
+    setSending(true);
+    try {
+      const res = await fetch('/api/inbox/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          email_id: emailId,
+          draft_id: draft?.id || null,
+          draft_text: draftText,
+        }),
+      });
+      if (res.ok) {
+        setToast('Reply sent via Gmail ✓');
+        if (draft) {
+          setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
+        }
+      } else {
+        const err = await res.json();
+        setToast(`Failed to send: ${err.error}`);
+      }
+    } catch (e: any) {
+      setToast('Send failed — check connection');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -455,8 +486,12 @@ export default function InboxAssistantPage() {
                     <button className="action-btn secondary">Create Ticket</button>
                     <button className="action-btn secondary">Link to Ticket</button>
                   </div>
-                  <button className="action-btn primary" onClick={handleApprove}>
-                    Approve &amp; Send
+                  <button
+                    className="action-btn primary"
+                    onClick={handleApprove}
+                    disabled={sending || aiDrafts[String(selected?.id)]?.status === 'sent'}
+                  >
+                    {sending ? 'Sending...' : aiDrafts[String(selected?.id)]?.status === 'sent' ? '✓ Sent' : 'Approve & Send'}
                   </button>
                 </div>
               </div>
