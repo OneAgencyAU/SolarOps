@@ -264,7 +264,64 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
     const textBlock = message.content.find((b) => b.type === 'text');
     const raw = textBlock?.text || '{}';
     console.log('[Bill Reader] Extract raw Claude response:', raw);
-    const extracted = parseClaudeJson(raw);
+
+    function sanitiseExtracted(data: any): any {
+      const warnings: string[] = [];
+
+      if (data.rates?.supplyCharge != null) {
+        if (data.rates.supplyCharge > 5 || data.rates.supplyCharge < 0.3) {
+          warnings.push(`Supply charge $${data.rates.supplyCharge}/day is outside expected range`);
+          data.rates.supplyCharge = null;
+        }
+      }
+
+      if (data.rates?.usageRate != null) {
+        if (data.rates.usageRate > 60 || data.rates.usageRate < 5) {
+          warnings.push(`Usage rate ${data.rates.usageRate}c/kWh is outside expected range`);
+          data.rates.usageRate = null;
+        }
+      }
+
+      if (data.rates?.peakRate != null) {
+        if (data.rates.peakRate > 60 || data.rates.peakRate < 5) {
+          warnings.push(`Peak rate ${data.rates.peakRate}c/kWh is outside expected range`);
+          data.rates.peakRate = null;
+        }
+      }
+
+      if (data.rates?.feedInTariff != null) {
+        if (data.rates.feedInTariff > 20 || data.rates.feedInTariff < 1) {
+          warnings.push(`Feed-in tariff ${data.rates.feedInTariff}c/kWh is outside expected range`);
+          data.rates.feedInTariff = null;
+        }
+      }
+
+      if (data.totals?.totalAmount != null) {
+        if (data.totals.totalAmount > 5000 || data.totals.totalAmount < 10) {
+          warnings.push(`Total amount $${data.totals.totalAmount} is outside expected range`);
+          data.totals.totalAmount = null;
+        }
+      }
+
+      if (data.usage?.dailyAvgKwh != null) {
+        if (data.usage.dailyAvgKwh > 150 || data.usage.dailyAvgKwh < 0.5) {
+          warnings.push(`Daily avg ${data.usage.dailyAvgKwh} kWh/day is outside expected range`);
+          data.usage.dailyAvgKwh = null;
+        }
+      }
+
+      if (warnings.length > 0) {
+        console.warn('[Bill Reader] Sanity check warnings:', warnings);
+        data.validationWarnings = warnings;
+        if (warnings.length >= 2) {
+          data.confidenceScore = Math.min(data.confidenceScore ?? 0.85, 0.6);
+        }
+      }
+
+      return data;
+    }
+
+    const extracted = sanitiseExtracted(parseClaudeJson(raw));
     console.log('[Bill Reader] Extract parsed fields:', JSON.stringify(extracted, null, 2));
 
     if (extracted.confidenceScore !== undefined) {
