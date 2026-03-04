@@ -211,7 +211,7 @@ export default function InboxAssistantPage() {
     preview: e.body_preview || '',
     time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
     tags: [],
-    body: e.body_text || '',
+    body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• '),
     aiSummary: '',
     draft: '',
   })) : connections.length === 0 ? emails : [];
