@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/BillReader.css';
 
@@ -39,6 +39,30 @@ interface RecentItem {
   status: 'extracted' | 'pending';
   data: BillData;
   rawOcrText: string;
+}
+
+interface SavedExtraction {
+  id: string;
+  retailer: string | null;
+  customer_name: string | null;
+  nmi: string | null;
+  created_at: string;
+  status: string;
+  daily_avg_kwh: number | null;
+  total_kwh: number | null;
+  supply_charge: number | null;
+  usage_rate: number | null;
+  feed_in_tariff: number | null;
+  total_amount: number | null;
+  existing_solar: boolean | null;
+  existing_battery: boolean | null;
+  meter_type: string | null;
+  billing_period_from: string | null;
+  billing_period_to: string | null;
+  billing_days: number | null;
+  property_address: string | null;
+  raw_ocr_text: string | null;
+  confidence_score: number | null;
 }
 
 const placeholderRecents: RecentItem[] = [
@@ -178,6 +202,24 @@ export default function BillReaderPage() {
   const [rawExpanded, setRawExpanded] = useState(false);
   const [toast, setToast] = useState('');
   const [saving, setSaving] = useState(false);
+  const [recentExtractions, setRecentExtractions] = useState<SavedExtraction[]>([]);
+
+  const fetchRecentExtractions = useCallback(async () => {
+    if (!tenant?.id) return;
+    try {
+      const res = await fetch(`/api/bill-reader/recent?tenant_id=${tenant.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentExtractions(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch recent extractions', e);
+    }
+  }, [tenant?.id]);
+
+  useEffect(() => {
+    fetchRecentExtractions();
+  }, [fetchRecentExtractions]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -312,6 +354,7 @@ export default function BillReaderPage() {
 
       if (res.ok) {
         showToast('Extraction saved successfully');
+        fetchRecentExtractions();
       } else {
         showToast('Failed to save extraction');
       }
@@ -453,25 +496,30 @@ export default function BillReaderPage() {
           <div style={{ marginTop: 28 }}>
             <div className="br-section-label">Recent extractions</div>
             <ul className="br-recent-list">
-              {placeholderRecents.map((item, i) => (
-                <li key={i} className="br-recent-item" onClick={() => loadRecent(item)}>
-                  <div className="retailer-icon">{item.retailerShort}</div>
-                  <div className="details">
-                    <div className="top-row">
-                      <span>{item.retailer}</span>
-                      <span style={{ color: '#6e6e73' }}>—</span>
-                      <span>{item.customerName}</span>
-                    </div>
-                    <div className="bottom-row">NMI: {item.nmi}</div>
-                  </div>
-                  <div className="meta">
-                    <div className="date">{item.date}</div>
-                    <span className={`br-status-pill ${item.status === 'extracted' ? 'extracted' : 'pending'}`}>
-                      {item.status === 'extracted' ? 'Extracted' : 'Pending Review'}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {recentExtractions.length === 0 ? (
+                <li className="br-recent-empty">No extractions yet</li>
+              ) : (
+                recentExtractions.map((item) => {
+                  const retailerShort = (item.retailer || 'UN').slice(0, 3).toUpperCase().replace(' ', '');
+                  const nmiDisplay = item.nmi ? item.nmi.slice(0, 4) + '...' + item.nmi.slice(-3) : '—';
+                  const dateDisplay = new Date(item.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+                  return (
+                    <li key={item.id} className="br-recent-item">
+                      <div className="br-retailer-badge">{retailerShort}</div>
+                      <div className="br-recent-info">
+                        <div className="br-recent-name">{item.retailer || 'Unknown'} — {item.customer_name || 'Unknown'}</div>
+                        <div className="br-recent-nmi">NMI: {nmiDisplay}</div>
+                      </div>
+                      <div className="br-recent-meta">
+                        <span className="br-recent-date">{dateDisplay}</span>
+                        <span className={`br-status-pill ${item.status === 'extracted' ? 'extracted' : 'pending'}`}>
+                          {item.status === 'extracted' ? 'Extracted' : 'Pending Review'}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
             </ul>
           </div>
         </div>

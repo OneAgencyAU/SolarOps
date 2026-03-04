@@ -370,4 +370,27 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/api/bill-reader/recent', async (req: Request, res: Response) => {
+  try {
+    const tenant_id = req.query.tenant_id as string;
+    if (!tenant_id) {
+      res.status(400).json({ error: 'tenant_id required' });
+      return;
+    }
+    const { data, error } = await supabase
+      .from('bill_extractions')
+      .select('*')
+      .eq('tenant_id', tenant_id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.json(data || []);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

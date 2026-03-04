@@ -1,0 +1,95 @@
+In client/src/pages/BillReaderPage.tsx, make the following changes:
+1. Add a useEffect and useCallback import is already there. Also add useEffect if not already imported at the top.
+2. Add a new interface after the RecentItem interface:
+typescriptinterface SavedExtraction {
+  id: string;
+  retailer: string | null;
+  customer_name: string | null;
+  nmi: string | null;
+  created_at: string;
+  status: string;
+  daily_avg_kwh: number | null;
+  total_kwh: number | null;
+  supply_charge: number | null;
+  usage_rate: number | null;
+  feed_in_tariff: number | null;
+  total_amount: number | null;
+  existing_solar: boolean | null;
+  existing_battery: boolean | null;
+  meter_type: string | null;
+  billing_period_from: string | null;
+  billing_period_to: string | null;
+  billing_days: number | null;
+  property_address: string | null;
+  raw_ocr_text: string | null;
+  confidence_score: number | null;
+}
+3. Inside the BillReaderPage component, add this state and fetch logic after the existing useState declarations:
+typescriptconst [recentExtractions, setRecentExtractions] = useState<SavedExtraction[]>([]);
+
+const fetchRecentExtractions = useCallback(async () => {
+  if (!tenant?.id) return;
+  try {
+    const res = await fetch(`/api/bill-reader/recent?tenant_id=${tenant.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setRecentExtractions(data);
+    }
+  } catch (e) {
+    console.error('Failed to fetch recent extractions', e);
+  }
+}, [tenant?.id]);
+
+useEffect(() => {
+  fetchRecentExtractions();
+}, [fetchRecentExtractions]);
+4. After a successful save (inside handleSave, after showToast('Saved!')), call fetchRecentExtractions() to refresh the list.
+5. Replace the recent extractions list render. Find where placeholderRecents.map is used and replace the entire list with:
+typescript{recentExtractions.length === 0 ? (
+  <li className="br-recent-empty">No extractions yet</li>
+) : (
+  recentExtractions.map((item) => {
+    const retailerShort = (item.retailer || 'UN').slice(0, 3).toUpperCase().replace(' ', '');
+    const nmiDisplay = item.nmi ? item.nmi.slice(0, 4) + '...' + item.nmi.slice(-3) : '—';
+    const dateDisplay = new Date(item.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    return (
+      <li key={item.id} className="br-recent-item">
+        <div className="br-retailer-badge">{retailerShort}</div>
+        <div className="br-recent-info">
+          <div className="br-recent-name">{item.retailer || 'Unknown'} — {item.customer_name || 'Unknown'}</div>
+          <div className="br-recent-nmi">NMI: {nmiDisplay}</div>
+        </div>
+        <div className="br-recent-meta">
+          <span className="br-recent-date">{dateDisplay}</span>
+          <span className={`br-status-pill ${item.status === 'extracted' ? 'extracted' : 'pending'}`}>
+            {item.status === 'extracted' ? 'Extracted' : 'Pending Review'}
+          </span>
+        </div>
+      </li>
+    );
+  })
+)}
+6. In server/routes/billReader.ts, add this new route before export default router:
+typescriptrouter.get('/api/bill-reader/recent', async (req: Request, res: Response) => {
+  try {
+    const tenant_id = req.query.tenant_id as string;
+    if (!tenant_id) {
+      res.status(400).json({ error: 'tenant_id required' });
+      return;
+    }
+    const { data, error } = await supabase
+      .from('bill_extractions')
+      .select('*')
+      .eq('tenant_id', tenant_id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.json(data || []);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+Do not change anything else in either file.

@@ -352,6 +352,61 @@
   color: #6e6e73;
 }
 
+.br-recent-empty {
+  padding: 16px 8px;
+  font-size: 0.82rem;
+  color: #6e6e73;
+  list-style: none;
+}
+
+.br-retailer-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f5f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6e6e73;
+  flex-shrink: 0;
+}
+
+.br-recent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.br-recent-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #1d1d1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.br-recent-nmi {
+  font-size: 0.75rem;
+  color: #6e6e73;
+  margin-top: 2px;
+}
+
+.br-recent-meta {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.br-recent-date {
+  font-size: 0.72rem;
+  color: #6e6e73;
+}
+
 .br-status-pill {
   display: inline-block;
   padding: 2px 8px;
