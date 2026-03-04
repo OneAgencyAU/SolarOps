@@ -190,7 +190,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
 
     const anthropic = getAnthropicClient();
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6-20250627',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2048,
       messages: [
         {
