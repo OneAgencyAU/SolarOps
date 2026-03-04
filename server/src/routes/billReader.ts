@@ -95,13 +95,13 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       };
       const [result] = await visionClient.batchAnnotateFiles(request);
       const page = result.responses?.[0]?.responses?.[0];
-      sampleText = (page?.fullTextAnnotation?.text || '').slice(0, 500);
+      sampleText = (page?.fullTextAnnotation?.text || '').slice(0, 1500);
     } else {
       const { buffer } = await getImageBuffer(req.file);
       const [result] = await visionClient.textDetection({
         image: { content: buffer.toString('base64') },
       });
-      sampleText = (result.fullTextAnnotation?.text || '').slice(0, 500);
+      sampleText = (result.fullTextAnnotation?.text || '').slice(0, 1500);
     }
 
     const anthropic = getAnthropicClient();
@@ -111,7 +111,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
       messages: [
         {
           role: 'user',
-          content: `You are a document classifier. Based on this filename and text sample, determine if this is an Australian electricity bill. Respond with JSON only:\n{\n  "isBill": true/false,\n  "confidence": 0.0-1.0,\n  "reason": "brief explanation"\n}\nFilename: ${filename}\nText sample: ${sampleText}`,
+          content: `You are a document classifier. Based on this filename and text sample, determine if this could be an Australian electricity bill or energy account document. Be generous — if there are ANY indicators like energy company names (AGL, Origin, Amber, EnergyAustralia, ActewAGL, Powershop, Red Energy, Alinta, Ergon, Endeavour), electricity terms (kWh, NMI, supply charge, usage, tariff, meter, kilowatt), or account/invoice language, classify as isBill: true.\nOnly return false if it is clearly NOT an energy bill (e.g. a photo, receipt, or unrelated document).\nRespond with JSON only:\n{\n  "isBill": true/false,\n  "confidence": 0.0-1.0,\n  "reason": "brief explanation"\n}\nFilename: ${filename}\nText sample: ${sampleText}`,
         },
       ],
     });
@@ -119,6 +119,10 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     const textBlock = message.content.find((b) => b.type === 'text');
     const raw = textBlock?.text || '{}';
     const classification = JSON.parse(raw);
+
+    if (!classification.isBill && (classification.confidence ?? 1) >= 0.3) {
+      classification.isBill = true;
+    }
 
     res.json(classification);
   } catch (err: any) {
