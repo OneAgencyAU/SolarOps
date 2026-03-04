@@ -381,7 +381,7 @@ export default function BillReaderPage() {
               <p>Supports JPG, PNG, PDF, HEIC, WebP · Max 10MB</p>
             </div>
           ) : (
-            <div className="br-upload-zone has-file">
+            <div className="br-file-preview-standalone">
               <div className="br-file-preview">
                 <div className="br-file-icon">📄</div>
                 <div className="br-file-info">

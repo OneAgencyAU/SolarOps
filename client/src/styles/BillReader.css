@@ -81,11 +81,12 @@
   background: rgba(79, 142, 247, 0.03);
 }
 
-.br-upload-zone.has-file {
-  border-style: solid;
-  border-color: #e5e5e7;
+.br-file-preview-standalone {
   background: #fff;
-  cursor: default;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e5e5e7;
+  margin-bottom: 16px;
 }
 
 .br-upload-icon {
