@@ -170,7 +170,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     }
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20250414',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages: [{ role: 'user', content: messageContent }],
     });
@@ -190,7 +190,7 @@ router.post('/api/bill-reader/check', upload.single('file'), async (req: Request
     await logUsage({
       module: 'bill_reader',
       service: 'claude_haiku',
-      model: 'claude-haiku-4-5-20250414',
+      model: 'claude-haiku-4-5-20251001',
       input_tokens: haikuInputTokens,
       output_tokens: haikuOutputTokens,
       cost_usd: haikuCost,
