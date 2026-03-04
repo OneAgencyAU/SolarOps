@@ -69,7 +69,7 @@ CALL FLOW:
           maxDurationSeconds: 300,
         }),
       });
-      const assistant = await createRes.json();
+      const assistant = await createRes.json() as { id: string };
       assistantId = assistant.id;
 
       await fetch(`https://api.vapi.ai/phone-number/${VAPI_PHONE_NUMBER_ID}`, {
