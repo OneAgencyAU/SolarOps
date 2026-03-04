@@ -200,9 +200,15 @@ export default function InboxAssistantPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenant_id: tenant.id }),
     });
+    await fetch(`/api/inbox/emails?tenant_id=${tenant.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenant.id }),
+    });
     setConnections([]);
     setRealEmails([]);
     setUseRealEmails(false);
+    setAiDrafts({});
   };
 
   const handleSync = async () => {
@@ -281,7 +287,8 @@ export default function InboxAssistantPage() {
                 {c.email} connected
                 <button
                   onClick={() => handleDisconnect(c.provider)}
-                  style={{ marginLeft: 8, background: 'none', border: 'none', color: '#ff3b30', cursor: 'pointer', fontSize: '0.75rem' }}
+                  className="inbox-sync-btn"
+                  style={{ borderColor: '#ff3b30', color: '#ff3b30' }}
                 >
                   Disconnect
                 </button>
@@ -320,11 +327,6 @@ export default function InboxAssistantPage() {
         {/* ── LEFT PANEL ── */}
         <div className="inbox-left">
           <div className="inbox-left-topbar">
-            <select className="inbox-select">
-              <option>support@solenergy.com.au</option>
-              <option>sales@solenergy.com.au</option>
-              <option>info@solenergy.com.au</option>
-            </select>
             <div className="inbox-filters">
               {(['All', 'Urgent', 'New Lead', 'Support'] as FilterType[]).map((f) => (
                 <button

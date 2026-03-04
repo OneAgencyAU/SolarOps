@@ -319,4 +319,16 @@ router.delete('/api/inbox/drafts/:id', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/api/inbox/emails', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    await supabase.from('inbox_drafts').delete().eq('tenant_id', tenant_id);
+    await supabase.from('inbox_emails').delete().eq('tenant_id', tenant_id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

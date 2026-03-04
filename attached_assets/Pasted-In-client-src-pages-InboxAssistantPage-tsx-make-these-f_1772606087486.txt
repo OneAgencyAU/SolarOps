@@ -1,0 +1,47 @@
+In client/src/pages/InboxAssistantPage.tsx, make these fixes. Do not change anything else. Economy mode.
+Fix 1 — Clear emails on disconnect. The handleDisconnect function already clears state, but fetchEmails is running on mount and reloading old data from Supabase. After disconnecting, also delete the stored emails from the backend. Update handleDisconnect to:
+typescriptconst handleDisconnect = async (provider: string) => {
+  if (!tenant?.id) return;
+  await fetch(`/api/inbox/connections/${provider}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenant_id: tenant.id }),
+  });
+  // Clear stored emails for this tenant
+  await fetch(`/api/inbox/emails?tenant_id=${tenant.id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenant_id: tenant.id }),
+  });
+  setConnections([]);
+  setRealEmails([]);
+  setUseRealEmails(false);
+  setAiDrafts({});
+};
+Fix 2 — Remove placeholder email address dropdown. Find and delete the entire <select> element:
+typescript<select className="inbox-select">
+  <option>support@solenergy.com.au</option>
+  <option>sales@solenergy.com.au</option>
+  <option>info@solenergy.com.au</option>
+</select>
+Fix 3 — Style disconnect button to match sync button but red. Replace the inline-styled disconnect button with:
+typescript<button
+  onClick={() => handleDisconnect(c.provider)}
+  className="inbox-sync-btn"
+  style={{ borderColor: '#ff3b30', color: '#ff3b30' }}
+>
+  Disconnect
+</button>
+
+Also add a DELETE route in server/routes/inbox.ts before export default router:
+typescriptrouter.delete('/api/inbox/emails', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    await supabase.from('inbox_drafts').delete().eq('tenant_id', tenant_id);
+    await supabase.from('inbox_emails').delete().eq('tenant_id', tenant_id);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
