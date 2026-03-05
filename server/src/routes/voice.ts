@@ -50,7 +50,7 @@ CALL FLOW:
         body: JSON.stringify({
           name: `${business_name} Receptionist`,
           model: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', systemPrompt, temperature: 0.7 },
-          voice: { provider: '11labs', voiceId: 'rachel' },
+          voice: { provider: 'playht', voiceId: 'jennifer' },
           firstMessage: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to take your details and arrange a callback. Is that okay?`,
           transcriber: { provider: 'deepgram', language: 'en-AU' },
           maxDurationSeconds: 300,
@@ -63,7 +63,7 @@ CALL FLOW:
         body: JSON.stringify({
           name: `${business_name} Receptionist`,
           model: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', systemPrompt, temperature: 0.7 },
-          voice: { provider: '11labs', voiceId: 'rachel' },
+          voice: { provider: 'playht', voiceId: 'jennifer' },
           firstMessage: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist.`,
           transcriber: { provider: 'deepgram', language: 'en-AU' },
           maxDurationSeconds: 300,
