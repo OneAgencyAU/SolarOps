@@ -69,7 +69,9 @@ CALL FLOW:
           maxDurationSeconds: 300,
         }),
       });
-      const assistant = await createRes.json() as { id: string };
+      const assistantRaw = await createRes.text();
+      console.log('[Voice Setup] Create assistant response:', assistantRaw);
+      const assistant = JSON.parse(assistantRaw) as { id: string };
       assistantId = assistant.id;
 
       await fetch(`https://api.vapi.ai/phone-number/${VAPI_PHONE_NUMBER_ID}`, {
