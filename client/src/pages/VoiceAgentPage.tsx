@@ -22,10 +22,14 @@ interface VoiceCall {
 
 interface VoiceConfig {
   assistant_id: string;
+  retell_agent_id: string;
   business_name: string;
   notification_email: string;
   phone_number: string;
+  telnyx_number: string;
+  telnyx_number_id: string;
   is_live: boolean;
+  onboarding_step: number;
 }
 
 export default function VoiceAgentPage() {
@@ -48,6 +52,14 @@ export default function VoiceAgentPage() {
   const [keywordInput, setKeywordInput] = useState('');
   const [escalationMsg, setEscalationMsg] = useState("I'm going to connect you with our team right away. Please hold.");
   const [notificationEmail, setNotificationEmail] = useState('');
+
+  const [availableNumbers, setAvailableNumbers] = useState<any[]>([]);
+  const [selectedNumber, setSelectedNumber] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('SA');
+  const [searchingNumbers, setSearchingNumbers] = useState(false);
+  const [purchasingNumber, setPurchasingNumber] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(1);
+  const [purchasedNumber, setPurchasedNumber] = useState<string>('');
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     identity: true, hours: true, routing: true, escalation: true, phone: true,
@@ -146,6 +158,36 @@ export default function VoiceAgentPage() {
     return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${time}`;
   };
 
+  const searchNumbers = async () => {
+    setSearchingNumbers(true);
+    try {
+      const res = await fetch(`/api/voice/numbers/search?state=${selectedState}`);
+      const data = await res.json();
+      setAvailableNumbers(data);
+    } finally {
+      setSearchingNumbers(false);
+    }
+  };
+
+  const purchaseNumber = async () => {
+    if (!selectedNumber || !tenant?.id) return;
+    setPurchasingNumber(true);
+    try {
+      const res = await fetch('/api/voice/numbers/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenant.id, phone_number: selectedNumber }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPurchasedNumber(selectedNumber);
+        setOnboardingStep(2);
+      }
+    } finally {
+      setPurchasingNumber(false);
+    }
+  };
+
   const displayCalls = calls.length > 0 ? calls : [];
   const totalCalls = calls.length;
   const callbackRequests = calls.filter(c => c.caller_name).length;
@@ -156,6 +198,139 @@ export default function VoiceAgentPage() {
   const avgDurationLabel = avgDuration
     ? avgDuration >= 60 ? `${(avgDuration / 60).toFixed(1)}m` : `${avgDuration}s`
     : '—';
+
+  if (!config || (config.onboarding_step || 1) < 3) {
+    const step = onboardingStep || config?.onboarding_step || 1;
+    const forwardingCodes: Record<string, string> = {
+      Telstra: `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
+      Optus: `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
+      TPG: `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
+      'iiNet': `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
+      Vonex: 'Login to your Vonex portal → Call Forwarding → enter your SolarOps number',
+    };
+
+    return (
+      <div className="va-page">
+        <div className="va-header">
+          <div>
+            <h1 className="va-title">Voice Agent Setup</h1>
+            <p className="va-subtitle">Get your AI receptionist live in 3 steps</p>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            {['Choose Number', 'Configure Agent', 'Activate Forwarding'].map((label, i) => (
+              <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%', margin: '0 auto 6px',
+                  background: step > i + 1 ? '#34C759' : step === i + 1 ? '#4F8EF7' : '#e5e5e7',
+                  color: step >= i + 1 ? '#fff' : '#aeaeb2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.85rem', fontWeight: 700,
+                }}>
+                  {step > i + 1 ? '✓' : i + 1}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: step === i + 1 ? '#1d1d1f' : '#aeaeb2', fontWeight: step === i + 1 ? 600 : 400 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {step === 1 && (
+            <div className="va-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="card-title">Choose your AI receptionist number</div>
+              <p style={{ fontSize: '0.875rem', color: '#6e6e73', margin: 0 }}>
+                This is the number your AI receptionist will answer. You'll forward your existing business number to it — $2/month.
+              </p>
+              <label className="va-label">Your state</label>
+              <select className="va-input" value={selectedState} onChange={e => setSelectedState(e.target.value)}>
+                {['NSW','VIC','QLD','SA','WA','TAS'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <button className="va-btn primary" onClick={searchNumbers} disabled={searchingNumbers}>
+                {searchingNumbers ? 'Searching...' : 'Search Available Numbers'}
+              </button>
+              {availableNumbers.length > 0 && (
+                <>
+                  <label className="va-label">Select a number</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {availableNumbers.map((n: any) => (
+                      <button
+                        key={n.phone_number}
+                        onClick={() => setSelectedNumber(n.phone_number)}
+                        style={{
+                          padding: '12px 16px', borderRadius: 10, border: `2px solid ${selectedNumber === n.phone_number ? '#4F8EF7' : '#e5e5e7'}`,
+                          background: selectedNumber === n.phone_number ? 'rgba(79,142,247,0.06)' : '#f5f5f7',
+                          cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#1d1d1f' }}>{n.phone_number}</span>
+                        <span style={{ fontSize: '0.78rem', color: '#6e6e73' }}>${n.cost_information?.monthly_cost}/mo</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button className="va-btn primary" onClick={purchaseNumber} disabled={!selectedNumber || purchasingNumber}>
+                    {purchasingNumber ? 'Purchasing...' : `Get ${selectedNumber || 'this number'}`}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="va-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="card-title">Configure your AI receptionist</div>
+              <div className="info-box" style={{ marginBottom: 4 }}>
+                Your number <strong>{purchasedNumber || config?.telnyx_number}</strong> is reserved
+              </div>
+              <label className="va-label">Business name</label>
+              <input className="va-input" value={agentName.replace(' Assistant','')} onChange={e => setAgentName(e.target.value)} placeholder="Sol Energy" />
+              <label className="va-label">Greeting message</label>
+              <textarea className="va-textarea" rows={3} value={greeting} onChange={e => setGreeting(e.target.value)} />
+              <label className="va-label">Tone</label>
+              <div className="tone-pills">
+                {(['Professional','Friendly','Formal'] as Tone[]).map(t => (
+                  <button key={t} className={`tone-pill${tone === t ? ' active' : ''}`} onClick={() => setTone(t)}>{t}</button>
+                ))}
+              </div>
+              <label className="va-label">Notification email</label>
+              <input className="va-input" value={notificationEmail} onChange={e => setNotificationEmail(e.target.value)} type="email" placeholder="sarah@solenergy.com.au" />
+              <button className="va-btn primary" onClick={async () => { await handleSave(); setOnboardingStep(3); }} disabled={saving}>
+                {saving ? 'Setting up...' : 'Create AI Receptionist →'}
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="va-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="card-title">Activate call forwarding</div>
+              <div className="info-box">
+                Your AI receptionist is configured and ready on <strong>{config?.telnyx_number}</strong>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#6e6e73', margin: 0 }}>
+                Forward your existing business number to your SolarOps number. Select your phone provider:
+              </p>
+              <label className="va-label">Your phone provider</label>
+              <select className="va-input" onChange={e => {}} defaultValue="">
+                <option value="" disabled>Select provider...</option>
+                {Object.keys(forwardingCodes).map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              <div className="info-box" style={{ fontFamily: 'monospace', fontSize: '0.95rem', letterSpacing: 1 }}>
+                {forwardingCodes['Telstra']}
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#6e6e73', margin: 0 }}>
+                Dial this code from your business phone. Forwarding activates instantly.
+              </p>
+              <button className="va-btn primary" onClick={() => { fetchData(); }}>
+                I've set up forwarding — Go Live
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="va-page">

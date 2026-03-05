@@ -55,7 +55,8 @@ Solar operations management platform for Australian solar businesses.
 │           ├── auth.ts        # Google OAuth endpoints (/api/auth/google/*)
 │           ├── billReader.ts  # Bill OCR + extraction endpoints
 │           ├── usage.ts       # API usage log endpoints
-│           └── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
+│           ├── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
+│           └── voice.ts       # Retell AI + Telnyx voice agent endpoints
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql
@@ -65,7 +66,9 @@ Solar operations management platform for Australian solar businesses.
 │       ├── 005_google_connections.sql
 │       ├── 006_bill_extractions.sql
 │       ├── 007_api_usage_log.sql
-│       └── 008_bill_extractions_processing_ms.sql
+│       ├── 008_bill_extractions_processing_ms.sql
+│       ├── 009_voice_tables.sql
+│       └── 010_voice_retell_telnyx.sql
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -117,6 +120,8 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `inbox_connections` — Gmail OAuth tokens per tenant (`tenant_id UUID`, `provider TEXT`, `email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `token_expiry TIMESTAMPTZ`, `updated_at`). Unique on `(tenant_id, provider)`.
 - `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`). Unique on `(tenant_id, external_id)`.
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
+- `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `created_at`, `updated_at`). Unique on `tenant_id`.
+- `voice_calls` — inbound call records (`id UUID`, `tenant_id UUID`, `vapi_call_id TEXT UNIQUE`, `caller_number TEXT`, `caller_name TEXT`, `caller_email TEXT`, `caller_suburb TEXT`, `reason TEXT`, `call_type TEXT`, `callback_window TEXT`, `transcript TEXT`, `summary TEXT`, `status TEXT`, `duration_seconds INT`, `created_at`)
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
 ## Environment Secrets
@@ -139,6 +144,8 @@ All required secrets are stored in Replit's Secrets pane:
 | `GOOGLE_APPLICATION_CREDENTIALS` | Backend (Cloud Vision OCR) |
 | `ANTHROPIC_API_KEY` | Backend (Claude Haiku + Sonnet) |
 | `SESSION_SECRET` | Backend (express-session) |
+| `RETELL_API_KEY` | Backend (Retell AI voice agent) |
+| `TELNYX_API_KEY` | Backend (Telnyx telephony — number purchase) |
 | `PRODUCTION_URL` | Backend |
 
 ## Pages & Features
@@ -152,7 +159,7 @@ All required secrets are stored in Replit's Secrets pane:
 - `/usage` — **COMPLETE & LIVE**. Real data from `api_usage_log`. Per-tenant filtering with `.or()` for legacy NULL rows. Module filter pill bar, cost by module breakdown, daily spend recharts line chart, monthly budget tracker. Extraction cost log table. Limit 100 rows.
 - `/inbox-assistant` — **COMPLETE & LIVE**. Gmail OAuth flow at `/api/auth/gmail`. Syncs 20 emails, upserts to `inbox_emails`. AI draft generation (Claude Sonnet) + summary via `/api/inbox/draft`. Approve & send via Gmail API (`/api/inbox/send`). Mark as read in Gmail (`/api/inbox/mark-read`). Unread indicator (blue dot, bold text). Completed tab for sent emails (hidden from All filter). Disconnect clears Supabase emails + drafts. Auto-polls every 3 minutes. Draft textarea is read-only after sending.
 - `/connections` — Google Workspace OAuth (passport-google-oauth20). Tokens stored in `google_connections`. Connect/disconnect working.
-- `/voice-agent` — UI only. Agent config, script preview, stats, recent calls. No Vapi/Telnyx integration.
+- `/voice-agent` — **COMPLETE & LIVE**. Self-serve onboarding: Step 1 (Telnyx AU number search + purchase), Step 2 (configure Retell AI agent — name, greeting, tone, email), Step 3 (call forwarding instructions per carrier). Full dashboard after onboarding: live/offline toggle, call stats, recent calls with transcript detail panel. Webhook logs calls to `voice_calls`. Uses Retell AI (11labs-Matilda voice, en-AU) + Telnyx for telephony.
 - `/helpdesk` — UI only. Kanban board, ticket detail panel. No backend connected.
 - `/activity-log` — UI only. Log table with drawer. No backend connected.
 - `/settings` — UI only. Workspace, notifications, AI behaviour, team, billing, time-saved cards. No backend connected.
@@ -184,6 +191,15 @@ All required secrets are stored in Replit's Secrets pane:
 - `DELETE /api/inbox/drafts/:id` — Deletes a specific draft.
 - `POST /api/inbox/send` — Sends reply via Gmail API, marks draft as sent + email as read.
 - `POST /api/inbox/mark-read` — Marks email as read in Supabase + removes UNREAD label in Gmail.
+
+### Voice Agent (`/api/voice`)
+- `GET /api/voice/numbers/search?state=SA` — Search available AU phone numbers on Telnyx by state.
+- `POST /api/voice/numbers/purchase` — Purchase a Telnyx number and save to `voice_config`.
+- `POST /api/voice/setup` — Create/update Retell AI agent + LLM with system prompt. Imports Telnyx number to Retell.
+- `POST /api/voice/webhook` — Retell webhook for `call_ended` events. Extracts caller details, logs to `voice_calls` and `api_usage_log`.
+- `GET /api/voice/calls?tenant_id=X` — List recent calls for a tenant.
+- `GET /api/voice/config?tenant_id=X` — Get voice config for a tenant.
+- `POST /api/voice/toggle` — Toggle agent live/offline.
 
 ## AI Models
 
@@ -247,7 +263,7 @@ npm run dev:server # Express only (tsx watch)
 ## What's Next (Pending)
 
 - **Push to Simpro** — Wire up disabled "Push to Simpro" button on Bill Reader to Simpro API
-- **Voice Agent** — Vapi.ai integration for real call handling
+- **Voice Agent** — Run 010_voice_retell_telnyx.sql migration in Supabase to add Retell/Telnyx columns
 - **Helpdesk** — Backend ticket management (create, update, assign)
 - **Activity Log** — Real data from audit trail
 - **Settings** — Save workspace/notification/AI settings to Supabase
