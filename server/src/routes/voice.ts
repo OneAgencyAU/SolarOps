@@ -64,14 +64,19 @@ CALL FLOW:
           name: `${business_name} Receptionist`,
           model: { provider: 'anthropic', model: 'claude-haiku-4-5-20251001', systemPrompt, temperature: 0.7 },
           voice: { provider: '11labs', voiceId: 'rachel' },
-          firstMessage: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to take your details and arrange a callback. Is that okay?`,
+          firstMessage: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist.`,
           transcriber: { provider: 'deepgram', language: 'en-AU' },
           maxDurationSeconds: 300,
         }),
       });
-      const assistantRaw = await createRes.text();
-      console.log('[Voice Setup] Create assistant response:', assistantRaw);
-      const assistant = JSON.parse(assistantRaw) as { id: string };
+      const createText = await createRes.text();
+      console.log('[Voice Setup] Vapi create status:', createRes.status);
+      console.log('[Voice Setup] Vapi create response:', createText);
+      if (!createRes.ok) {
+        res.status(500).json({ error: 'Vapi assistant creation failed', details: createText });
+        return;
+      }
+      const assistant = JSON.parse(createText) as { id: string };
       assistantId = assistant.id;
 
       await fetch(`https://api.vapi.ai/phone-number/${VAPI_PHONE_NUMBER_ID}`, {
