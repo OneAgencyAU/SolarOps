@@ -199,7 +199,7 @@ export default function VoiceAgentPage() {
     : '—';
 
   if (!config || (config.onboarding_step || 1) < 3) {
-    const step = onboardingStep || config?.onboarding_step || 1;
+    const step = onboardingStep > 1 ? onboardingStep : (config?.onboarding_step || 1);
     const forwardingCodes: Record<string, string> = {
       Telstra: `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
       Optus: `*21*${purchasedNumber || config?.telnyx_number || ''}#`,
@@ -291,7 +291,11 @@ export default function VoiceAgentPage() {
               </div>
               <label className="va-label">Notification email</label>
               <input className="va-input" value={notificationEmail} onChange={e => setNotificationEmail(e.target.value)} type="email" placeholder="sarah@solenergy.com.au" />
-              <button className="va-btn primary" onClick={async () => { await handleSave(); setOnboardingStep(3); }} disabled={saving}>
+              <button className="va-btn primary" onClick={async () => {
+                await handleSave();
+                await fetchData();
+                setOnboardingStep(3);
+              }} disabled={saving}>
                 {saving ? 'Setting up...' : 'Create AI Receptionist →'}
               </button>
             </div>
