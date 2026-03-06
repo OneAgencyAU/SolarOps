@@ -134,7 +134,7 @@ Rude caller: First warning then end call.`;
       console.log('[Retell LLM]', llm.llm_id);
 
       const agent = await retell.agent.create({
-        voice_id: '11labs-Matilda',
+        voice_id: '11labs-Adrian',
         response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
         agent_name: `${business_name} Receptionist`,
         language: 'en-AU',
