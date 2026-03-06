@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
+import Retell from 'retell-sdk';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -7,8 +8,8 @@ const supabase = createClient(
 );
 
 const router = Router();
-const RETELL_API_KEY = process.env.RETELL_API_KEY!;
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY!;
+const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
 
 router.get('/api/voice/numbers/search', async (req: Request, res: Response) => {
   try {
@@ -118,57 +119,42 @@ Rude caller: First warning then end call.`;
     let agentId = config?.retell_agent_id;
 
     if (agentId) {
-      await fetch(`https://api.retellai.com/update-agent/${agentId}`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${RETELL_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_name: `${business_name} Receptionist`,
-          response_engine: { type: 'retell-llm', llm_id: config?.retell_agent_id },
-          voice_id: '11labs-Matilda',
-          language: 'en-AU',
-        }),
+      await retell.agent.update(agentId, {
+        agent_name: `${business_name} Receptionist`,
+        voice_id: '11labs-Matilda',
+        language: 'en-AU',
       });
     } else {
-      const llmRes = await fetch('https://api.retellai.com/create-retell-llm', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RETELL_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          general_prompt: systemPrompt,
-          begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
-          general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
-        }),
+      const llm = await retell.llm.create({
+        model: 'gpt-4o-mini',
+        general_prompt: systemPrompt,
+        begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
+        general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
       });
-      const llm = await llmRes.json() as { llm_id: string };
-      console.log('[Retell LLM]', JSON.stringify(llm));
+      console.log('[Retell LLM]', llm.llm_id);
 
-      const agentRes = await fetch('https://api.retellai.com/create-agent', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${RETELL_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agent_name: `${business_name} Receptionist`,
-          response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
-          voice_id: '11labs-Matilda',
-          language: 'en-AU',
-          webhook_url: 'https://solarops.com.au/api/voice/webhook',
-        }),
+      const agent = await retell.agent.create({
+        voice_id: '11labs-Matilda',
+        response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
+        agent_name: `${business_name} Receptionist`,
+        language: 'en-AU',
+        webhook_url: 'https://solarops.com.au/api/voice/webhook',
       });
-      const agent = await agentRes.json() as { agent_id: string };
-      console.log('[Retell Agent]', JSON.stringify(agent));
+      console.log('[Retell Agent]', agent.agent_id);
       agentId = agent.agent_id;
 
       if (config?.telnyx_number) {
-        const phoneRes = await fetch('https://api.retellai.com/import-phone-number', {
+        const sipRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${RETELL_API_KEY}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phone_number: config.telnyx_number,
             termination_uri: 'sip.telnyx.com',
             inbound_agent_id: agentId,
           }),
         });
-        const phoneData = await phoneRes.json();
-        console.log('[Retell Phone Import]', JSON.stringify(phoneData));
+        const sipText = await sipRes.text();
+        console.log('[Retell SIP Import]', sipRes.status, sipText);
       }
     }
 
