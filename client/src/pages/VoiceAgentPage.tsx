@@ -459,7 +459,9 @@ export default function VoiceAgentPage() {
             ) : displayCalls.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: '#6e6e73', fontSize: '0.875rem' }}>
                 <p>No calls yet.</p>
-                <p style={{ marginTop: 8 }}>Call <strong>{config?.phone_number || '+61485016654'}</strong> to test your agent.</p>
+                {(config?.telnyx_number || config?.phone_number) && (
+                  <p style={{ marginTop: 8 }}>Call <strong>{config?.telnyx_number || config?.phone_number}</strong> to test your agent.</p>
+                )}
               </div>
             ) : (
               <>
@@ -534,11 +536,11 @@ export default function VoiceAgentPage() {
           <Section title="Phone Number Setup" open={openSections.phone} onToggle={() => toggle('phone')}>
             <div className="steps">
               <Step icon={config ? '✅' : '⏳'} label="Agent configured" />
-              <Step icon={config ? '✅' : '🔒'} label={`Your number: ${config?.phone_number || '+61485016654'}`} />
+              <Step icon={config ? '✅' : '🔒'} label={config?.telnyx_number || config?.phone_number ? `Your number: ${config?.telnyx_number || config?.phone_number}` : 'Your number: not yet assigned'} />
               <Step icon="💡" label="Forward your business number to this number to go live" />
             </div>
             <div className="info-box">
-              Set up call forwarding on your existing business number to <strong>{config?.phone_number || '+61485016654'}</strong>. Calls will be answered by your AI receptionist. You can toggle the agent offline above at any time.
+              Set up call forwarding on your existing business number to{config?.telnyx_number || config?.phone_number ? <> <strong>{config?.telnyx_number || config?.phone_number}</strong></> : ' your SolarOps number'}. Calls will be answered by your AI receptionist. You can toggle the agent offline above at any time.
             </div>
           </Section>
 
@@ -546,7 +548,7 @@ export default function VoiceAgentPage() {
             <div className="card-title" style={{ marginBottom: 14 }}>Quick Tips</div>
             <div className="tips-list">
               {[
-                'Test your agent by calling +61485016654 before forwarding your business number.',
+                `Test your agent by calling ${config?.telnyx_number || config?.phone_number || 'your SolarOps number'} before forwarding your business number.`,
                 'Update your greeting seasonally — e.g. mention battery rebates when available.',
                 'Check your escalation number is always reachable during business hours.',
               ].map((tip, i) => (
