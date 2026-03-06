@@ -133,6 +133,12 @@ Rude caller: First warning then end call.`;
       });
       console.log('[Retell LLM]', llm.llm_id);
 
+      const voicesRes = await fetch('https://api.retellai.com/v2/list-voices', {
+        headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}` }
+      });
+      const voices = await voicesRes.json();
+      console.log('[Retell Voices]', JSON.stringify(voices).substring(0, 500));
+
       const agent = await retell.agent.create({
         voice_id: '11labs-Adrian',
         response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
