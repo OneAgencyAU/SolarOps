@@ -126,7 +126,7 @@ Rude caller: First warning then end call.`;
       });
     } else {
       const llm = await retell.llm.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini' as any,
         general_prompt: systemPrompt,
         begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
         general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
