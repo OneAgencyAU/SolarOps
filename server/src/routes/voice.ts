@@ -121,7 +121,7 @@ Rude caller: First warning then end call.`;
     if (agentId) {
       await retell.agent.update(agentId, {
         agent_name: `${business_name} Receptionist`,
-        voice_id: '11labs-Matilda',
+        voice_id: '11labs-Adrian',
         language: 'en-AU',
       });
     } else {
