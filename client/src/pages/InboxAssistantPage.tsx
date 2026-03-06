@@ -266,7 +266,8 @@ export default function InboxAssistantPage() {
     draft: '',
     is_read: e.is_read || readEmails.has(String(e.id)),
     is_sent: sentEmails.has(String(e.id)) || aiDrafts[String(e.id)]?.status === 'sent',
-  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false })) : [];
+    message_id: e.message_id || null,
+  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false, message_id: null })) : [];
 
   const selected = emailSource.find((e) => String(e.id) === String(selectedId)) || emailSource[0];
 
@@ -300,6 +301,7 @@ export default function InboxAssistantPage() {
           email_id: emailId,
           draft_id: draft?.id || null,
           draft_text: draftText,
+          message_id: selected.message_id || null,
         }),
       });
       if (res.ok) {

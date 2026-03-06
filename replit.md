@@ -68,7 +68,8 @@ Solar operations management platform for Australian solar businesses.
 │       ├── 007_api_usage_log.sql
 │       ├── 008_bill_extractions_processing_ms.sql
 │       ├── 009_voice_tables.sql
-│       └── 010_voice_retell_telnyx.sql
+│       ├── 010_voice_retell_telnyx.sql
+│       └── 011_inbox_emails_message_id.sql
 ├── vite.config.ts             # Port 5000, /api proxy → 8000
 ├── tsconfig.json              # Client TypeScript config
 ├── tsconfig.server.json       # Server TypeScript config
@@ -118,7 +119,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `bill_extractions` — OCR bill results (`id UUID`, `tenant_id UUID`, `customer_name`, `nmi`, `retailer`, `address`, `billing_period_start`, `billing_period_end`, `total_amount`, `daily_avg_kwh`, `supply_charge`, `usage_rate`, `fit_rate`, `solar_detected BOOL`, `battery_detected BOOL`, `meter_type`, `raw_ocr_text`, `confidence_score`, `status`, `processing_ms`, `created_at`)
 - `api_usage_log` — tracks all AI/OCR API calls per tenant (`id UUID`, `tenant_id UUID`, `module TEXT`, `service TEXT`, `model TEXT`, `input_tokens INT`, `output_tokens INT`, `cost_usd NUMERIC`, `status TEXT`, `created_at`). Filtered with `.or(tenant_id.eq.${id},tenant_id.is.null)` to support legacy NULL rows.
 - `inbox_connections` — Gmail OAuth tokens per tenant (`tenant_id UUID`, `provider TEXT`, `email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `token_expiry TIMESTAMPTZ`, `updated_at`). Unique on `(tenant_id, provider)`.
-- `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`). Unique on `(tenant_id, external_id)`.
+- `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`, `message_id TEXT`). Unique on `(tenant_id, external_id)`.
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
 - `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `created_at`, `updated_at`). Unique on `tenant_id`.
 - `voice_calls` — inbound call records (`id UUID`, `tenant_id UUID`, `vapi_call_id TEXT UNIQUE`, `caller_number TEXT`, `caller_name TEXT`, `caller_email TEXT`, `caller_suburb TEXT`, `reason TEXT`, `call_type TEXT`, `callback_window TEXT`, `transcript TEXT`, `summary TEXT`, `status TEXT`, `duration_seconds INT`, `created_at`)

@@ -138,6 +138,7 @@ router.post('/api/inbox/sync', async (req: Request, res: Response) => {
       const subject = getHeader('Subject');
       const dateStr = getHeader('Date');
       const receivedAt = dateStr ? new Date(dateStr).toISOString() : new Date().toISOString();
+      const messageId = getHeader('Message-ID');
 
       let bodyText = '';
       const extractBody = (part: any): string => {
@@ -169,6 +170,7 @@ router.post('/api/inbox/sync', async (req: Request, res: Response) => {
         body_preview: preview,
         received_at: receivedAt,
         is_read: !full.data.labelIds?.includes('UNREAD'),
+        message_id: messageId || null,
       }, { onConflict: 'tenant_id,external_id' });
 
       if (!upsertError) synced++;
@@ -333,7 +335,7 @@ router.delete('/api/inbox/emails', async (req: Request, res: Response) => {
 
 router.post('/api/inbox/send', async (req: Request, res: Response) => {
   try {
-    const { tenant_id, email_id, draft_id, draft_text } = req.body;
+    const { tenant_id, email_id, draft_id, draft_text, message_id } = req.body;
     if (!tenant_id || !email_id || !draft_text) {
       res.status(400).json({ error: 'tenant_id, email_id and draft_text required' });
       return;
@@ -375,14 +377,19 @@ router.post('/api/inbox/send', async (req: Request, res: Response) => {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     const replyTo = emailData.from_email;
-    const subject = emailData.subject?.startsWith('Re:')
-      ? emailData.subject
-      : `Re: ${emailData.subject}`;
+    const rawSubject = emailData.subject || '';
+    const subject = /^re:/i.test(rawSubject) ? rawSubject : `Re: ${rawSubject}`;
+
+    const resolvedMessageId = message_id || emailData.message_id || null;
 
     const emailLines = [
       `To: ${replyTo}`,
       `Subject: ${subject}`,
       `Content-Type: text/plain; charset=utf-8`,
+      ...(resolvedMessageId ? [
+        `In-Reply-To: ${resolvedMessageId}`,
+        `References: ${resolvedMessageId}`,
+      ] : []),
       ``,
       draft_text,
     ];
