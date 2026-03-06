@@ -55,7 +55,6 @@ export default function VoiceAgentPage() {
 
   const [availableNumbers, setAvailableNumbers] = useState<any[]>([]);
   const [selectedNumber, setSelectedNumber] = useState<string>('');
-  const [selectedState, setSelectedState] = useState<string>('SA');
   const [searchingNumbers, setSearchingNumbers] = useState(false);
   const [purchasingNumber, setPurchasingNumber] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(1);
@@ -161,7 +160,7 @@ export default function VoiceAgentPage() {
   const searchNumbers = async () => {
     setSearchingNumbers(true);
     try {
-      const res = await fetch(`/api/voice/numbers/search?state=${selectedState}`);
+      const res = await fetch('/api/voice/numbers/search');
       const data = await res.json();
       setAvailableNumbers(data);
     } finally {
@@ -243,10 +242,6 @@ export default function VoiceAgentPage() {
               <p style={{ fontSize: '0.875rem', color: '#6e6e73', margin: 0 }}>
                 This is the number your AI receptionist will answer. You'll forward your existing business number to it — $2/month.
               </p>
-              <label className="va-label">Your state</label>
-              <select className="va-input" value={selectedState} onChange={e => setSelectedState(e.target.value)}>
-                {['NSW','VIC','QLD','SA','WA','TAS'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
               <button className="va-btn primary" onClick={searchNumbers} disabled={searchingNumbers}>
                 {searchingNumbers ? 'Searching...' : 'Search Available Numbers'}
               </button>

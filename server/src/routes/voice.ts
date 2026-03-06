@@ -12,18 +12,12 @@ const TELNYX_API_KEY = process.env.TELNYX_API_KEY!;
 
 router.get('/api/voice/numbers/search', async (req: Request, res: Response) => {
   try {
-    const { state } = req.query;
-    const areaCodes: Record<string, string> = {
-      NSW: '02', VIC: '03', QLD: '07', SA: '08', WA: '08', TAS: '03',
-    };
-    const areaCode = state ? areaCodes[state as string] : undefined;
-    let url = 'https://api.telnyx.com/v2/available_phone_numbers?filter[country_code]=AU&filter[number_type]=local&filter[limit]=6';
-    if (areaCode) url += `&filter[national_destination_code]=${areaCode}`;
-
+    const url = 'https://api.telnyx.com/v2/available_phone_numbers?filter[country_code]=AU&filter[number_type]=local&filter[limit]=6';
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' },
     });
     const data = await response.json() as { data: any[] };
+    console.log('[Telnyx Search]', JSON.stringify(data));
     res.json(data.data || []);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
