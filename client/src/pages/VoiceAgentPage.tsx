@@ -261,7 +261,7 @@ export default function VoiceAgentPage() {
                         }}
                       >
                         <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#1d1d1f' }}>{n.phone_number}</span>
-                        <span style={{ fontSize: '0.78rem', color: '#6e6e73' }}>${n.cost_information?.monthly_cost}/mo</span>
+                        <span style={{ fontSize: '0.78rem', color: '#6e6e73' }}>${parseFloat(n.cost_information?.monthly_cost || '0').toFixed(2)}/mo</span>
                       </button>
                     ))}
                   </div>
