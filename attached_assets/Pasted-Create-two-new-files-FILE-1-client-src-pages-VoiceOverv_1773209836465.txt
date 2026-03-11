@@ -1,0 +1,70 @@
+Create two new files:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE 1: client/src/pages/VoiceOverviewPage.tsx
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This page checks if the tenant has a voice_config set up. If not, redirect to /voice-agent/setup. If yes, show the overview.
+
+Fetch from /api/voice/config?tenant_id=xxx on mount.
+- If no config or config.onboarding_step < 3 → redirect to /voice-agent/setup using useNavigate
+- If config exists and is set up → show overview page
+
+Overview page layout (two columns, same card style as DashboardPage):
+
+LEFT COLUMN:
+- Page title "Voice Agent" with subtitle "AI-powered phone receptionist"
+- LIVE/OFFLINE toggle card (same as current VoiceAgentPage live toggle) — calls /api/voice/toggle
+- Agent card showing:
+  - Selected voice: Jake or Brooke (large name, description "Male · Friendly · Aussie" or "Female · Warm · Aussie")
+  - Phone number assigned
+  - A "Configure Inbound" button → navigates to /voice-agent/inbound
+  - A "Manage Campaigns" button → navigates to /outbound
+
+RIGHT COLUMN:
+- 3 mini stat cards (fetch from /api/voice/calls?tenant_id=xxx):
+  - Total Calls
+  - Callback Requests (count where callback_requested = true)
+  - Avg Duration (average duration_seconds formatted as m:ss)
+- Recent Calls card — last 5 calls from /api/voice/calls, same call row style as current VoiceAgentPage (caller name, call type, duration, time)
+- Phone Number Setup card (same as current VoiceAgentPage — shows agent configured, number, forwarding instructions)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FILE 2: client/src/pages/VoiceSetupPage.tsx
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A clean, centred setup wizard. Not the full dashboard layout — just a single centred card, max-width 520px, with a step indicator at the top.
+
+3 steps:
+
+STEP 1 — Choose your voice
+- Title: "Choose your AI receptionist"
+- Subtitle: "Pick the voice that will represent your business on every call."
+- Same Jake/Brooke card picker as OutboundCampaignsPage (two cards side by side, blue border on selected)
+- Jake: "Male · Friendly · Aussie"
+- Brooke: "Female · Warm · Aussie"
+- Next button
+
+STEP 2 — Configure your agent
+- Title: "Set up your receptionist"
+- Fields:
+  - Business name (text input, prefilled from tenant name)
+  - Greeting message (textarea, prefilled based on selected voice:
+    - Jake: "Hi, thanks for calling {{business_name}}. You're through to Jake, our AI receptionist — how can I help?"
+    - Brooke: "Hi, thanks for calling {{business_name}}. You're through to Brooke, our AI receptionist — how can I help?"
+  - Notification email (text input)
+  - Tone selector: Professional / Friendly / Formal (pill buttons)
+- Back + Next buttons
+
+STEP 3 — Activate
+- Title: "You're almost live"
+- Summary of what was configured (voice name, business name, greeting preview)
+- Big "Activate Voice Agent" button → calls POST /api/voice/setup with all config, then redirects to /voice-agent on success
+- Show loading state while activating
+- Back button
+
+Step indicator at top: 3 dots or "Step 1 of 3" style, shows current step.
+
+Use inline styles or a new VoiceSetupPage.css file for styling — match the overall SolarOps aesthetic (white cards, rounded corners, same font/colour palette).
+
+Do not touch any other files.

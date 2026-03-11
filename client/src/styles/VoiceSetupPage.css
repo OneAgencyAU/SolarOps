@@ -1,0 +1,366 @@
+.vs-page {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  padding: 48px 24px 64px;
+}
+
+.vs-container {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.vs-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 48px;
+  position: relative;
+  padding: 0 16px;
+}
+
+.vs-step-line {
+  position: absolute;
+  top: 16px;
+  left: 80px;
+  right: 80px;
+  height: 2px;
+  background: #e5e5e7;
+  z-index: 0;
+}
+
+.vs-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+}
+
+.vs-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #e5e5e7;
+  color: #aeaeb2;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.vs-step-dot.active {
+  background: #4F8EF7;
+  color: #ffffff;
+}
+
+.vs-step-dot.done {
+  background: #34C759;
+  color: #ffffff;
+}
+
+.vs-step-label {
+  font-size: 0.72rem;
+  color: #aeaeb2;
+  font-weight: 400;
+  transition: color 200ms ease;
+}
+
+.vs-step-label.active {
+  color: #1d1d1f;
+  font-weight: 600;
+}
+
+.vs-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.vs-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.vs-subtitle {
+  font-size: 0.88rem;
+  color: #6e6e73;
+  margin: -8px 0 0;
+  line-height: 1.5;
+}
+
+.vs-voice-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.vs-voice-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 14px;
+  border-radius: 16px;
+  border: 2px solid #e5e5e7;
+  background: #f5f5f7;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.vs-voice-card:hover {
+  background: #ffffff;
+  border-color: #c7c7cc;
+}
+
+.vs-voice-card.selected {
+  border-color: #4F8EF7;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
+}
+
+.vs-voice-avatar {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.vs-voice-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.vs-voice-card.selected .vs-voice-name {
+  color: #4F8EF7;
+}
+
+.vs-voice-desc {
+  font-size: 0.78rem;
+  color: #6e6e73;
+  text-align: center;
+}
+
+.vs-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vs-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #6e6e73;
+  margin-bottom: 6px;
+}
+
+.vs-input {
+  width: 100%;
+  background: #f5f5f7;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  color: #1d1d1f;
+  font-size: 0.88rem;
+  font-family: inherit;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+
+.vs-input:focus {
+  border-color: #4F8EF7;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+  background: #ffffff;
+}
+
+.vs-textarea {
+  width: 100%;
+  background: #f5f5f7;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  color: #1d1d1f;
+  font-size: 0.88rem;
+  font-family: inherit;
+  padding: 10px 14px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+
+.vs-textarea:focus {
+  border-color: #4F8EF7;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+  background: #ffffff;
+}
+
+.vs-tone-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.vs-tone-pill {
+  padding: 6px 16px;
+  border-radius: 980px;
+  border: 1px solid #e5e5e7;
+  background: #ffffff;
+  color: #6e6e73;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.vs-tone-pill.active {
+  background: #1d1d1f;
+  color: #ffffff;
+  border-color: #1d1d1f;
+}
+
+.vs-tone-pill:hover:not(.active) {
+  background: #f5f5f7;
+}
+
+.vs-summary {
+  background: #f5f5f7;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.vs-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.vs-summary-row.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.vs-summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vs-summary-value {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.vs-summary-greeting {
+  font-size: 0.85rem;
+  color: #1d1d1f;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.vs-summary-divider {
+  height: 1px;
+  background: #e5e5e7;
+}
+
+.vs-btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+.vs-btn {
+  padding: 11px 24px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 150ms ease;
+}
+
+.vs-btn.primary {
+  background: #4F8EF7;
+  color: #ffffff;
+  flex: 1;
+}
+
+.vs-btn.primary:hover:not(:disabled) {
+  background: #3a7de8;
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.30);
+}
+
+.vs-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vs-btn.primary.activate {
+  background: #34C759;
+}
+
+.vs-btn.primary.activate:hover:not(:disabled) {
+  background: #2db84e;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.30);
+}
+
+.vs-btn.secondary {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.vs-btn.secondary:hover {
+  background: #e5e5e7;
+}
+
+.vs-error {
+  background: rgba(255, 69, 58, 0.08);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  color: #FF453A;
+}
+
+@media (max-width: 540px) {
+  .vs-page {
+    padding: 24px 16px 48px;
+  }
+
+  .vs-card {
+    padding: 24px 20px;
+  }
+
+  .vs-steps {
+    gap: 32px;
+  }
+
+  .vs-step-line {
+    left: 56px;
+    right: 56px;
+  }
+}
