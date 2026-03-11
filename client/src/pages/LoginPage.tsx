@@ -83,8 +83,11 @@ export default function LoginPage() {
         <div className="login-orb login-orb--3" />
         <div className="login-left-content">
           <div className="login-brand">
-            <span className="login-brand-icon">⊙</span>
-            <span className="login-brand-name">SolarOps</span>
+            <img
+              src="/solarops-logo.png"
+              alt="SolarOps"
+              style={{ height: '56px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
+            />
           </div>
           <p className="login-brand-tagline">AI operations for solar businesses</p>
 

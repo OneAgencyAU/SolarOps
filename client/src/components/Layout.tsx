@@ -24,8 +24,11 @@ export default function Layout() {
 
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <span className="sidebar-logo-sun">☀</span>
-          <span className="sidebar-logo-text">SolarOps</span>
+          <img
+            src="/solarops-logo.png"
+            alt="SolarOps"
+            style={{ height: '38px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
+          />
         </div>
         <nav className="sidebar-nav">
           {navItems.map((item) => (
