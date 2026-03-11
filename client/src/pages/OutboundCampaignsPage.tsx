@@ -4,6 +4,13 @@ import '../styles/OutboundCampaignsPage.css';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
+const campaignScripts: Record<string, string> = {
+  lead_reactivation: "Hi {{customer_name}}, it's {{agent_name}} calling from {{business_name}}. You'd enquired with us a little while back about solar — I'm just following up to see how things are going?",
+  maintenance_reminder: "Hi {{customer_name}}, it's {{agent_name}} from {{business_name}}. Just a quick one — your solar system is coming up for its annual service check. Is now an okay time?",
+  battery_rebate: "Hi {{customer_name}}, it's {{agent_name}} calling from {{business_name}}. I'm just reaching out because there's a government battery rebate available at the moment, and based on your details you could be eligible. Have you heard much about it?",
+  quote_followup: "Hi {{customer_name}}, it's {{agent_name}} from {{business_name}}. I'm just following up on the quote we sent through — had a chance to have a look at it?",
+};
+
 const CAMPAIGN_TYPES = [
   { value: 'lead_reactivation', label: 'Lead Reactivation' },
   { value: 'maintenance_reminder', label: 'Maintenance Reminder' },
@@ -154,7 +161,7 @@ export default function OutboundCampaignsPage() {
                 <select
                   className="oc-select"
                   value={campaignType}
-                  onChange={(e) => setCampaignType(e.target.value)}
+                  onChange={(e) => { setCampaignType(e.target.value); setScript(campaignScripts[e.target.value] ?? ''); }}
                 >
                   {CAMPAIGN_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
