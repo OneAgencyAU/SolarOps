@@ -118,7 +118,7 @@ Off-topic: "I'm set up to help with solar questions — our team will help with 
 Rude caller: First warning then end call.`;
 
     const beginMessage = greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`;
-    const generalTools = [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }];
+    const generalTools = [{ type: 'end_call' as const, name: 'end_call', description: 'End the call when conversation is complete' }];
 
     const [jakeLlm, brookeLlm] = await Promise.all([
       retell.llm.create({ model: 'gpt-4o-mini' as any, general_prompt: systemPrompt, begin_message: beginMessage, general_tools: generalTools }),
