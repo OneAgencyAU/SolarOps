@@ -73,6 +73,24 @@
   border-left-color: #4F8EF7;
 }
 
+.sidebar-nav-subitem {
+  margin-left: 16px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav-subitem:hover {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.sidebar-nav-subitem.active {
+  background: #e8f0fe;
+  color: #4F8EF7;
+  border-left-color: #4F8EF7;
+}
+
 .nav-icon {
   font-size: 0.9rem;
   width: 18px;

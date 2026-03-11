@@ -1,11 +1,10 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Layout.css';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: '▦' },
   { label: 'Voice Agent', path: '/voice-agent', icon: '◎' },
-  { label: 'Outbound', path: '/outbound', icon: '⊳' },
   { label: 'Inbox Assistant', path: '/inbox-assistant', icon: '✉' },
   { label: 'Bill Reader', path: '/bill-reader', icon: '⎘' },
   { label: 'Helpdesk', path: '/helpdesk', icon: '⊙' },
@@ -17,6 +16,8 @@ const navItems = [
 
 export default function Layout() {
   const { user, tenant, signOut } = useAuth();
+  const { pathname } = useLocation();
+  const voiceExpanded = pathname === '/voice-agent' || pathname === '/outbound';
 
   return (
     <div className="app-shell">
@@ -32,16 +33,29 @@ export default function Layout() {
         </div>
         <nav className="sidebar-nav">
           {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `sidebar-nav-item${isActive ? ' active' : ''}`
-              }
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-            </NavLink>
+            <div key={item.path}>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `sidebar-nav-item${isActive ? ' active' : ''}`
+                }
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+              </NavLink>
+
+              {item.path === '/voice-agent' && voiceExpanded && (
+                <NavLink
+                  to="/outbound"
+                  className={({ isActive }) =>
+                    `sidebar-nav-item sidebar-nav-subitem${isActive ? ' active' : ''}`
+                  }
+                >
+                  <span className="nav-icon">⊳</span>
+                  <span className="nav-label">Outbound</span>
+                </NavLink>
+              )}
+            </div>
           ))}
         </nav>
       </aside>
