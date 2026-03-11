@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import VoiceAgentPage from './pages/VoiceAgentPage';
+import VoiceSetupPage from './pages/VoiceSetupPage';
+import VoiceOverviewPage from './pages/VoiceOverviewPage';
+import InboundPage from './pages/InboundPage';
 import OutboundCampaignsPage from './pages/OutboundCampaignsPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
@@ -41,7 +44,9 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/voice-agent" element={<VoiceAgentPage />} />
+            <Route path="/voice-agent" element={<VoiceOverviewPage />} />
+            <Route path="/voice-agent/setup" element={<VoiceSetupPage />} />
+            <Route path="/voice-agent/inbound" element={<InboundPage />} />
             <Route path="/outbound" element={<OutboundCampaignsPage />} />
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
             <Route path="/bill-reader" element={<BillReaderPage />} />

@@ -17,7 +17,7 @@ const navItems = [
 export default function Layout() {
   const { user, tenant, signOut } = useAuth();
   const { pathname } = useLocation();
-  const voiceExpanded = pathname === '/voice-agent' || pathname === '/outbound';
+  const voiceExpanded = pathname === '/voice-agent' || pathname === '/voice-agent/inbound' || pathname === '/outbound' || pathname === '/voice-agent/setup';
 
   return (
     <div className="app-shell">
@@ -45,15 +45,26 @@ export default function Layout() {
               </NavLink>
 
               {item.path === '/voice-agent' && voiceExpanded && (
-                <NavLink
-                  to="/outbound"
-                  className={({ isActive }) =>
-                    `sidebar-nav-item sidebar-nav-subitem${isActive ? ' active' : ''}`
-                  }
-                >
-                  <span className="nav-icon">⊳</span>
-                  <span className="nav-label">Outbound</span>
-                </NavLink>
+                <>
+                  <NavLink
+                    to="/voice-agent/inbound"
+                    className={({ isActive }) =>
+                      `sidebar-nav-item sidebar-nav-subitem${isActive ? ' active' : ''}`
+                    }
+                  >
+                    <span className="nav-icon">↙</span>
+                    <span className="nav-label">Inbound</span>
+                  </NavLink>
+                  <NavLink
+                    to="/outbound"
+                    className={({ isActive }) =>
+                      `sidebar-nav-item sidebar-nav-subitem${isActive ? ' active' : ''}`
+                    }
+                  >
+                    <span className="nav-icon">⊳</span>
+                    <span className="nav-label">Outbound</span>
+                  </NavLink>
+                </>
               )}
             </div>
           ))}
