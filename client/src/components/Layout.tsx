@@ -5,6 +5,7 @@ import '../styles/Layout.css';
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: '▦' },
   { label: 'Voice Agent', path: '/voice-agent', icon: '◎' },
+  { label: 'Outbound', path: '/outbound', icon: '⊳' },
   { label: 'Inbox Assistant', path: '/inbox-assistant', icon: '✉' },
   { label: 'Bill Reader', path: '/bill-reader', icon: '⎘' },
   { label: 'Helpdesk', path: '/helpdesk', icon: '⊙' },

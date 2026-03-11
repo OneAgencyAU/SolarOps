@@ -1,0 +1,39 @@
+Create a new file client/src/pages/OutboundCampaignsPage.tsx.
+
+Also create client/src/styles/OutboundCampaignsPage.css and import it in the page.
+
+The page should match the visual style of VoiceAgentPage.tsx (same card style, same layout patterns, same CSS class naming conventions).
+
+Page layout — two columns, same split as VoiceAgentPage:
+
+LEFT COLUMN — Create Campaign form:
+- Page title "Outbound Campaigns" with subtitle "Run AI-powered outbound call campaigns"
+- Card: "New Campaign"
+  - Campaign name (text input)
+  - Campaign type (select dropdown): Lead Reactivation, Maintenance Reminder, Battery Rebate Follow-up, Quote Follow-up
+  - Script (textarea, placeholder: "Hi {{customer_name}}, this is calling from Sol Energy...")
+  - Leads section: a simple textarea where user pastes CSV data (one lead per line: name,phone)
+    - Show a small helper text: "One lead per line: Name, Phone number"
+    - Parse the textarea into leads array on submit
+  - "Launch Campaign" button — calls POST /api/campaigns/create
+  - Show lead count parsed from the textarea live as user types
+
+RIGHT COLUMN — Campaign results:
+- Stats row (3 mini stat cards): Total Campaigns, Total Calls Made, Avg Answer Rate (hardcoded — for now)
+- Campaign cards list — fetch from GET /api/campaigns/list
+  - Each card shows:
+    - Campaign name (bold) + campaign type badge (coloured by type)
+    - Lead count + status pill (sent = green, draft = grey)
+    - Script preview (first 100 chars, truncated with ellipsis)
+    - Created date
+    - Expand on click to show full script
+  - Campaign type badge colours:
+    - lead_reactivation → purple
+    - maintenance_reminder → blue
+    - battery_rebate → orange
+    - quote_followup → green
+  - Empty state: "No campaigns yet. Create your first campaign to get started."
+
+Also add the new page to the app router and sidebar navigation, following the same pattern as the Voice Agent page entry. The nav label should be "Outbound" and use an appropriate icon.
+
+Do not modify VoiceAgentPage.tsx or voice.ts.

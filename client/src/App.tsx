@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
 import VoiceAgentPage from './pages/VoiceAgentPage';
+import OutboundCampaignsPage from './pages/OutboundCampaignsPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
 import ConnectionsPage from './pages/ConnectionsPage';
@@ -41,6 +42,7 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/voice-agent" element={<VoiceAgentPage />} />
+            <Route path="/outbound" element={<OutboundCampaignsPage />} />
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
             <Route path="/bill-reader" element={<BillReaderPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />
