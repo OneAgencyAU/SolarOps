@@ -1,0 +1,33 @@
+In client/src/pages/DashboardPage.tsx, replace all hardcoded dummy data with real data fetched from /api/dashboard/stats.
+
+Changes to make:
+
+1. Add a useEffect that fetches /api/dashboard/stats?tenant_id=${tenant.id}&period=${period.toLowerCase().replace(' ', '_')} on mount and whenever period changes. Map period values: 'This Week' → 'week', 'This Month' → 'month', 'All Time' → 'all'.
+
+2. Store the response in a stats state variable. Show a loading state while fetching.
+
+3. Replace hardcoded values with real data:
+   - "Calls handled today" → stats.voice.calls_today
+   - "Emails drafted today" → stats.drafts.emails_drafted_today
+   - "Time saved today" → calculate from today's calls + drafts: ((calls_today * 4) + (emails_drafted_today * 3)) / 60, show as e.g. "1.2h"
+   - "TIME SAVED THIS WEEK" hours/mins → stats.time_saved.hours_saved + stats.time_saved.mins_remainder
+   - "Equivalent to X working days" → (time_saved.minutes_saved / 480).toFixed(1) working days
+   - "EST. SALARY SAVED" → $stats.time_saved.salary_saved
+   - "Emails Drafted" stat card → stats.drafts.emails_drafted
+   - "Emails Sent" stat card → rename to "Emails Received", value → stats.email.emails_received
+   - "Avg Response Time" stat card → keep as is (no real data yet, show "—")
+   - Voice Agent LIVE card → stats.voice.is_agent_live ? show green LIVE dot : show grey OFFLINE
+   - "47 calls this week" → "${stats.voice.total_calls} calls this week"
+   - Callback Requests → stats.voice.callback_requests (add as a 4th mini stat or replace one)
+
+4. Replace the hardcoded activityItems array with stats.recent_activity mapped as:
+   - type: item.type ('call' or 'email')
+   - title: item.title
+   - subtitle: item.subtitle
+   - time: format item.time as a readable time string (e.g. "9:42 AM") using toLocaleTimeString
+
+5. Keep the pie chart and weekly line chart as hardcoded for now — no real data source for those yet.
+
+6. If stats is null or loading, show "—" for all values rather than crashing.
+
+Do not touch any other files.

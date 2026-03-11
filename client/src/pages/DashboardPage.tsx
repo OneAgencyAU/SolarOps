@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -7,7 +7,47 @@ import {
 } from 'recharts';
 import '../styles/DashboardPage.css';
 
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+
 type Period = 'This Week' | 'This Month' | 'All Time';
+
+const PERIOD_MAP: Record<Period, string> = {
+  'This Week': 'week',
+  'This Month': 'month',
+  'All Time': 'all',
+};
+
+interface DashboardStats {
+  voice: {
+    total_calls: number;
+    calls_today: number;
+    callback_requests: number;
+    avg_duration_seconds: number;
+    is_agent_live: boolean;
+  };
+  email: {
+    emails_received: number;
+    emails_received_today: number;
+    unread_count: number;
+  };
+  drafts: {
+    emails_drafted: number;
+    emails_drafted_today: number;
+  };
+  time_saved: {
+    minutes_saved: number;
+    hours_saved: number;
+    mins_remainder: number;
+    salary_saved: number;
+  };
+  recent_activity: {
+    type: string;
+    title: string;
+    subtitle: string;
+    time: string;
+    meta: string;
+  }[];
+}
 
 const weeklyData = [
   { day: 'Mon', calls: 8, emails: 22 },
@@ -26,17 +66,11 @@ const pieData = [
   { name: 'Maintenance', value: 15, color: '#FF453A' },
 ];
 
-const activityItems = [
-  { type: 'call', title: 'Inbound call handled — John Smith', subtitle: 'Callback requested · Commercial · 2 mins ago', time: '9:42 AM' },
-  { type: 'mail', title: 'Email drafted — Sunridge Solar quote follow-up', subtitle: 'Proposal sent · Residential · 14 mins ago', time: '9:30 AM' },
-  { type: 'call', title: 'Inbound call handled — Maria Torres', subtitle: 'Appointment booked · Residential · 31 mins ago', time: '9:13 AM' },
-  { type: 'mail', title: 'Email drafted — Panel maintenance inquiry', subtitle: 'Service request · Commercial · 1 hr ago', time: '8:44 AM' },
-  { type: 'call', title: 'Inbound call handled — Derek Okafor', subtitle: 'Information provided · Industrial · 2 hrs ago', time: '7:58 AM' },
-];
-
 export default function DashboardPage() {
-  const { user, firstName } = useAuth();
+  const { user, firstName, tenant } = useAuth();
   const [period, setPeriod] = useState<Period>('This Week');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const getGreetingName = (): string => {
     if (firstName) return firstName;
@@ -45,7 +79,47 @@ export default function DashboardPage() {
     return emailUsername ? cap(emailUsername) : 'there';
   };
 
+  useEffect(() => {
+    if (!tenant?.id) return;
+    setLoading(true);
+    fetch(`${API}/api/dashboard/stats?tenant_id=${tenant.id}&period=${PERIOD_MAP[period]}`)
+      .then((r) => r.json())
+      .then((data) => setStats(data))
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
+  }, [tenant?.id, period]);
+
+  const d = (v: number | undefined, suffix = ''): string =>
+    loading || v === undefined ? '—' : `${v}${suffix}`;
+
+  const timeSavedToday = (): string => {
+    if (loading || !stats) return '—';
+    const mins = (stats.voice.calls_today * 4) + (stats.drafts.emails_drafted_today * 3);
+    return `${(mins / 60).toFixed(1)}h`;
+  };
+
+  const workingDays = (): string => {
+    if (loading || !stats) return '—';
+    return (stats.time_saved.minutes_saved / 480).toFixed(1);
+  };
+
+  const formatActivityTime = (iso: string): string => {
+    try {
+      return new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
+    } catch {
+      return '';
+    }
+  };
+
+  const activityItems = stats?.recent_activity.map((item) => ({
+    type: item.type === 'call' ? 'call' : 'mail',
+    title: item.title,
+    subtitle: item.subtitle,
+    time: formatActivityTime(item.time),
+  })) ?? [];
+
   const greetingName = getGreetingName();
+  const isLive = stats?.voice.is_agent_live ?? false;
 
   return (
     <div className="dashboard">
@@ -80,7 +154,7 @@ export default function DashboardPage() {
                 <span className="summary-icon" style={{ color: '#4F8EF7' }}>📞</span>
                 <span className="summary-row-label">Calls handled today</span>
               </div>
-              <span className="summary-row-value">14</span>
+              <span className="summary-row-value">{d(stats?.voice.calls_today)}</span>
             </div>
             <div className="summary-divider" />
             <div className="summary-row">
@@ -88,7 +162,7 @@ export default function DashboardPage() {
                 <span className="summary-icon" style={{ color: '#4F8EF7' }}>✉️</span>
                 <span className="summary-row-label">Emails drafted today</span>
               </div>
-              <span className="summary-row-value">23</span>
+              <span className="summary-row-value">{d(stats?.drafts.emails_drafted_today)}</span>
             </div>
             <div className="summary-divider" />
             <div className="summary-row">
@@ -96,20 +170,20 @@ export default function DashboardPage() {
                 <span className="summary-icon" style={{ color: '#34C759' }}>🕐</span>
                 <span className="summary-row-label">Time saved today</span>
               </div>
-              <span className="summary-row-value">3.2h</span>
+              <span className="summary-row-value">{timeSavedToday()}</span>
             </div>
           </div>
           <div className="summary-footer">
             <div className="summary-footer-divider" />
             <div className="summary-time-saved">
-              <div className="summary-time-label">TIME SAVED THIS WEEK</div>
+              <div className="summary-time-label">TIME SAVED THIS {period === 'This Week' ? 'WEEK' : period === 'This Month' ? 'MONTH' : 'TIME'}</div>
               <div className="summary-time-value">
-                <span className="summary-time-hours">18hrs</span>
-                <span className="summary-time-mins">24mins</span>
+                <span className="summary-time-hours">{loading ? '—' : `${stats?.time_saved.hours_saved ?? 0}hrs`}</span>
+                <span className="summary-time-mins">{loading ? '' : `${stats?.time_saved.mins_remainder ?? 0}mins`}</span>
               </div>
-              <div className="summary-time-sub">Equivalent to 2.3 working days</div>
+              <div className="summary-time-sub">Equivalent to {workingDays()} working days</div>
               <div className="summary-money-label">EST. SALARY SAVED</div>
-              <div className="summary-money-value">$773</div>
+              <div className="summary-money-value">{loading ? '—' : `$${stats?.time_saved.salary_saved ?? 0}`}</div>
               <div className="summary-money-sub">Based on $42/hr admin rate</div>
             </div>
             <Link to="/helpdesk" className="summary-alert-row">
@@ -117,7 +191,9 @@ export default function DashboardPage() {
               <span className="summary-arrow">→</span>
             </Link>
             <Link to="/inbox-assistant" className="summary-alert-row">
-              <span className="summary-alert-text muted">2 emails waiting for approval</span>
+              <span className="summary-alert-text muted">
+                {loading ? '—' : stats?.email.unread_count ?? 0} emails waiting for approval
+              </span>
               <span className="summary-arrow muted">→</span>
             </Link>
           </div>
@@ -152,35 +228,38 @@ export default function DashboardPage() {
         {/* Card 3 — Emails Drafted */}
         <div className="bento-card stat-card">
           <div className="stat-icon" style={{ background: 'rgba(79,142,247,0.10)', color: '#4F8EF7' }}><MailIcon /></div>
-          <div className="stat-value">134</div>
+          <div className="stat-value">{d(stats?.drafts.emails_drafted)}</div>
           <div className="stat-label">Emails Drafted</div>
-          <div className="stat-trend positive">↑ 28 this week</div>
+          <div className="stat-trend positive">↑ {d(stats?.drafts.emails_drafted_today)} today</div>
         </div>
 
-        {/* Card 4 — Emails Sent */}
+        {/* Card 4 — Emails Received */}
         <div className="bento-card stat-card">
           <div className="stat-icon" style={{ background: 'rgba(79,142,247,0.10)', color: '#4F8EF7' }}><SendIcon /></div>
-          <div className="stat-value">89</div>
-          <div className="stat-label">Emails Sent</div>
-          <div className="stat-trend positive">↑ 19 this week</div>
+          <div className="stat-value">{d(stats?.email.emails_received)}</div>
+          <div className="stat-label">Emails Received</div>
+          <div className="stat-trend positive">↑ {d(stats?.email.emails_received_today)} today</div>
         </div>
 
         {/* Card 5 — Avg Response */}
         <div className="bento-card stat-card">
           <div className="stat-icon" style={{ background: 'rgba(52,199,89,0.10)', color: '#34C759' }}><ClockIcon /></div>
-          <div className="stat-value">4.2m</div>
+          <div className="stat-value">—</div>
           <div className="stat-label">Avg Response Time</div>
-          <div className="stat-trend positive">↓ 1.8m faster</div>
+          <div className="stat-trend positive">No data yet</div>
         </div>
 
         {/* Card 6 — Live Status */}
         <div className="bento-card live-card">
           <div className="live-label">VOICE AGENT</div>
           <div className="live-row">
-            <span className="live-dot" />
-            <span className="live-text">LIVE</span>
+            <span className="live-dot" style={{ background: isLive ? '#34C759' : '#aeaeb2' }} />
+            <span className="live-text" style={{ color: isLive ? '#34C759' : '#aeaeb2' }}>
+              {loading ? '—' : isLive ? 'LIVE' : 'OFFLINE'}
+            </span>
           </div>
-          <div className="live-sub">47 calls this week</div>
+          <div className="live-sub">{d(stats?.voice.total_calls)} calls this {period === 'This Week' ? 'week' : period === 'This Month' ? 'month' : 'time'}</div>
+          <div className="live-sub" style={{ marginTop: 4 }}>{d(stats?.voice.callback_requests)} callback requests</div>
         </div>
 
         {/* Card 7 — Enquiry Types */}
@@ -228,6 +307,9 @@ export default function DashboardPage() {
         {/* Card 9 — Activity Feed */}
         <div className="bento-card feed-card">
           <div className="card-title" style={{ marginBottom: 8 }}>Recent Activity</div>
+          {activityItems.length === 0 && !loading && (
+            <div style={{ color: '#aeaeb2', fontSize: '0.84rem', padding: '20px 0' }}>No recent activity.</div>
+          )}
           {activityItems.map((item, i) => (
             <div key={i} className={`feed-row${i < activityItems.length - 1 ? ' bordered' : ''}`}>
               <div className={`feed-icon ${item.type}`}>
