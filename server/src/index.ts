@@ -9,6 +9,7 @@ import usageRoutes from './routes/usage';
 import inboxRouter from './routes/inbox';
 import voiceRouter from './routes/voice';
 import campaignsRouter from './routes/campaigns';
+import dashboardRouter from './routes/dashboard';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,6 +38,7 @@ app.use(usageRoutes);
 app.use(inboxRouter);
 app.use(voiceRouter);
 app.use(campaignsRouter);
+app.use(dashboardRouter);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });

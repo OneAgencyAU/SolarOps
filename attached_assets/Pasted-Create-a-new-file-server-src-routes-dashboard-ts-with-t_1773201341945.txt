@@ -1,0 +1,45 @@
+Create a new file server/src/routes/dashboard.ts with the following routes. Use the same Supabase setup pattern as voice.ts.
+
+1. GET /api/dashboard/stats?tenant_id=xxx&period=week|month|all
+
+   Based on period, calculate a `since` date:
+   - week → 7 days ago
+   - month → 30 days ago  
+   - all → no date filter
+
+   Query and return:
+   
+   a) Voice stats (from voice_calls table, filtered by tenant_id and created_at >= since):
+      - total_calls: count of all rows
+      - calls_today: count where created_at >= start of today
+      - callback_requests: count where callback_requested = true
+      - avg_duration_seconds: average of duration_seconds (ignore nulls)
+      - is_agent_live: from voice_config table, is_live field for this tenant
+
+   b) Email stats (from inbox_emails table, filtered by tenant_id and created_at >= since):
+      - emails_received: count of all rows
+      - emails_received_today: count where created_at >= start of today
+      - unread_count: count where is_read = false
+
+   c) Draft stats (from inbox_drafts table, filtered by tenant_id and created_at >= since):
+      - emails_drafted: count of all rows
+      - emails_drafted_today: count where created_at >= start of today
+
+   d) Time saved calculation (do this in the backend):
+      - minutes_saved: (total_calls * 4) + (emails_drafted * 3)
+        (4 mins per call handled, 3 mins per email drafted)
+      - hours_saved: Math.floor(minutes_saved / 60)
+      - mins_remainder: minutes_saved % 60
+      - salary_saved: Math.round((minutes_saved / 60) * 42)
+        (based on $42/hr admin rate)
+
+   e) Recent activity (last 10 items combined):
+      - Fetch last 5 voice_calls ordered by created_at desc: return { type: 'call', title: caller_name || 'Unknown caller', subtitle: reason || call_type, time: created_at, meta: call_type }
+      - Fetch last 5 inbox_emails ordered by created_at desc: return { type: 'email', title: subject, subtitle: from_name, time: created_at, meta: 'received' }
+      - Merge and sort by time desc, return top 10
+
+   Return all of the above as a single JSON object.
+
+2. Register this router in server/src/index.ts the same way other routes are registered.
+
+Do not touch any other files.
