@@ -177,11 +177,13 @@ router.post('/api/voice/webhook', async (req: Request, res: Response) => {
     const event = req.body;
     console.log('[Voice Webhook] event:', event.event);
 
-    if (event.event === 'call_ended') {
+    if (event.event === 'call_analyzed') {
       const call = event.data || {};
+      const analysis = call.call_analysis || {};
+      const custom = analysis.custom_analysis_data || {};
+      const summary = analysis.call_summary || '';
+      const sentiment = analysis.user_sentiment || '';
       const transcript = call.transcript || '';
-      const summary = call.call_analysis?.call_summary || '';
-      const sentiment = call.call_analysis?.user_sentiment || '';
 
       let tenant_id = null;
       if (call.agent_id) {
@@ -193,22 +195,16 @@ router.post('/api/voice/webhook', async (req: Request, res: Response) => {
         ? Math.round((call.end_timestamp - call.start_timestamp) / 1000)
         : null;
 
-      const extract = (label: string) => {
-        const regex = new RegExp(`${label}[:\\s]+([^\\n,]+)`, 'i');
-        const match = (summary + ' ' + transcript).match(regex);
-        return match ? match[1].trim() : null;
-      };
-
       await supabase.from('voice_calls').upsert({
         tenant_id,
         vapi_call_id: call.call_id,
-        caller_number: call.from_number || null,
-        caller_name: extract('name'),
-        caller_email: extract('email'),
-        caller_suburb: extract('suburb'),
-        reason: extract('reason'),
-        call_type: transcript.toLowerCase().includes('existing') ? 'existing_customer' : 'new_enquiry',
-        callback_window: extract('callback'),
+        caller_number: custom.caller_phone || call.from_number || null,
+        caller_name: custom.caller_name || null,
+        caller_email: null,
+        caller_suburb: null,
+        reason: custom.call_reason || null,
+        call_type: custom.caller_type || 'new_enquiry',
+        callback_window: custom.callback_time || null,
         transcript,
         summary,
         status: sentiment,
