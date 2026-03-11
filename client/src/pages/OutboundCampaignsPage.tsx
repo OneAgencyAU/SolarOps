@@ -163,7 +163,7 @@ export default function OutboundCampaignsPage() {
                 <label className="oc-label">Script</label>
                 <textarea
                   className="oc-textarea"
-                  placeholder="Hi {{customer_name}}, this is calling from Sol Energy..."
+                  placeholder="Hi {{customer_name}}, this is calling from Sol Energy. We wanted to follow up on your recent enquiry about solar. Is now a good time to chat?"
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
                   rows={5}
@@ -180,15 +180,16 @@ export default function OutboundCampaignsPage() {
                   rows={6}
                 />
                 <p className="oc-helper">One lead per line: Name, Phone number</p>
-                {leadsRaw.trim().length > 0 && (
-                  <p className="oc-lead-count">
-                    {parsedLeads.length} valid lead{parsedLeads.length !== 1 ? 's' : ''} detected
-                  </p>
-                )}
               </div>
 
               {formError && <div className="oc-error">{formError}</div>}
               {formSuccess && <div className="oc-success">{formSuccess}</div>}
+
+              <p className="oc-helper" style={{ color: parsedLeads.length > 0 ? '#6e6e73' : '#aeaeb2' }}>
+                {parsedLeads.length > 0
+                  ? `${parsedLeads.length} lead${parsedLeads.length !== 1 ? 's' : ''} ready`
+                  : 'No leads added yet'}
+              </p>
 
               <button
                 className="oc-btn primary"
