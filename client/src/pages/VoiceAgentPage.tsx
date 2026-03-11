@@ -18,6 +18,9 @@ interface VoiceCall {
   transcript: string | null;
   duration_seconds: number | null;
   status: string;
+  callback_requested: boolean | null;
+  lead_quality: string | null;
+  action_required: string | null;
 }
 
 interface VoiceConfig {
@@ -483,8 +486,8 @@ export default function VoiceAgentPage() {
                       <span className="calls-name">{call.caller_name || 'Unknown'}</span>
                       <span className="calls-route">{call.call_type === 'existing' ? 'Existing Customer' : 'New Enquiry'}</span>
                       <span className="calls-dur">{formatDuration(call.duration_seconds)}</span>
-                      <span className={`outcome-pill ${call.caller_name ? 'callback-requested' : 'completed'}`}>
-                        {call.caller_name ? 'Callback Requested' : 'Completed'}
+                      <span className={`outcome-pill ${call.callback_requested ? 'callback-requested' : 'completed'}`}>
+                        {call.callback_requested ? 'Callback Requested' : 'Completed'}
                       </span>
                       <span className="calls-time">{formatTime(call.created_at)}</span>
                     </div>
@@ -496,10 +499,10 @@ export default function VoiceAgentPage() {
                       {[
                         ['Name', selectedCall.caller_name],
                         ['Number', selectedCall.caller_number],
-                        ['Suburb', selectedCall.caller_suburb],
-                        ['Email', selectedCall.caller_email],
+                        ['Call Type', selectedCall.call_type],
                         ['Reason', selectedCall.reason],
                         ['Callback Window', selectedCall.callback_window],
+                        ['Action Required', selectedCall.action_required],
                       ].map(([label, value]) => (
                         <div key={label}>
                           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#aeaeb2', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{label}</div>
@@ -507,6 +510,17 @@ export default function VoiceAgentPage() {
                         </div>
                       ))}
                     </div>
+                    {selectedCall.lead_quality && (() => {
+                      const lq = selectedCall.lead_quality;
+                      const bg = lq === 'hot' ? '#FF453A' : lq === 'warm' ? '#FF9F0A' : '#aeaeb2';
+                      const label = lq === 'not_a_lead' ? 'Not a lead' : lq.charAt(0).toUpperCase() + lq.slice(1);
+                      return (
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#aeaeb2', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>Lead Quality</div>
+                          <span style={{ background: bg, color: '#fff', borderRadius: 20, padding: '3px 12px', fontSize: '0.78rem', fontWeight: 600 }}>{label}</span>
+                        </div>
+                      );
+                    })()}
                     {selectedCall.summary && (
                       <div style={{ background: '#fff', borderRadius: 8, padding: '10px 14px', fontSize: '0.825rem', color: '#3a3a3c', lineHeight: 1.6, marginBottom: 10 }}>
                         <span style={{ color: '#4F8EF7', marginRight: 6 }}>✦</span>{selectedCall.summary}
