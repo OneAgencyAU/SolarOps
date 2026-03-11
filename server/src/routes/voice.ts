@@ -62,6 +62,7 @@ router.post('/api/voice/numbers/purchase', async (req: Request, res: Response) =
 
 router.post('/api/voice/setup', async (req: Request, res: Response) => {
   try {
+    console.log('[Setup] Starting...');
     const { tenant_id, business_name = 'Sol Energy', notification_email, greeting, tone, escalation_phone, escalation_message, keywords } = req.body;
     if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
 
@@ -116,52 +117,42 @@ Confirm everything back before ending.
 Off-topic: "I'm set up to help with solar questions — our team will help with anything else on your callback."
 Rude caller: First warning then end call.`;
 
-    let agentId = config?.retell_agent_id;
+    const llm = await retell.llm.create({
+      model: 'gpt-4o-mini' as any,
+      general_prompt: systemPrompt,
+      begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
+      general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
+    });
+    console.log('[Retell LLM]', llm.llm_id);
 
-    if (agentId) {
-      await retell.agent.update(agentId, {
-        agent_name: `${business_name} Receptionist`,
-        voice_id: '11labs-Adrian',
-        language: 'en-AU',
-      });
-    } else {
-      const llm = await retell.llm.create({
-        model: 'gpt-4o-mini' as any,
-        general_prompt: systemPrompt,
-        begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
-        general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
-      });
-      console.log('[Retell LLM]', llm.llm_id);
+    const voicesRes = await fetch('https://api.retellai.com/v2/list-voices', {
+      headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}` }
+    });
+    const voices = await voicesRes.json();
+    console.log('[Retell Voices]', JSON.stringify(voices).substring(0, 500));
 
-      const voicesRes = await fetch('https://api.retellai.com/v2/list-voices', {
-        headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}` }
-      });
-      const voices = await voicesRes.json();
-      console.log('[Retell Voices]', JSON.stringify(voices).substring(0, 500));
+    const agent = await retell.agent.create({
+      voice_id: '11labs-Adrian',
+      response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
+      agent_name: `${business_name} Receptionist`,
+      language: 'en-AU',
+      webhook_url: 'https://solarops.com.au/api/voice/webhook',
+    });
+    console.log('[Retell Agent]', agent.agent_id);
+    const agentId = agent.agent_id;
 
-      const agent = await retell.agent.create({
-        voice_id: '11labs-Adrian',
-        response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
-        agent_name: `${business_name} Receptionist`,
-        language: 'en-AU',
-        webhook_url: 'https://solarops.com.au/api/voice/webhook',
+    if (config?.telnyx_number) {
+      const sipRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone_number: config.telnyx_number,
+          termination_uri: 'sip.telnyx.com',
+          inbound_agent_id: agentId,
+        }),
       });
-      console.log('[Retell Agent]', agent.agent_id);
-      agentId = agent.agent_id;
-
-      if (config?.telnyx_number) {
-        const sipRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone_number: config.telnyx_number,
-            termination_uri: 'sip.telnyx.com',
-            inbound_agent_id: agentId,
-          }),
-        });
-        const sipText = await sipRes.text();
-        console.log('[Retell SIP Import]', sipRes.status, sipText);
-      }
+      const sipText = await sipRes.text();
+      console.log('[Retell SIP Import]', sipRes.status, sipText);
     }
 
     await supabase.from('voice_config').upsert({
