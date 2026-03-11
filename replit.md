@@ -56,7 +56,8 @@ Solar operations management platform for Australian solar businesses.
 │           ├── billReader.ts  # Bill OCR + extraction endpoints
 │           ├── usage.ts       # API usage log endpoints
 │           ├── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
-│           └── voice.ts       # Retell AI + Telnyx voice agent endpoints
+│           ├── voice.ts       # Retell AI + Telnyx voice agent endpoints
+│           └── campaigns.ts   # Outbound campaign management endpoints
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql
@@ -122,6 +123,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`, `message_id TEXT`). Unique on `(tenant_id, external_id)`.
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
 - `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `created_at`, `updated_at`). Unique on `tenant_id`.
+- `outbound_campaigns` — outbound call campaigns (`id UUID`, `tenant_id TEXT`, `name TEXT`, `campaign_type TEXT`, `script TEXT`, `lead_count INT`, `retell_batch_id TEXT`, `status TEXT`, `created_at TIMESTAMPTZ`)
 - `voice_calls` — inbound call records (`id UUID`, `tenant_id UUID`, `vapi_call_id TEXT UNIQUE`, `caller_number TEXT`, `caller_name TEXT`, `caller_email TEXT`, `caller_suburb TEXT`, `reason TEXT`, `call_type TEXT`, `callback_window TEXT`, `transcript TEXT`, `summary TEXT`, `status TEXT`, `duration_seconds INT`, `created_at`)
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
 
@@ -201,6 +203,11 @@ All required secrets are stored in Replit's Secrets pane:
 - `GET /api/voice/calls?tenant_id=X` — List recent calls for a tenant.
 - `GET /api/voice/config?tenant_id=X` — Get voice config for a tenant.
 - `POST /api/voice/toggle` — Toggle agent live/offline.
+
+### Campaigns (`/api/campaigns`)
+- `POST /api/campaigns/create` — Create outbound batch call campaign via Retell. Looks up tenant's `retell_agent_id` + `telnyx_number` from `voice_config`, posts to Retell `/v2/create-batch-call`, saves to `outbound_campaigns`.
+- `GET /api/campaigns/list?tenant_id=X` — List all campaigns for tenant, ordered by created_at desc.
+- `GET /api/campaigns/:id?tenant_id=X` — Get single campaign by id.
 
 ## AI Models
 
