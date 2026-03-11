@@ -117,47 +117,55 @@ Confirm everything back before ending.
 Off-topic: "I'm set up to help with solar questions — our team will help with anything else on your callback."
 Rude caller: First warning then end call.`;
 
-    const llm = await retell.llm.create({
-      model: 'gpt-4o-mini' as any,
-      general_prompt: systemPrompt,
-      begin_message: greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`,
-      general_tools: [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }],
-    });
-    console.log('[Retell LLM]', llm.llm_id);
+    const beginMessage = greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`;
+    const generalTools = [{ type: 'end_call', name: 'end_call', description: 'End the call when conversation is complete' }];
 
-    const voicesRes = await fetch('https://api.retellai.com/v2/list-voices', {
-      headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}` }
-    });
-    const voices = await voicesRes.json();
-    console.log('[Retell Voices]', JSON.stringify(voices).substring(0, 500));
+    const [jakeLlm, brookeLlm] = await Promise.all([
+      retell.llm.create({ model: 'gpt-4o-mini' as any, general_prompt: systemPrompt, begin_message: beginMessage, general_tools: generalTools }),
+      retell.llm.create({ model: 'gpt-4o-mini' as any, general_prompt: systemPrompt, begin_message: beginMessage, general_tools: generalTools }),
+    ]);
+    console.log('[Retell LLM Jake]', jakeLlm.llm_id, '[Retell LLM Brooke]', brookeLlm.llm_id);
 
-    const agent = await retell.agent.create({
-      voice_id: '11labs-Adrian',
-      response_engine: { type: 'retell-llm', llm_id: llm.llm_id },
-      agent_name: `${business_name} Receptionist`,
-      language: 'en-AU',
-      webhook_url: 'https://solarops.com.au/api/voice/webhook',
-    });
-    console.log('[Retell Agent]', agent.agent_id);
-    const agentId = agent.agent_id;
+    const [jakeAgent, brookeAgent] = await Promise.all([
+      retell.agent.create({
+        voice_id: '11labs-Adrian',
+        response_engine: { type: 'retell-llm', llm_id: jakeLlm.llm_id },
+        agent_name: `${business_name} - Jake`,
+        language: 'en-AU',
+        webhook_url: 'https://solarops.com.au/api/voice/webhook',
+      }),
+      retell.agent.create({
+        voice_id: '11labs-Matilda',
+        response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
+        agent_name: `${business_name} - Brooke`,
+        language: 'en-AU',
+        webhook_url: 'https://solarops.com.au/api/voice/webhook',
+      }),
+    ]);
+    console.log('[Retell Agent Jake]', jakeAgent.agent_id, '[Retell Agent Brooke]', brookeAgent.agent_id);
 
     if (config?.telnyx_number) {
-      const sipRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone_number: config.telnyx_number,
-          termination_uri: 'sip.telnyx.com',
-          inbound_agent_id: agentId,
+      const sipHeaders = { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' };
+      const [sipJake, sipBrooke] = await Promise.all([
+        fetch('https://api.retellai.com/v2/import-phone-number', {
+          method: 'POST',
+          headers: sipHeaders,
+          body: JSON.stringify({ phone_number: config.telnyx_number, termination_uri: 'sip.telnyx.com', inbound_agent_id: jakeAgent.agent_id }),
         }),
-      });
-      const sipText = await sipRes.text();
-      console.log('[Retell SIP Import]', sipRes.status, sipText);
+        fetch('https://api.retellai.com/v2/import-phone-number', {
+          method: 'POST',
+          headers: sipHeaders,
+          body: JSON.stringify({ phone_number: config.telnyx_number, termination_uri: 'sip.telnyx.com', inbound_agent_id: brookeAgent.agent_id }),
+        }),
+      ]);
+      console.log('[Retell SIP Jake]', sipJake.status, '[Retell SIP Brooke]', sipBrooke.status);
     }
 
     await supabase.from('voice_config').upsert({
       tenant_id,
-      retell_agent_id: agentId,
+      retell_agent_id: jakeAgent.agent_id,
+      retell_agent_id_jake: jakeAgent.agent_id,
+      retell_agent_id_brooke: brookeAgent.agent_id,
       business_name,
       notification_email,
       is_live: true,
@@ -165,7 +173,7 @@ Rude caller: First warning then end call.`;
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
 
-    res.json({ success: true, agent_id: agentId });
+    res.json({ success: true, agent_id_jake: jakeAgent.agent_id, agent_id_brooke: brookeAgent.agent_id });
   } catch (err: any) {
     console.error('[Voice Setup]', err);
     res.status(500).json({ error: err.message });
