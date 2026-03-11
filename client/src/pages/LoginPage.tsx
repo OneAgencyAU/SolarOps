@@ -86,7 +86,7 @@ export default function LoginPage() {
             <img
               src="/solarops-logo.png"
               alt="SolarOps"
-              style={{ height: '56px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
+              style={{ height: '140px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
             />
           </div>
           <p className="login-brand-tagline">AI operations for solar businesses</p>
