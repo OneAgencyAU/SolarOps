@@ -1,0 +1,55 @@
+Create a new file: client/src/pages/InboundPage.tsx
+
+This is the inbound receptionist configuration page. It replaces the config sections that were in VoiceAgentPage. Match the visual style of VoiceAgentPage exactly — same card style, same two-column layout, same CSS class conventions. Create a new InboundPage.css file and import it.
+
+LEFT COLUMN — Configuration:
+
+Page title "Inbound Receptionist" with subtitle "Configure your AI receptionist for incoming calls"
+
+Card: "Voice & Identity"
+- Jake/Brooke picker (same two-card style as OutboundCampaignsPage)
+- Agent name field (read-only, shows "Jake" or "Brooke" based on selection)
+- Business name (text input)
+- Notification email (text input)
+
+Card: "Greeting & Tone"
+- Greeting message (textarea)
+- Tone selector: Professional / Friendly / Formal (pill buttons)
+- When voice changes, auto-update greeting to:
+  - Jake: "Hi, thanks for calling {{business_name}}. You're through to Jake — how can I help?"
+  - Brooke: "Hi, thanks for calling {{business_name}}. You're through to Brooke — how can I help?"
+
+Card: "Business Hours"
+- Toggle: "Only answer during business hours"
+- If enabled show: open time, close time, days of week (Mon-Fri checkboxes)
+
+Card: "Call Routing"
+- Two static info rows (not editable):
+  - New Enquiry → Collect: Name, Phone, Suburb, System type, Callback window
+  - Existing Customer → Collect: Name, Phone, Issue description, Urgency level
+
+Card: "Escalation Settings"
+- Escalation phone number (text input)
+- Safety keywords (tag input — same as current VoiceAgentPage)
+- Escalation message (textarea)
+
+"Save Configuration" button at bottom → calls POST /api/voice/setup with all fields including selected voice, stores retell_agent_id_jake or retell_agent_id_brooke as the active agent based on voice selection
+
+RIGHT COLUMN — Live preview + status:
+
+Card: "Script Preview"
+- Same chat bubble preview as current VoiceAgentPage
+- Updates live as greeting changes
+
+Card: "Agent Status"
+- LIVE/OFFLINE toggle (calls /api/voice/toggle)
+- Shows selected voice name + description
+- Shows phone number
+
+Card: "Quick Tips"
+- Same 3 tips as current VoiceAgentPage but updated to reference Jake/Brooke by name
+
+Fetch existing config from /api/voice/config on mount and prefill all fields.
+If voice selection changes, check if retell_agent_id_jake or retell_agent_id_brooke exists in config — if not, show a small warning: "Save configuration to activate this voice."
+
+Do not touch any other files.
