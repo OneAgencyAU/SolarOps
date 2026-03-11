@@ -22,6 +22,7 @@ interface Campaign {
   script: string;
   lead_count: number;
   status: string;
+  voice?: string;
   created_at: string;
 }
 
@@ -51,6 +52,7 @@ export default function OutboundCampaignsPage() {
 
   const [name, setName] = useState('');
   const [campaignType, setCampaignType] = useState('lead_reactivation');
+  const [voice, setVoice] = useState<'jake' | 'brooke'>('brooke');
   const [script, setScript] = useState('');
   const [leadsRaw, setLeadsRaw] = useState('');
   const [launching, setLaunching] = useState(false);
@@ -99,6 +101,7 @@ export default function OutboundCampaignsPage() {
           name: name.trim(),
           campaign_type: campaignType,
           script: script.trim(),
+          voice,
           leads: parsedLeads,
         }),
       });
@@ -157,6 +160,28 @@ export default function OutboundCampaignsPage() {
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="oc-label">Voice</label>
+                <div className="oc-voice-picker">
+                  <button
+                    type="button"
+                    className={`oc-voice-card${voice === 'jake' ? ' selected' : ''}`}
+                    onClick={() => setVoice('jake')}
+                  >
+                    <div className="oc-voice-name">Jake</div>
+                    <div className="oc-voice-desc">Male · Friendly · Aussie</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`oc-voice-card${voice === 'brooke' ? ' selected' : ''}`}
+                    onClick={() => setVoice('brooke')}
+                  >
+                    <div className="oc-voice-name">Brooke</div>
+                    <div className="oc-voice-desc">Female · Warm · Aussie</div>
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -253,6 +278,11 @@ export default function OutboundCampaignsPage() {
                         <span className={`oc-type-badge ${c.campaign_type}`}>
                           {typeBadgeLabel(c.campaign_type)}
                         </span>
+                        {c.voice && (
+                          <span className="oc-voice-pill">
+                            {c.voice.charAt(0).toUpperCase() + c.voice.slice(1)}
+                          </span>
+                        )}
                         <span className={`oc-status-pill ${c.status}`}>
                           {c.status}
                         </span>
