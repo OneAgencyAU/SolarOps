@@ -27,7 +27,7 @@ export default function Layout() {
           <img
             src="/solarops-logo.png"
             alt="SolarOps"
-            style={{ height: '38px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
+            style={{ height: '60px', width: 'auto', objectFit: 'contain', objectPosition: 'left center' }}
           />
         </div>
         <nav className="sidebar-nav">
