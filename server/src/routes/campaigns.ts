@@ -15,7 +15,7 @@ const router = Router();
 
 router.post('/api/campaigns/create', async (req: Request, res: Response) => {
   try {
-    const { tenant_id, name, campaign_type, script, leads } = req.body;
+    const { tenant_id, name, campaign_type, script, leads, voice = 'brooke' } = req.body;
     if (!tenant_id || !name || !leads || !Array.isArray(leads)) {
       res.status(400).json({ error: 'tenant_id, name and leads array are required' });
       return;
@@ -23,12 +23,22 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
 
     const { data: voiceConfig, error: configErr } = await supabase
       .from('voice_config')
-      .select('retell_agent_id, telnyx_number')
+      .select('retell_agent_id, retell_agent_id_jake, retell_agent_id_brooke, telnyx_number')
       .eq('tenant_id', tenant_id)
       .single();
 
-    if (configErr || !voiceConfig?.retell_agent_id || !voiceConfig?.telnyx_number) {
+    if (configErr || !voiceConfig?.telnyx_number) {
       res.status(400).json({ error: 'Voice agent not configured for this tenant' });
+      return;
+    }
+
+    const selectedAgentId =
+      voice === 'jake'   ? (voiceConfig.retell_agent_id_jake   || voiceConfig.retell_agent_id) :
+      voice === 'brooke' ? (voiceConfig.retell_agent_id_brooke || voiceConfig.retell_agent_id) :
+                           voiceConfig.retell_agent_id;
+
+    if (!selectedAgentId) {
+      res.status(400).json({ error: 'No agent ID found for this tenant' });
       return;
     }
 
@@ -52,7 +62,7 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
       },
       body: JSON.stringify({
         from_number: voiceConfig.telnyx_number,
-        override_agent_id: voiceConfig.retell_agent_id,
+        override_agent_id: selectedAgentId,
         name,
         tasks,
       }),
@@ -71,6 +81,7 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
       name,
       campaign_type,
       script,
+      voice,
       lead_count: leads.length,
       retell_batch_id: batchData.batch_call_id || null,
       status: 'sent',
