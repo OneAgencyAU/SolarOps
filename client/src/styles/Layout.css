@@ -23,8 +23,9 @@
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 4px 12px 24px;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 8px 12px 24px;
 }
 
 .sidebar-logo-sun {
