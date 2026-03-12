@@ -309,7 +309,7 @@ export default function LoginPage() {
             position: 'absolute', right: '5%', top: '55%',
             transform: 'rotate(5deg) translateY(-50%)',
             animation: 'float3 3.8s ease-in-out infinite 1s',
-            width: '220px', background: '#0f1623',
+            width: '220px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -326,11 +326,23 @@ export default function LoginPage() {
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>2:34</span>
               <span style={{ fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '20px', padding: '2px 8px' }}>New Enquiry</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '28px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '28px', marginBottom: '12px' }}>
               {[6, 14, 10, 20, 16, 24, 12, 18, 8, 22, 14, 10].map((h, i) => (
                 <div key={i} style={{ flex: 1, height: `${h}px`, borderRadius: '2px', background: i % 2 === 0 ? '#f97316' : 'rgba(251,146,60,0.4)' }} />
               ))}
             </div>
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '8px' }} />
+            {[
+              { l: 'Caller', v: <span style={{ color: 'white', fontWeight: 600 }}>John T.</span> },
+              { l: 'Classified as', v: <span style={{ fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '20px', padding: '1px 6px' }}>New Enquiry</span> },
+              { l: 'Callback', v: <span style={{ color: 'white', fontWeight: 600 }}>Today afternoon</span> },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                <span>{r.l}</span>
+                {r.v}
+              </div>
+            ))}
+            <div style={{ marginTop: '8px', fontSize: '9px', color: '#34c759' }}>✓ Transcript ready</div>
           </div>
 
           {/* Card 2 — Inbox Draft (middle) */}
@@ -338,7 +350,7 @@ export default function LoginPage() {
             position: 'absolute', left: '50%', top: '40%',
             transform: 'translateX(-50%) rotate(2deg) translateY(-50%)',
             animation: 'float2 4.5s ease-in-out infinite 0.5s',
-            width: '220px', background: '#0f1623',
+            width: '220px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -349,11 +361,14 @@ export default function LoginPage() {
             </div>
             <div style={{ fontSize: '11px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>Sarah M.</div>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Re: Solar Quote Request</div>
-            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.07)', marginBottom: '5px' }} />
-            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)', width: '70%', marginBottom: '12px' }} />
-            <button style={{ width: '100%', padding: '7px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 600, color: 'white', cursor: 'default' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', lineHeight: 1.6, marginBottom: '10px' }}>
+              Hi Sarah, thanks for getting in touch about<br />your solar installation. I'd be happy to...
+            </div>
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '10px' }} />
+            <button style={{ width: '100%', padding: '7px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 600, color: 'white', cursor: 'default', marginBottom: '8px' }}>
               Send Draft
             </button>
+            <div style={{ textAlign: 'center', fontSize: '9px', color: '#f97316' }}>AI drafted · 2 seconds ago</div>
           </div>
 
           {/* Card 1 — Dashboard (front, left) */}
@@ -361,7 +376,7 @@ export default function LoginPage() {
             position: 'absolute', left: '5%', top: '50%',
             transform: 'rotate(-6deg) translateY(-50%)',
             animation: 'float1 4s ease-in-out infinite',
-            width: '220px', background: '#0f1623',
+            width: '220px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -379,11 +394,18 @@ export default function LoginPage() {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '36px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '36px', marginBottom: '12px' }}>
               {[18, 28, 22, 34, 26, 40, 30].map((h, i) => (
                 <div key={i} style={{ flex: 1, height: `${h}px`, borderRadius: '3px 3px 0 0', background: i === 5 ? '#f97316' : i === 6 ? '#fbbf24' : 'rgba(251,146,60,0.3)' }} />
               ))}
             </div>
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '8px' }} />
+            {[{ l: 'Bills Processed', v: '47' }, { l: 'Emails Drafted', v: '183' }, { l: 'Calls Answered', v: '91' }].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>
+                <span>{r.l}</span>
+                <span style={{ color: 'white', fontWeight: 600 }}>{r.v}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -408,12 +430,12 @@ export default function LoginPage() {
       <div style={{ flex: '1 1 0', background: '#fafafa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '64px 48px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }} />
 
-        <div style={{ width: '100%', maxWidth: '320px' }}>
+        <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
           <div className="a1">
-            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', marginBottom: '6px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', marginBottom: '6px', textAlign: 'center' }}>
               Welcome back
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '32px', fontWeight: 400 }}>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '32px', fontWeight: 400, textAlign: 'center' }}>
               Sign in to your SolarOps workspace
             </p>
           </div>
@@ -440,10 +462,10 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <div className="a4" style={{ display: 'flex', gap: '7px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {[{ e: '🔒', l: 'SOC 2 Ready' }, { e: '🇦🇺', l: 'Australian' }, { e: '⚡', l: 'Solar-specific' }].map((b, i) => (
-              <span key={i} className="badge"><span>{b.e}</span>{b.l}</span>
-            ))}
+          <div className="a4" style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <span className="badge"><span>🔒</span>SOC 2 Ready</span>
+            <span className="badge"><span>🇦🇺</span>Australian</span>
+            <span className="badge"><span>⚡</span>Solar-specific</span>
           </div>
         </div>
 
