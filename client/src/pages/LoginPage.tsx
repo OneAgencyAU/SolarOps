@@ -267,12 +267,12 @@ export default function LoginPage() {
 
           <h1 className="a3" style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: '48px',
+            fontSize: 'clamp(52px, 6vw, 88px)',
             fontWeight: 800,
             color: 'white',
-            lineHeight: 1.08,
-            letterSpacing: '-0.03em',
-            marginBottom: '18px',
+            lineHeight: 1.0,
+            letterSpacing: '-0.04em',
+            marginBottom: '24px',
           }}>
             Built for<br />
             <span style={{
@@ -287,7 +287,7 @@ export default function LoginPage() {
             </span>
           </h1>
 
-          <p className="a3" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '15px', lineHeight: 1.75, maxWidth: '320px', fontWeight: 300 }}>
+          <p className="a3" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '16px', lineHeight: 1.8, maxWidth: '320px', fontWeight: 300 }}>
             Answer every call. Draft every email.<br />Track every ticket. Automatically.
           </p>
 
