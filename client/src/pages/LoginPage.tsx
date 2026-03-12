@@ -177,9 +177,9 @@ export default function LoginPage() {
   if (loading) return null;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Syne:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         @keyframes fadeUp {
@@ -215,7 +215,7 @@ export default function LoginPage() {
           width: 100%; padding: 15px 24px;
           background: white; border: 1.5px solid #e5e7eb;
           border-radius: 14px; cursor: pointer;
-          font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+          font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500;
           color: #111827; transition: all 0.2s ease;
           box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
@@ -247,7 +247,7 @@ export default function LoginPage() {
               <path d="M2 9H0.5M17.5 9H16M9 0.5V2M9 16V17.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
             </svg>
           </div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '17px', fontWeight: 800, color: 'white', letterSpacing: '-0.01em' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', fontWeight: 800, color: 'white', letterSpacing: '-0.01em' }}>
             SOLAR<span style={{ color: '#f97316' }}>OPS</span>
           </span>
         </div>
@@ -261,7 +261,7 @@ export default function LoginPage() {
           </div>
 
           <h1 className="a3" style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Inter', sans-serif",
             fontSize: '48px',
             fontWeight: 800,
             color: 'white',
@@ -289,7 +289,7 @@ export default function LoginPage() {
           <div className="a4" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '32px' }}>
             {stats.map((s, i) => (
               <div key={i} className="stat">
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>{s.value}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>{s.value}</div>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>{s.label}</div>
               </div>
             ))}
@@ -319,7 +319,7 @@ export default function LoginPage() {
 
         <div style={{ width: '100%', maxWidth: '320px' }}>
           <div className="a1">
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', marginBottom: '6px' }}>
+            <h2 style={{ fontFamily: "'Inter', sans-serif", fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', marginBottom: '6px' }}>
               Welcome back
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '32px', fontWeight: 400 }}>
