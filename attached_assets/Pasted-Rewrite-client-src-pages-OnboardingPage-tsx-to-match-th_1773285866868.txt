@@ -1,0 +1,68 @@
+Rewrite client/src/pages/OnboardingPage.tsx to match the visual style of LoginPage.tsx. Keep ALL existing logic exactly (useState, handleSubmit, fetch to /api/onboarding, navigate, useAuth, canSubmit, error, submitting) — only change the JSX and styles.
+
+Remove the import for '../styles/OnboardingPage.css' — all styles will be inline + a <style> tag.
+
+The new layout is a 2/3 + 1/3 split (same as LoginPage):
+- Left panel: flex '2 1 0', dark animated background (copy the AnimatedBackground canvas component from LoginPage.tsx exactly)
+- Right panel: flex '1 1 0', background #fafafa, contains the form
+
+LEFT PANEL content (top to bottom, using flexDirection column, padding 40px 44px):
+
+1. Logo — same as LoginPage: orange gradient box with star SVG + "SOLAR" + orange "OPS" text
+
+2. Hero section:
+   - Small orange uppercase label: "ONBOARDING"
+   - Large heading (fontSize clamp(42px,5vw,68px), fontWeight 800, color white, letterSpacing -0.03em):
+     "Let's set up your workspace."
+   - Subtext (fontSize 15px, color rgba(255,255,255,0.45), fontWeight 300):
+     "2 minutes to your AI operations dashboard."
+
+3. Progress indicator — styled as two step pills side by side:
+   - Container: display flex, gap 10px, marginTop 28px
+   - Step 1 pill: background linear-gradient(135deg,#f97316,#fbbf24), color white, borderRadius 20px, padding 8px 18px, fontSize 12px, fontWeight 600 — label "1. Workspace Setup"
+   - Step 2 pill: background rgba(255,255,255,0.06), color rgba(255,255,255,0.3), borderRadius 20px, padding 8px 18px, fontSize 12px — label "2. Connect Tools"
+
+4. Three feature cards in a column (marginTop 32px, flex 1, display flex, flexDirection column, gap 12px):
+   Each card: background rgba(255,255,255,0.04), border 1px solid rgba(255,255,255,0.08), borderRadius 14px, padding 16px 18px, display flex, alignItems center, gap 14px
+   
+   Card 1: Orange icon "📞", title "Voice Receptionist" (fontWeight 600, color white, fontSize 13px), subtitle "Answers calls 24/7, captures leads" (fontSize 11px, color rgba(255,255,255,0.4))
+   Card 2: Orange icon "✉️", title "Inbox Assistant", subtitle "Drafts replies in seconds"
+   Card 3: Orange icon "📄", title "Bill Reader", subtitle "Reads energy bills automatically"
+   
+   Each card has a right-side checkmark area: a circle (width 20px, height 20px, borderRadius 50%, border 1.5px solid rgba(255,255,255,0.15)) — will fill orange when setup is complete
+
+5. Testimonial at bottom (same as LoginPage — Nat Elliott quote, orange left border, marginTop auto)
+
+6. "Powered by ONE AGENCY" footer text
+
+RIGHT PANEL — white form panel, centered content, maxWidth 340px:
+
+- Orange top accent line (same as LoginPage)
+- Heading: "Set up your workspace" (fontSize 24px, fontWeight 800, color #0f172a)
+- Subtitle: "Tell us about your solar business" (fontSize 14px, color #94a3b8, marginBottom 28px)
+
+Form fields — all using inline styles (no CSS classes):
+  - Input style: width 100%, padding 11px 14px, border 1.5px solid #e5e7eb, borderRadius 10px, fontSize 14px, fontFamily Inter, color #0f172a, outline none, transition border-color 0.2s — on focus border-color #f97316
+  - Label style: fontSize 12px, fontWeight 500, color #374151, marginBottom 6px, display block
+  - Field wrapper: marginBottom 18px
+
+Fields (same as before):
+  - First name + Last name side by side (display grid, gridTemplateColumns 1fr 1fr, gap 12px)
+  - Business name (full width)
+  - Industry select (same options)
+  - Team size select (same options)
+
+Submit button:
+  - width 100%, padding 14px, background linear-gradient(135deg,#f97316,#fbbf24), border none, borderRadius 12px, fontSize 15px, fontWeight 600, color white, cursor pointer
+  - disabled state: opacity 0.5, cursor not-allowed
+  - label: submitting ? 'Creating workspace…' : 'Create my workspace →'
+
+Error message if error: fontSize 13px, color #ef4444, marginBottom 12px
+
+"Already have a workspace? Sign in →" link at bottom, same styling as LoginPage's Request access link.
+
+Add the same fadeUp animations (.a1 through .a5) and shimmer keyframe from LoginPage to the <style> tag.
+
+Copy AnimatedBackground component exactly from LoginPage.tsx into OnboardingPage.tsx (it's a self-contained canvas component with no props).
+
+Do not change any form logic, API calls, navigation, or auth context usage. Do not touch any other files.
