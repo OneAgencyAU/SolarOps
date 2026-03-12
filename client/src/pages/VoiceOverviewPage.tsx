@@ -49,7 +49,7 @@ export default function VoiceOverviewPage() {
       ]);
       if (configRes.ok) {
         const cfg = await configRes.json();
-        if (!cfg || (cfg.onboarding_step ?? 0) < 3 || !cfg.phone_number) {
+        if (!cfg || (cfg.onboarding_step ?? 0) < 3 || (!cfg.phone_number && !cfg.telnyx_number)) {
           navigate('/voice-agent/setup', { replace: true });
           return;
         }
