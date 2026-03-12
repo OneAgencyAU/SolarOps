@@ -223,15 +223,15 @@ export default function OnboardingPage() {
             </div>
             <h1 style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: 'clamp(42px, 5vw, 68px)',
+              fontSize: 'clamp(36px, 4vw, 58px)',
               fontWeight: 800,
               color: 'white',
               letterSpacing: '-0.03em',
               lineHeight: 1.05,
               marginBottom: '14px',
+              whiteSpace: 'nowrap',
             }}>
-              Let's set up your<br />
-              <span style={{
+              Let's set up your <span style={{
                 background: 'linear-gradient(90deg, #f97316, #fbbf24, #f97316)',
                 backgroundSize: '200% auto',
                 WebkitBackgroundClip: 'text',
@@ -268,7 +268,6 @@ export default function OnboardingPage() {
                   <div style={{ fontWeight: 600, color: 'white', fontSize: '13px', marginBottom: '2px' }}>{card.title}</div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{card.sub}</div>
                 </div>
-                <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
               </div>
             ))}
           </div>
