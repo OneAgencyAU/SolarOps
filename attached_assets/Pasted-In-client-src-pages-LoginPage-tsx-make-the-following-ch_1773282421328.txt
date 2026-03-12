@@ -1,0 +1,33 @@
+In client/src/pages/LoginPage.tsx make the following changes:
+
+1. LOGO — Find the logo image file in the project (search public/ and src/assets/ for any file named logo, solarops, or similar — png, svg, webp). Replace the current SVG icon + text logo in the left panel with an <img> tag pointing to the correct logo path. Set height to 36px, width auto. Remove the text "SOLAROPS" span next to it since the logo image includes the wordmark.
+
+2. FILL THE EMPTY SPACE — Replace the large empty gap between the tagline/stats and the testimonial with three overlapping floating UI mockup cards that look like real screenshots from inside SolarOps. Stack them with slight rotation and offset so they overlap naturally (like cards fanned out). Use absolute/relative positioning within a container div. 
+
+Build these three cards as styled divs (not real components — just visual mockups):
+
+Card 1 — Dashboard stats card (front, slight left offset, -2deg rotation):
+- Dark card, rounded-2xl, shadow-2xl, padding 20px, width 280px
+- Header: "Dashboard" in small orange uppercase label + "Today" pill
+- Row of 3 mini stats: "12 Calls" / "8 Drafts" / "3 Bills"
+- A simple bar chart made of 7 divs of varying heights in orange/amber tones
+- Background: #0f1623, border: 1px solid rgba(255,255,255,0.08)
+
+Card 2 — Inbox draft card (middle, slight right offset, 2deg rotation):
+- Same dark styling
+- Header: "Inbox Assistant" label
+- Shows a fake email draft: sender "Sarah M." with subject "Re: Solar Quote Request"
+- Two lines of placeholder text in gray
+- An orange "Send Draft" button at bottom
+- Background: #0f1623
+
+Card 3 — Voice call card (back, centered, 1deg rotation):
+- Same dark styling  
+- Header: "Voice Agent" with a green "LIVE" dot
+- Shows: caller name "John T.", duration "2:34", classification badge "New Enquiry" in blue
+- A fake waveform made of ~12 divs of varying heights in orange
+- Background: #0f1623
+
+Position the card stack in the empty middle section of the left panel, centered, with enough margin so it doesn't crowd the headline or testimonial. Cards should feel like they're floating — use drop-shadow filter on the container.
+
+Do not change any auth logic, routing, or the right panel. Do not touch any other files.

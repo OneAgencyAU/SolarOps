@@ -240,16 +240,8 @@ export default function LoginPage() {
         <AnimatedBackground />
 
         {/* Logo */}
-        <div className="a1" style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg, #f97316, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 2L10.5 7H15L11.5 9.5L13 14.5L9 12L5 14.5L6.5 9.5L3 7H7.5L9 2Z" fill="white" />
-              <path d="M2 9H0.5M17.5 9H16M9 0.5V2M9 16V17.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
-            </svg>
-          </div>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', fontWeight: 800, color: 'white', letterSpacing: '-0.01em' }}>
-            SOLAR<span style={{ color: '#f97316' }}>OPS</span>
-          </span>
+        <div className="a1" style={{ position: 'relative', zIndex: 10 }}>
+          <img src="/solarops-logo.png" alt="SolarOps" style={{ height: '36px', width: 'auto' }} />
         </div>
 
         {/* Hero text */}
@@ -293,6 +285,86 @@ export default function LoginPage() {
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>{s.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Floating UI Card Stack */}
+        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
+
+          {/* Card 3 — Voice Agent (back) */}
+          <div style={{
+            position: 'absolute', top: '10px', left: '50%',
+            transform: 'translateX(-50%) rotate(1deg)',
+            width: '270px', background: '#0f1623',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', padding: '16px 18px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Voice Agent</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: 600, color: '#34c759' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34c759', display: 'inline-block' }} />LIVE
+              </span>
+            </div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '4px' }}>John T.</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>2:34</span>
+              <span style={{ fontSize: '9px', fontWeight: 600, color: '#60a5fa', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.2)', borderRadius: '20px', padding: '2px 8px' }}>New Enquiry</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '28px' }}>
+              {[6, 14, 10, 20, 16, 24, 12, 18, 8, 22, 14, 10].map((h, i) => (
+                <div key={i} style={{ flex: 1, height: `${h}px`, borderRadius: '2px', background: i % 2 === 0 ? '#f97316' : 'rgba(251,146,60,0.4)' }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Card 2 — Inbox Draft (middle) */}
+          <div style={{
+            position: 'absolute', top: '18px', left: 'calc(50% + 60px)',
+            transform: 'rotate(2deg)',
+            width: '240px', background: '#0f1623',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', padding: '16px 18px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Inbox Assistant</span>
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>Sarah M.</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Re: Solar Quote Request</div>
+            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.07)', marginBottom: '5px' }} />
+            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)', width: '70%', marginBottom: '12px' }} />
+            <button style={{ width: '100%', padding: '7px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 600, color: 'white', cursor: 'default' }}>
+              Send Draft
+            </button>
+          </div>
+
+          {/* Card 1 — Dashboard (front) */}
+          <div style={{
+            position: 'absolute', top: '22px', left: 'calc(50% - 200px)',
+            transform: 'rotate(-2deg)',
+            width: '260px', background: '#0f1623',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', padding: '16px 18px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Dashboard</span>
+              <span style={{ fontSize: '9px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.06)', borderRadius: '20px', padding: '2px 8px' }}>Today</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+              {[{ v: '12', l: 'Calls' }, { v: '8', l: 'Drafts' }, { v: '3', l: 'Bills' }].map((s, i) => (
+                <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px 6px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>{s.v}</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.35)' }}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '36px' }}>
+              {[18, 28, 22, 34, 26, 40, 30].map((h, i) => (
+                <div key={i} style={{ flex: 1, height: `${h}px`, borderRadius: '3px 3px 0 0', background: i === 5 ? '#f97316' : i === 6 ? '#fbbf24' : 'rgba(251,146,60,0.3)' }} />
+              ))}
+            </div>
           </div>
         </div>
 
