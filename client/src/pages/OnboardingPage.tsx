@@ -102,6 +102,7 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('[Onboarding] handleSubmit called');
     e.preventDefault();
+    console.log('[Onboarding] canSubmit:', canSubmit, firstName, lastName, businessName);
     if (!user || !canSubmit) return;
 
     setSubmitting(true);
