@@ -235,25 +235,25 @@ export default function LoginPage() {
         .badge:hover { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 
         @keyframes float1 {
-          0%, 100% { transform: rotate(-5deg) translateY(-50%); }
-          50% { transform: rotate(-5deg) translateY(calc(-50% - 14px)); }
+          0%, 100% { transform: rotate(-6deg) translateY(-50%); }
+          50% { transform: rotate(-6deg) translateY(calc(-50% - 12px)); }
         }
         @keyframes float2 {
           0%, 100% { transform: translateX(-50%) rotate(2deg) translateY(-50%); }
           50% { transform: translateX(-50%) rotate(2deg) translateY(calc(-50% - 10px)); }
         }
         @keyframes float3 {
-          0%, 100% { transform: rotate(4deg) translateY(-50%); }
-          50% { transform: rotate(4deg) translateY(calc(-50% - 16px)); }
+          0%, 100% { transform: rotate(5deg) translateY(-50%); }
+          50% { transform: rotate(5deg) translateY(calc(-50% - 14px)); }
         }
       `}</style>
 
       {/* LEFT PANEL */}
-      <div style={{ flex: '2 1 0', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '40px 44px' }}>
+      <div style={{ flex: '2 1 0', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '44px 48px' }}>
         <AnimatedBackground />
 
         {/* Logo */}
-        <div className="a1" style={{ position: 'relative', zIndex: 10, marginBottom: 32 }}>
+        <div className="a1" style={{ position: 'relative', zIndex: 10 }}>
           <img src="/solarops-logo.png" alt="SolarOps" style={{ height: '36px', width: 'auto' }} />
         </div>
 
@@ -346,14 +346,14 @@ export default function LoginPage() {
         </div>
 
         {/* Floating UI Card Stack */}
-        <div className="a4" style={{ position: 'relative', zIndex: 10, flex: '1 1 0', minHeight: 0, marginTop: 28, marginBottom: 28, width: '100%', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
+        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '260px', width: '100%', marginTop: '32px', marginBottom: '32px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
 
           {/* Card 3 — Voice Agent (back, right) */}
           <div style={{
-            position: 'absolute', right: '2%', top: '50%',
-            transform: 'rotate(4deg) translateY(-50%)',
+            position: 'absolute', right: '5%', top: '55%',
+            transform: 'rotate(5deg) translateY(-50%)',
             animation: 'float3 3.8s ease-in-out infinite 1s',
-            width: '260px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -391,10 +391,10 @@ export default function LoginPage() {
 
           {/* Card 2 — Inbox Draft (middle) */}
           <div style={{
-            position: 'absolute', left: '50%', top: '45%',
+            position: 'absolute', left: '50%', top: '40%',
             transform: 'translateX(-50%) rotate(2deg) translateY(-50%)',
             animation: 'float2 4.5s ease-in-out infinite 0.5s',
-            width: '260px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -417,10 +417,10 @@ export default function LoginPage() {
 
           {/* Card 1 — Dashboard (front, left) */}
           <div style={{
-            position: 'absolute', left: '2%', top: '55%',
-            transform: 'rotate(-5deg) translateY(-50%)',
+            position: 'absolute', left: '5%', top: '50%',
+            transform: 'rotate(-6deg) translateY(-50%)',
             animation: 'float1 4s ease-in-out infinite',
-            width: '260px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -454,7 +454,7 @@ export default function LoginPage() {
         </div>
 
         {/* Testimonial */}
-        <div className="a5" style={{ position: 'relative', zIndex: 10, marginTop: 'auto' }}>
+        <div className="a5" style={{ position: 'relative', zIndex: 10 }}>
           <div style={{ borderLeft: '2px solid rgba(249,115,22,0.35)', paddingLeft: '16px' }}>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.65, fontStyle: 'italic', fontWeight: 300 }}>
               "SolarOps saves our team hours every week on emails and calls."
