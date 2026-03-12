@@ -11,6 +11,34 @@ const router = Router();
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY!;
 const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
 
+router.get('/api/voice/numbers/available', async (req: Request, res: Response) => {
+  try {
+    const [telnyxRes, { data: configs }] = await Promise.all([
+      fetch('https://api.telnyx.com/v2/phone_numbers', {
+        headers: { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' },
+      }),
+      supabase.from('voice_config').select('telnyx_number').not('telnyx_number', 'is', null),
+    ]);
+
+    const telnyxData = await telnyxRes.json() as { data: any[] };
+    const owned: any[] = telnyxData.data || [];
+
+    const assigned = new Set((configs || []).map((r: any) => r.telnyx_number).filter(Boolean));
+
+    const unassigned = owned
+      .filter((n: any) => !assigned.has(n.phone_number))
+      .map((n: any) => ({
+        phone_number: n.phone_number,
+        status: n.status,
+        region: n.region_information?.[0]?.region_name ?? null,
+      }));
+
+    res.json(unassigned);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/api/voice/numbers/search', async (req: Request, res: Response) => {
   try {
     const url = 'https://api.telnyx.com/v2/available_phone_numbers?filter[country_code]=AU&filter[number_type]=local&filter[limit]=6';
