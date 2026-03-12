@@ -275,8 +275,9 @@ router.get('/api/voice/calls', async (req: Request, res: Response) => {
 router.get('/api/voice/config', async (req: Request, res: Response) => {
   const { tenant_id } = req.query;
   if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
-  const { data } = await supabase.from('voice_config').select('*').eq('tenant_id', tenant_id as string).single();
-  res.json(data || null);
+  const { data } = await supabase.from('voice_config').select('*').eq('tenant_id', tenant_id as string).maybeSingle();
+  if (!data) { res.status(404).json({ error: 'No voice config found' }); return; }
+  res.json(data);
 });
 
 router.post('/api/voice/toggle', async (req: Request, res: Response) => {
