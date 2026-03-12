@@ -1,0 +1,298 @@
+import { useState, useEffect, useRef } from "react";
+
+const AnimatedBackground = () => {
+  const canvasRef = useRef(null);
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animationId;
+    let t = 0;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, "#050810");
+      bg.addColorStop(1, "#0a0f1e");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      const blobs = [
+        { x: 0.3 + Math.sin(t * 0.4) * 0.15, y: 0.3 + Math.cos(t * 0.3) * 0.1, r: 0.45, c1: "rgba(251,146,60,0.18)", c2: "rgba(251,146,60,0)" },
+        { x: 0.7 + Math.cos(t * 0.35) * 0.1, y: 0.6 + Math.sin(t * 0.5) * 0.12, r: 0.4, c1: "rgba(99,102,241,0.2)", c2: "rgba(99,102,241,0)" },
+        { x: 0.5 + Math.sin(t * 0.25) * 0.2, y: 0.8 + Math.cos(t * 0.4) * 0.08, r: 0.35, c1: "rgba(251,191,36,0.12)", c2: "rgba(251,191,36,0)" },
+        { x: 0.15 + Math.cos(t * 0.45) * 0.08, y: 0.65 + Math.sin(t * 0.3) * 0.1, r: 0.3, c1: "rgba(251,146,60,0.1)", c2: "rgba(251,146,60,0)" },
+      ];
+
+      blobs.forEach(b => {
+        const gx = b.x * w, gy = b.y * h, gr = b.r * Math.max(w, h);
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        g.addColorStop(0, b.c1);
+        g.addColorStop(1, b.c2);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+      });
+
+      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.lineWidth = 1;
+      const gridSize = 60;
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      for (let i = 0; i < 14; i++) {
+        const px = (Math.sin(t * 0.2 + i * 2.1) * 0.5 + 0.5) * w;
+        const py = (Math.cos(t * 0.15 + i * 1.7) * 0.5 + 0.5) * h;
+        const alpha = (Math.sin(t * 0.5 + i) * 0.5 + 0.5) * 0.7;
+        const size = 1 + Math.sin(t + i) * 0.5;
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = i % 3 === 0 ? `rgba(251,146,60,${alpha})` : `rgba(251,191,36,${alpha * 0.6})`;
+        ctx.fill();
+      }
+
+      t += 0.008;
+      animationId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+  );
+};
+
+const GoogleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18">
+    <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+    <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
+    <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18z"/>
+    <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
+  </svg>
+);
+
+const stats = [
+  { value: "18hrs", label: "saved per week" },
+  { value: "99.2%", label: "AI accuracy" },
+  { value: "4.2m", label: "avg response" },
+];
+
+export default function LoginPage() {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setLoaded(true), 80);
+  }, []);
+
+  return (
+    <div style={{ display: "flex", height: "100vh", fontFamily: "'DM Sans', sans-serif", overflow: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Syne:wght@700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+
+        .a1 { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; animation-delay: 0.05s; }
+        .a2 { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; animation-delay: 0.18s; }
+        .a3 { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; animation-delay: 0.3s; }
+        .a4 { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; animation-delay: 0.44s; }
+        .a5 { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; opacity: 0; animation-delay: 0.58s; }
+
+        .stat { 
+          background: rgba(255,255,255,0.04); 
+          border: 1px solid rgba(255,255,255,0.08); 
+          border-radius: 14px; padding: 18px 16px;
+          transition: all 0.3s ease;
+          cursor: default;
+        }
+        .stat:hover { 
+          background: rgba(249,115,22,0.08); 
+          border-color: rgba(249,115,22,0.25); 
+          transform: translateY(-2px);
+        }
+
+        .gbtn {
+          display: flex; align-items: center; justify-content: center; gap: 12px;
+          width: 100%; padding: 15px 24px;
+          background: white; border: 1.5px solid #e5e7eb;
+          border-radius: 14px; cursor: pointer;
+          font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+          color: #111827; transition: all 0.2s ease;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .gbtn:hover {
+          border-color: #f97316;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.1), 0 0 0 3px rgba(249,115,22,0.08);
+          transform: translateY(-1px);
+        }
+
+        .badge {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 5px 11px; border-radius: 20px;
+          font-size: 11px; font-weight: 500;
+          background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+          transition: all 0.2s;
+        }
+        .badge:hover { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+      `}</style>
+
+      {/* LEFT PANEL */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "44px 48px" }}>
+        <AnimatedBackground />
+
+        {/* Logo */}
+        <div className="a1" style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #f97316, #fbbf24)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 2L10.5 7H15L11.5 9.5L13 14.5L9 12L5 14.5L6.5 9.5L3 7H7.5L9 2Z" fill="white" />
+              <path d="M2 9H0.5M17.5 9H16M9 0.5V2M9 16V17.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.6"/>
+            </svg>
+          </div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "17px", fontWeight: 800, color: "white", letterSpacing: "-0.01em" }}>
+            SOLAR<span style={{ color: "#f97316" }}>OPS</span>
+          </span>
+        </div>
+
+        {/* Hero text */}
+        <div style={{ position: "relative", zIndex: 10 }}>
+          <div className="a2" style={{ marginBottom: "10px" }}>
+            <span style={{ fontSize: "10px", fontWeight: 600, color: "#f97316", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+              AI Operations Platform
+            </span>
+          </div>
+
+          <h1 className="a3" style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: "48px",
+            fontWeight: 800,
+            color: "white",
+            lineHeight: 1.08,
+            letterSpacing: "-0.03em",
+            marginBottom: "18px"
+          }}>
+            Built for<br />
+            <span style={{
+              background: "linear-gradient(90deg, #f97316, #fbbf24, #f97316)",
+              backgroundSize: "200% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              animation: "shimmer 2.5s linear infinite"
+            }}>
+              Australian solar.
+            </span>
+          </h1>
+
+          <p className="a3" style={{ color: "rgba(255,255,255,0.45)", fontSize: "15px", lineHeight: 1.75, maxWidth: "320px", fontWeight: 300 }}>
+            Answer every call. Draft every email.<br />Track every ticket. Automatically.
+          </p>
+
+          <div className="a4" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "10px", marginTop: "32px" }}>
+            {stats.map((s, i) => (
+              <div key={i} className="stat">
+                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: "22px", fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>{s.value}</div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.38)", marginTop: "3px", fontWeight: 400 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Testimonial */}
+        <div className="a5" style={{ position: "relative", zIndex: 10 }}>
+          <div style={{ borderLeft: "2px solid rgba(249,115,22,0.35)", paddingLeft: "16px" }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", lineHeight: 1.65, fontStyle: "italic", fontWeight: 300 }}>
+              "SolarOps saves our team hours every week on emails and calls."
+            </p>
+            <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #f97316, #fbbf24)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 700, color: "white" }}>N</div>
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px" }}>Nat Elliott · Sol Energy</span>
+            </div>
+          </div>
+          <div style={{ marginTop: "28px" }}>
+            <span style={{ color: "rgba(255,255,255,0.18)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase" }}>Powered by ONE AGENCY</span>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div style={{ width: "460px", minWidth: "420px", background: "#fafafa", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "64px 48px", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "2px", background: "linear-gradient(90deg, transparent, #f97316, transparent)" }} />
+
+        <div style={{ width: "100%", maxWidth: "320px" }}>
+          <div className="a1">
+            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "26px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", marginBottom: "6px" }}>
+              Welcome back
+            </h2>
+            <p style={{ color: "#94a3b8", fontSize: "14px", marginBottom: "32px", fontWeight: 400 }}>
+              Sign in to your SolarOps workspace
+            </p>
+          </div>
+
+          <div className="a2">
+            <button className="gbtn">
+              <GoogleIcon />
+              Continue with Google
+            </button>
+          </div>
+
+          <div className="a3" style={{ display: "flex", alignItems: "center", gap: "14px", margin: "22px 0" }}>
+            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+            <span style={{ fontSize: "11px", color: "#cbd5e1", fontWeight: 500 }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+          </div>
+
+          <div className="a3" style={{ textAlign: "center", marginBottom: "32px" }}>
+            <span style={{ fontSize: "13px", color: "#94a3b8" }}>
+              New to SolarOps?{" "}
+              <a href="#" style={{ color: "#f97316", fontWeight: 600, textDecoration: "none" }}>
+                Request access →
+              </a>
+            </span>
+          </div>
+
+          <div className="a4" style={{ display: "flex", gap: "7px", justifyContent: "center", flexWrap: "wrap" }}>
+            {[{ e: "🔒", l: "SOC 2 Ready" }, { e: "🇦🇺", l: "Australian" }, { e: "⚡", l: "Solar-specific" }].map((b, i) => (
+              <span key={i} className="badge"><span>{b.e}</span>{b.l}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="a5" style={{ position: "absolute", bottom: "28px", textAlign: "center" }}>
+          <span style={{ fontSize: "11px", color: "#cbd5e1" }}>
+            By signing in, you agree to our{" "}
+            <a href="#" style={{ color: "#94a3b8", textDecoration: "underline" }}>Terms</a>
+            {" "}and{" "}
+            <a href="#" style={{ color: "#94a3b8", textDecoration: "underline" }}>Privacy Policy</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
