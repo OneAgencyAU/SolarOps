@@ -289,16 +289,17 @@ export default function LoginPage() {
         </div>
 
         {/* Floating UI Card Stack */}
-        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
+        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', width: '420px', marginTop: '24px', marginBottom: '24px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
 
-          {/* Card 3 — Voice Agent (back) */}
+          {/* Card 3 — Voice Agent (back, right) */}
           <div style={{
             position: 'absolute', top: '10px', left: '50%',
-            transform: 'translateX(-50%) rotate(1deg)',
-            width: '270px', background: '#0f1623',
+            transform: 'translateX(-50%) rotate(4deg) translate(140px, -20px)',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            zIndex: 1,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Voice Agent</span>
@@ -320,12 +321,13 @@ export default function LoginPage() {
 
           {/* Card 2 — Inbox Draft (middle) */}
           <div style={{
-            position: 'absolute', top: '18px', left: 'calc(50% + 60px)',
-            transform: 'rotate(2deg)',
-            width: '240px', background: '#0f1623',
+            position: 'absolute', top: '10px', left: '50%',
+            transform: 'translateX(-50%) rotate(1deg) translate(20px, -10px)',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            zIndex: 2,
           }}>
             <div style={{ marginBottom: '10px' }}>
               <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Inbox Assistant</span>
@@ -339,14 +341,15 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Card 1 — Dashboard (front) */}
+          {/* Card 1 — Dashboard (front, left) */}
           <div style={{
-            position: 'absolute', top: '22px', left: 'calc(50% - 200px)',
-            transform: 'rotate(-2deg)',
-            width: '260px', background: '#0f1623',
+            position: 'absolute', top: '10px', left: '50%',
+            transform: 'translateX(-50%) rotate(-4deg) translate(-120px, 10px)',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            zIndex: 3,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Dashboard</span>
