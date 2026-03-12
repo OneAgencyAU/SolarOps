@@ -236,7 +236,7 @@ export default function LoginPage() {
       `}</style>
 
       {/* LEFT PANEL */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '44px 48px' }}>
+      <div style={{ flex: '1 1 50%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '44px 48px' }}>
         <AnimatedBackground />
 
         {/* Logo */}
@@ -289,13 +289,13 @@ export default function LoginPage() {
         </div>
 
         {/* Floating UI Card Stack */}
-        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', width: '420px', marginTop: '24px', marginBottom: '24px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
+        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', width: '100%', marginTop: '24px', marginBottom: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
 
           {/* Card 3 — Voice Agent (back, right) */}
           <div style={{
-            position: 'absolute', top: '10px', left: '50%',
-            transform: 'translateX(-50%) rotate(4deg) translate(140px, -20px)',
-            width: '220px', background: '#0f1623',
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%) rotate(5deg) translateX(160px) translateY(10px)',
+            width: '240px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -321,9 +321,9 @@ export default function LoginPage() {
 
           {/* Card 2 — Inbox Draft (middle) */}
           <div style={{
-            position: 'absolute', top: '10px', left: '50%',
-            transform: 'translateX(-50%) rotate(1deg) translate(20px, -10px)',
-            width: '220px', background: '#0f1623',
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%) rotate(1deg) translateX(0px) translateY(-15px)',
+            width: '240px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -343,9 +343,9 @@ export default function LoginPage() {
 
           {/* Card 1 — Dashboard (front, left) */}
           <div style={{
-            position: 'absolute', top: '10px', left: '50%',
-            transform: 'translateX(-50%) rotate(-4deg) translate(-120px, 10px)',
-            width: '220px', background: '#0f1623',
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-6deg) translateX(-160px) translateY(20px)',
+            width: '240px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -389,7 +389,7 @@ export default function LoginPage() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{ width: '460px', minWidth: '420px', background: '#fafafa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '64px 48px', position: 'relative' }}>
+      <div style={{ flex: '1 1 50%', background: '#fafafa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '64px 48px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }} />
 
         <div style={{ width: '100%', maxWidth: '320px' }}>
