@@ -267,15 +267,14 @@ export default function LoginPage() {
 
           <h1 className="a3" style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: 'clamp(52px, 6vw, 88px)',
+            fontSize: 'clamp(42px, 5vw, 72px)',
             fontWeight: 800,
             color: 'white',
             lineHeight: 1.0,
             letterSpacing: '-0.04em',
             marginBottom: '24px',
           }}>
-            Built for<br />
-            <span style={{
+            Built for <span style={{
               background: 'linear-gradient(90deg, #f97316, #fbbf24, #f97316)',
               backgroundSize: '200% auto',
               WebkitBackgroundClip: 'text',
