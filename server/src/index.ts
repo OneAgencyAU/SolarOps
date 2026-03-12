@@ -103,11 +103,12 @@ app.post('/api/onboarding', async (req: Request, res: Response) => {
     return;
   }
 
-  const slug = business_name
+  const baseSlug = business_name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+  const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 7)}`;
 
   const { data: tenant, error: tenantErr } = await supabase
     .from('tenants')
