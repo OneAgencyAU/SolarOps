@@ -233,10 +233,23 @@ export default function LoginPage() {
           transition: all 0.2s;
         }
         .badge:hover { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+
+        @keyframes float1 {
+          0%, 100% { transform: rotate(-6deg) translateY(-50%); }
+          50% { transform: rotate(-6deg) translateY(calc(-50% - 12px)); }
+        }
+        @keyframes float2 {
+          0%, 100% { transform: translateX(-50%) rotate(2deg) translateY(-50%); }
+          50% { transform: translateX(-50%) rotate(2deg) translateY(calc(-50% - 10px)); }
+        }
+        @keyframes float3 {
+          0%, 100% { transform: rotate(5deg) translateY(-50%); }
+          50% { transform: rotate(5deg) translateY(calc(-50% - 14px)); }
+        }
       `}</style>
 
       {/* LEFT PANEL */}
-      <div style={{ flex: '1 1 50%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '44px 48px' }}>
+      <div style={{ flex: '2 1 0', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '44px 48px' }}>
         <AnimatedBackground />
 
         {/* Logo */}
@@ -289,13 +302,14 @@ export default function LoginPage() {
         </div>
 
         {/* Floating UI Card Stack */}
-        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '220px', width: '100%', marginTop: '24px', marginBottom: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
+        <div className="a4" style={{ position: 'relative', zIndex: 10, height: '260px', width: '100%', marginTop: '32px', marginBottom: '32px', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.5))' }}>
 
           {/* Card 3 — Voice Agent (back, right) */}
           <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%) rotate(5deg) translateX(160px) translateY(10px)',
-            width: '240px', background: '#0f1623',
+            position: 'absolute', right: '5%', top: '55%',
+            transform: 'rotate(5deg) translateY(-50%)',
+            animation: 'float3 3.8s ease-in-out infinite 1s',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -321,9 +335,10 @@ export default function LoginPage() {
 
           {/* Card 2 — Inbox Draft (middle) */}
           <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%) rotate(1deg) translateX(0px) translateY(-15px)',
-            width: '240px', background: '#0f1623',
+            position: 'absolute', left: '50%', top: '40%',
+            transform: 'translateX(-50%) rotate(2deg) translateY(-50%)',
+            animation: 'float2 4.5s ease-in-out infinite 0.5s',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -343,9 +358,10 @@ export default function LoginPage() {
 
           {/* Card 1 — Dashboard (front, left) */}
           <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%, -50%) rotate(-6deg) translateX(-160px) translateY(20px)',
-            width: '240px', background: '#0f1623',
+            position: 'absolute', left: '5%', top: '50%',
+            transform: 'rotate(-6deg) translateY(-50%)',
+            animation: 'float1 4s ease-in-out infinite',
+            width: '220px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -389,7 +405,7 @@ export default function LoginPage() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{ flex: '1 1 50%', background: '#fafafa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '64px 48px', position: 'relative' }}>
+      <div style={{ flex: '1 1 0', background: '#fafafa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '64px 48px', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }} />
 
         <div style={{ width: '100%', maxWidth: '320px' }}>
