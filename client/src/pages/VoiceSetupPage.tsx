@@ -7,10 +7,18 @@ const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 type Tone = 'Professional' | 'Friendly' | 'Formal';
 
+interface AvailableNumber {
+  phone_number: string;
+  status: string;
+  region: string | null;
+}
+
 const GREETINGS: Record<string, string> = {
   jake: "Hi, thanks for calling {{business_name}}. You're through to Jake, our AI receptionist — how can I help?",
   brooke: "Hi, thanks for calling {{business_name}}. You're through to Brooke, our AI receptionist — how can I help?",
 };
+
+const STEP_LABELS = ['Choose Voice', 'Configure', 'Choose Number', 'Activate'];
 
 export default function VoiceSetupPage() {
   const { tenant } = useAuth();
@@ -25,9 +33,67 @@ export default function VoiceSetupPage() {
   const [activating, setActivating] = useState(false);
   const [error, setError] = useState('');
 
+  const [availableNumbers, setAvailableNumbers] = useState<AvailableNumber[]>([]);
+  const [selectedNumber, setSelectedNumber] = useState('');
+  const [loadingNumbers, setLoadingNumbers] = useState(false);
+  const [searchResults, setSearchResults] = useState<AvailableNumber[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+
   const handleVoiceChange = (v: 'jake' | 'brooke') => {
     setVoice(v);
     setGreeting(GREETINGS[v]);
+  };
+
+  const goToStep3 = async () => {
+    setStep(3);
+    setLoadingNumbers(true);
+    try {
+      const res = await fetch(`${API}/api/voice/numbers/available`);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableNumbers(Array.isArray(data) ? data : []);
+      } else {
+        setAvailableNumbers([]);
+      }
+    } catch {
+      setAvailableNumbers([]);
+    } finally {
+      setLoadingNumbers(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    setSearching(true);
+    try {
+      const res = await fetch(`${API}/api/voice/numbers/search`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handlePurchase = async () => {
+    if (!selectedNumber || !tenant?.id) return;
+    setPurchasing(true);
+    try {
+      const res = await fetch(`${API}/api/voice/numbers/purchase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenant.id, phone_number: selectedNumber }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStep(4);
+      }
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   const handleActivate = async () => {
@@ -45,6 +111,7 @@ export default function VoiceSetupPage() {
           greeting,
           tone,
           voice,
+          phone_number: selectedNumber || undefined,
         }),
       });
       if (res.ok) {
@@ -62,17 +129,30 @@ export default function VoiceSetupPage() {
 
   const resolvedGreeting = greeting.replace('{{business_name}}', businessName || '…');
 
+  const numberCards = (numbers: AvailableNumber[]) =>
+    numbers.map(n => (
+      <button
+        key={n.phone_number}
+        type="button"
+        className={`vs-number-card${selectedNumber === n.phone_number ? ' selected' : ''}`}
+        onClick={() => setSelectedNumber(n.phone_number)}
+      >
+        <span className="vs-number-num">{n.phone_number}</span>
+        {n.region && <span className="vs-number-region">{n.region}</span>}
+      </button>
+    ));
+
   return (
     <div className="vs-page">
       <div className="vs-container">
-        <div className="vs-steps">
-          {[1, 2, 3].map(n => (
+        <div className="vs-steps vs-steps-4">
+          {[1, 2, 3, 4].map(n => (
             <div key={n} className="vs-step-item">
               <div className={`vs-step-dot${step > n ? ' done' : step === n ? ' active' : ''}`}>
                 {step > n ? '✓' : n}
               </div>
               <div className={`vs-step-label${step === n ? ' active' : ''}`}>
-                {n === 1 ? 'Choose Voice' : n === 2 ? 'Configure' : 'Activate'}
+                {STEP_LABELS[n - 1]}
               </div>
             </div>
           ))}
@@ -164,7 +244,7 @@ export default function VoiceSetupPage() {
                 <button className="vs-btn secondary" onClick={() => setStep(1)}>Back</button>
                 <button
                   className="vs-btn primary"
-                  onClick={() => setStep(3)}
+                  onClick={goToStep3}
                   disabled={!businessName.trim()}
                 >
                   Next
@@ -174,6 +254,61 @@ export default function VoiceSetupPage() {
           )}
 
           {step === 3 && (
+            <>
+              <h2 className="vs-title">Choose your phone number</h2>
+              <p className="vs-subtitle">This is the number your AI receptionist will answer.</p>
+
+              {loadingNumbers ? (
+                <div className="vs-loading">Checking available numbers…</div>
+              ) : availableNumbers.length > 0 ? (
+                <div>
+                  <label className="vs-label">Available numbers</label>
+                  <div className="vs-number-list">
+                    {numberCards(availableNumbers)}
+                  </div>
+                  <p className="vs-number-note">These numbers are ready to use immediately.</p>
+                </div>
+              ) : (
+                <div className="vs-form">
+                  <button
+                    className="vs-btn primary"
+                    onClick={handleSearch}
+                    disabled={searching}
+                  >
+                    {searching ? 'Searching…' : 'Search for an Australian number'}
+                  </button>
+                  {searchResults.length > 0 && (
+                    <div>
+                      <div className="vs-number-list">
+                        {numberCards(searchResults)}
+                      </div>
+                      <button
+                        className="vs-btn primary"
+                        onClick={handlePurchase}
+                        disabled={!selectedNumber || purchasing}
+                        style={{ marginTop: 12 }}
+                      >
+                        {purchasing ? 'Purchasing…' : `Purchase ${selectedNumber || 'selected number'}`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="vs-btn-row" style={{ marginTop: 8 }}>
+                <button className="vs-btn secondary" onClick={() => setStep(2)}>Back</button>
+                <button
+                  className="vs-btn primary"
+                  onClick={() => setStep(4)}
+                  disabled={!selectedNumber}
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 4 && (
             <>
               <h2 className="vs-title">You're almost live</h2>
               <p className="vs-subtitle">Review your configuration and activate your AI receptionist.</p>
@@ -193,6 +328,11 @@ export default function VoiceSetupPage() {
                   <span className="vs-summary-value">{tone}</span>
                 </div>
                 <div className="vs-summary-divider" />
+                <div className="vs-summary-row">
+                  <span className="vs-summary-label">Phone number</span>
+                  <span className="vs-summary-value">{selectedNumber || '—'}</span>
+                </div>
+                <div className="vs-summary-divider" />
                 <div className="vs-summary-row vertical">
                   <span className="vs-summary-label">Greeting</span>
                   <span className="vs-summary-greeting">{resolvedGreeting}</span>
@@ -202,7 +342,7 @@ export default function VoiceSetupPage() {
               {error && <div className="vs-error">{error}</div>}
 
               <div className="vs-btn-row">
-                <button className="vs-btn secondary" onClick={() => setStep(2)}>Back</button>
+                <button className="vs-btn secondary" onClick={() => setStep(3)}>Back</button>
                 <button
                   className="vs-btn primary activate"
                   onClick={handleActivate}

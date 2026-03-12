@@ -23,6 +23,10 @@
   padding: 0 16px;
 }
 
+.vs-steps-4 {
+  gap: 28px;
+}
+
 .vs-step-line {
   position: absolute;
   top: 16px;
@@ -31,6 +35,11 @@
   height: 2px;
   background: #e5e5e7;
   z-index: 0;
+}
+
+.vs-steps-4 .vs-step-line {
+  left: 56px;
+  right: 56px;
 }
 
 .vs-step-item {
@@ -335,6 +344,66 @@
 
 .vs-btn.secondary:hover {
   background: #e5e5e7;
+}
+
+.vs-loading {
+  font-size: 0.86rem;
+  color: #6e6e73;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.vs-number-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vs-number-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid #e5e5e7;
+  background: #f5f5f7;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.vs-number-card:hover {
+  background: #ffffff;
+  border-color: #c7c7cc;
+}
+
+.vs-number-card.selected {
+  border-color: #4F8EF7;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
+}
+
+.vs-number-num {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.vs-number-card.selected .vs-number-num {
+  color: #4F8EF7;
+}
+
+.vs-number-region {
+  font-size: 0.78rem;
+  color: #6e6e73;
+}
+
+.vs-number-note {
+  font-size: 0.78rem;
+  color: #aeaeb2;
+  margin-top: 8px;
 }
 
 .vs-error {
