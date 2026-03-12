@@ -102,8 +102,12 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('[Onboarding] handleSubmit called');
     e.preventDefault();
-    console.log('[Onboarding] canSubmit:', canSubmit, firstName, lastName, businessName);
-    if (!user || !canSubmit) return;
+    console.log('[Onboarding] user:', user?.uid, 'canSubmit:', canSubmit);
+    if (!canSubmit) return;
+    if (!user) {
+      setError('Session expired — please refresh the page and try again.');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -398,6 +402,8 @@ export default function OnboardingPage() {
             {error && (
               <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '12px' }}>{error}</p>
             )}
+
+            {!user && <p style={{ fontSize: 12, color: '#f97316', marginBottom: 8 }}>⚠️ Not signed in — please refresh</p>}
 
             <button
               type="submit"
