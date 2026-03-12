@@ -292,12 +292,56 @@ export default function LoginPage() {
           </p>
 
           <div className="a4" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginTop: '32px' }}>
-            {stats.map((s, i) => (
-              <div key={i} className="stat">
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>{s.value}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>{s.label}</div>
+
+            {/* Stat 1 — 18hrs */}
+            <div className="stat" style={{ padding: '20px 18px', minHeight: '100px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>18hrs</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>saved per week</div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '10px 0 8px' }} />
+              <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                <div style={{ width: '74%', height: '100%', background: '#f97316', borderRadius: '2px' }} />
               </div>
-            ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '6px' }}>
+                <span>vs last week</span><span style={{ color: '#f97316' }}>+2.4hrs</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>
+                <span>this month</span><span>68hrs total</span>
+              </div>
+            </div>
+
+            {/* Stat 2 — 99.2% */}
+            <div className="stat" style={{ padding: '20px 18px', minHeight: '100px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>99.2%</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>AI accuracy</div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '10px 0 8px' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '0' }}>
+                <span>Bills read</span><span>847</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>
+                <span>Emails drafted</span><span>1,204</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+                <span style={{ fontSize: '9px', color: '#22c55e' }}>All systems operational</span>
+              </div>
+            </div>
+
+            {/* Stat 3 — 4.2m */}
+            <div className="stat" style={{ padding: '20px 18px', minHeight: '100px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>4.2m</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.38)', marginTop: '3px', fontWeight: 400 }}>avg response</div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '10px 0 8px' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>
+                <span>Fastest reply</span><span style={{ color: '#f97316' }}>0.8m</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>
+                <span>vs industry avg</span><span>4x faster</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+                <span style={{ fontSize: '9px', color: '#22c55e' }}>↑ Improving</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -309,7 +353,7 @@ export default function LoginPage() {
             position: 'absolute', right: '5%', top: '55%',
             transform: 'rotate(5deg) translateY(-50%)',
             animation: 'float3 3.8s ease-in-out infinite 1s',
-            width: '220px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -350,7 +394,7 @@ export default function LoginPage() {
             position: 'absolute', left: '50%', top: '40%',
             transform: 'translateX(-50%) rotate(2deg) translateY(-50%)',
             animation: 'float2 4.5s ease-in-out infinite 0.5s',
-            width: '220px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
@@ -376,7 +420,7 @@ export default function LoginPage() {
             position: 'absolute', left: '5%', top: '50%',
             transform: 'rotate(-6deg) translateY(-50%)',
             animation: 'float1 4s ease-in-out infinite',
-            width: '220px', minHeight: '180px', background: '#0f1623',
+            width: '280px', minHeight: '180px', background: '#0f1623',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '16px', padding: '16px 18px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
