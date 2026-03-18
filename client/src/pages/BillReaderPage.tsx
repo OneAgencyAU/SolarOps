@@ -403,7 +403,7 @@ export default function BillReaderPage() {
   const sectionLabel: React.CSSProperties = {
     fontSize: '10px',
     fontWeight: 600,
-    color: '#f97316',
+    color: '#4F8EF7',
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
     marginBottom: '12px',
@@ -443,14 +443,14 @@ export default function BillReaderPage() {
         @keyframes progress { 0% { width: 0% } 60% { width: 75% } 100% { width: 90% } }
         .br-spinner-ring {
           width: 18px; height: 18px; border: 2px solid #f1f5f9;
-          border-top-color: #f97316; border-radius: 50%;
+          border-top-color: #4F8EF7; border-radius: 50%;
           animation: spin 0.7s linear infinite; display: inline-block;
         }
-        .br-upload-zone:hover { border-color: #f97316 !important; background: #fff7ed !important; }
+        .br-upload-zone:hover { border-color: #4F8EF7 !important; background: #f0f9ff !important; }
         .br-recent-row:hover { background: #f8fafc !important; }
         .br-extract-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
         .br-extract-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-        .br-btn-outline:hover { border-color: #f97316 !important; color: #f97316 !important; }
+        .br-btn-outline:hover { border-color: #4F8EF7 !important; color: #4F8EF7 !important; }
         .br-btn-primary:hover:not(:disabled) { opacity: 0.9; }
       `}</style>
 
@@ -478,10 +478,10 @@ export default function BillReaderPage() {
       </div>
 
       {/* Two-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'stretch' }}>
 
         {/* LEFT PANEL */}
-        <div style={{ ...card, padding: '24px' }}>
+        <div style={{ ...card, padding: '24px', height: '100%' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -502,9 +502,9 @@ export default function BillReaderPage() {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               style={{
-                border: `2px dashed ${dragOver ? '#f97316' : '#e2e8f0'}`,
+                border: `2px dashed ${dragOver ? '#4F8EF7' : '#e2e8f0'}`,
                 borderRadius: '12px',
-                background: dragOver ? '#fff7ed' : '#f8fafc',
+                background: dragOver ? '#f0f9ff' : '#f8fafc',
                 padding: '36px 20px',
                 textAlign: 'center',
                 cursor: 'pointer',
@@ -512,7 +512,7 @@ export default function BillReaderPage() {
                 marginBottom: '16px',
               }}
             >
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4F8EF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="12" y1="18" x2="12" y2="12"/>
@@ -529,7 +529,7 @@ export default function BillReaderPage() {
             <div style={{ marginBottom: '16px' }}>
               {/* File info */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#f8fafc', borderRadius: '10px', marginBottom: '12px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F8EF7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <polyline points="14 2 14 8 20 8"/>
                 </svg>
@@ -557,16 +557,16 @@ export default function BillReaderPage() {
               )}
 
               {stage === 'extracting' && (
-                <div style={{ padding: '14px', background: '#fff7ed', borderRadius: '10px', border: '1px solid #fed7aa' }}>
+                <div style={{ padding: '14px', background: '#f0f9ff', borderRadius: '10px', border: '1px solid #bae6fd' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span className="br-spinner-ring" style={{ borderTopColor: '#f97316' } as React.CSSProperties} />
+                    <span className="br-spinner-ring" style={{ borderTopColor: '#4F8EF7' } as React.CSSProperties} />
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#c2410c' }}>Extracting data with AI...</div>
-                      <div style={{ fontSize: '11px', color: '#ea580c' }}>Reading bill with OCR</div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#4F8EF7' }}>Extracting data with AI...</div>
+                      <div style={{ fontSize: '11px', color: '#4F8EF7' }}>Reading bill with OCR</div>
                     </div>
                   </div>
-                  <div style={{ height: '4px', background: '#fed7aa', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: 'linear-gradient(90deg, #f97316, #fbbf24)', borderRadius: '2px', animation: 'progress 3s ease forwards' }} />
+                  <div style={{ height: '4px', background: '#bae6fd', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: 'linear-gradient(90deg, #4F8EF7, #6BB3F7)', borderRadius: '2px', animation: 'progress 3s ease forwards' }} />
                   </div>
                 </div>
               )}
@@ -604,7 +604,7 @@ export default function BillReaderPage() {
             style={{
               width: '100%',
               padding: '13px',
-              background: 'linear-gradient(135deg, #f97316, #fbbf24)',
+              background: 'linear-gradient(135deg, #4F8EF7, #6BB3F7)',
               border: 'none',
               borderRadius: '12px',
               fontSize: '14px',
@@ -662,7 +662,7 @@ export default function BillReaderPage() {
                       }}
                       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.15s' }}
                     >
-                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #4F8EF7, #6BB3F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
                         {retailerShort}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -675,9 +675,9 @@ export default function BillReaderPage() {
                         <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px' }}>{dateDisplay}</div>
                         <span style={{
                           fontSize: '10px', fontWeight: 600, padding: '2px 7px', borderRadius: '20px',
-                          background: item.status === 'extracted' ? '#f0fdf4' : '#fff7ed',
-                          color: item.status === 'extracted' ? '#16a34a' : '#c2410c',
-                          border: `1px solid ${item.status === 'extracted' ? '#bbf7d0' : '#fed7aa'}`,
+                          background: item.status === 'extracted' ? '#f0fdf4' : '#f0f9ff',
+                          color: item.status === 'extracted' ? '#16a34a' : '#4F8EF7',
+                          border: `1px solid ${item.status === 'extracted' ? '#bbf7d0' : '#bae6fd'}`,
                         }}>
                           {item.status === 'extracted' ? 'Extracted' : 'Pending'}
                         </span>
@@ -691,7 +691,7 @@ export default function BillReaderPage() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div style={{ ...card, padding: '28px' }}>
+        <div style={{ ...card, padding: '28px', height: '100%' }}>
           {!extractedData ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', textAlign: 'center' }}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px' }}>
@@ -776,7 +776,7 @@ export default function BillReaderPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', color: '#64748b', width: '60px' }}>Peak</span>
                       <div style={{ flex: 1, height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(extractedData.usage.peakKwh / maxKwh) * 100}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)', borderRadius: '3px' }} />
+                        <div style={{ height: '100%', width: `${(extractedData.usage.peakKwh / maxKwh) * 100}%`, background: 'linear-gradient(90deg, #4F8EF7, #6BB3F7)', borderRadius: '3px' }} />
                       </div>
                       <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 500, width: '72px', textAlign: 'right' }}>{extractedData.usage.peakKwh} kWh</span>
                     </div>
@@ -792,9 +792,9 @@ export default function BillReaderPage() {
                   )}
                 </div>
               )}
-              <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '10px 16px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '22px', fontWeight: 700, color: '#c2410c' }}>{extractedData.usage?.dailyAvgKwh ?? '—'}</span>
-                <span style={{ fontSize: '12px', color: '#ea580c' }}>kWh/day average</span>
+              <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '10px', padding: '10px 16px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '22px', fontWeight: 700, color: '#4F8EF7' }}>{extractedData.usage?.dailyAvgKwh ?? '—'}</span>
+                <span style={{ fontSize: '12px', color: '#4F8EF7' }}>kWh/day average</span>
               </div>
 
               <div style={divider} />
@@ -842,7 +842,7 @@ export default function BillReaderPage() {
                 {extractedData.existingSolar === true ? (
                   <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Solar detected</span>
                 ) : (
-                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>⚡ Solar opportunity</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#4F8EF7', border: '1px solid #bae6fd' }}>⚡ Solar opportunity</span>
                 )}
                 {extractedData.existingBattery === true ? (
                   <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Battery detected</span>
@@ -877,7 +877,7 @@ export default function BillReaderPage() {
                   onClick={handleSave}
                   disabled={saving}
                   style={{
-                    flex: 2, padding: '11px', background: 'linear-gradient(135deg, #f97316, #fbbf24)',
+                    flex: 2, padding: '11px', background: 'linear-gradient(135deg, #4F8EF7, #6BB3F7)',
                     border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
                     color: 'white', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s',
