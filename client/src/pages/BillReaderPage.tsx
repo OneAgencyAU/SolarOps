@@ -5,6 +5,9 @@ interface BillData {
   nmi: string | null;
   retailer: string | null;
   customerName: string | null;
+  phoneNumber: string | null;
+  emailAddress: string | null;
+  accountNumber: string | null;
   propertyAddress: string | null;
   billingPeriod: { from: string | null; to: string | null; days: number | null };
   usage: {
@@ -357,6 +360,9 @@ export default function BillReaderPage() {
         raw_ocr_text: rawOcr,
         confidence_score: extractedData.confidenceScore,
         processing_ms: processingMs ?? null,
+        phone_number: extractedData.phoneNumber || null,
+        email_address: extractedData.emailAddress || null,
+        account_number: extractedData.accountNumber || null,
       };
 
       const res = await fetch('/api/bill-reader/save', {
@@ -376,6 +382,11 @@ export default function BillReaderPage() {
       showToast('Failed to save extraction');
     }
     setSaving(false);
+  };
+
+  const copyField = (value: string) => {
+    navigator.clipboard.writeText(value);
+    showToast('Copied!');
   };
 
   const copyNmi = (nmi: string) => {
@@ -709,10 +720,24 @@ export default function BillReaderPage() {
               {/* Result header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
-                    {extractedData.customerName || 'Unknown Customer'}
-                  </h2>
-                  <p style={{ fontSize: '13px', color: '#64748b' }}>{extractedData.propertyAddress || ''}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                      {extractedData.customerName || 'Unknown Customer'}
+                    </h2>
+                    {extractedData.customerName && (
+                      <button onClick={() => copyField(extractedData.customerName!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>{extractedData.propertyAddress || ''}</p>
+                    {extractedData.propertyAddress && (
+                      <button onClick={() => copyField(extractedData.propertyAddress!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <span style={{
                   fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '20px',
@@ -740,8 +765,48 @@ export default function BillReaderPage() {
                 </div>
                 <div>
                   <span style={fieldLabel}>Retailer</span>
-                  <span style={fieldValue}>{extractedData.retailer || '—'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={fieldValue}>{extractedData.retailer || '—'}</span>
+                    {extractedData.retailer && (
+                      <button onClick={() => copyField(extractedData.retailer!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {extractedData.accountNumber && (
+                  <div>
+                    <span style={fieldLabel}>Account Number</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ ...fieldValue, fontFamily: 'monospace', letterSpacing: '0.04em' }}>{extractedData.accountNumber}</span>
+                      <button onClick={() => copyField(extractedData.accountNumber!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {extractedData.phoneNumber && (
+                  <div>
+                    <span style={fieldLabel}>Phone Number</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={fieldValue}>{extractedData.phoneNumber}</span>
+                      <button onClick={() => copyField(extractedData.phoneNumber!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {extractedData.emailAddress && (
+                  <div>
+                    <span style={fieldLabel}>Email Address</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={fieldValue}>{extractedData.emailAddress}</span>
+                      <button onClick={() => copyField(extractedData.emailAddress!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <span style={fieldLabel}>Billing Period</span>
                   <span style={fieldValue}>
