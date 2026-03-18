@@ -915,10 +915,10 @@ export default function BillReaderPage() {
                   <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' }}>No battery detected</span>
                 )}
                 {extractedData.meterType && (
-                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{extractedData.meterType}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{extractedData.meterType}</span>
                 )}
                 {extractedData.meterCondition && (
-                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{extractedData.meterCondition}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{extractedData.meterCondition}</span>
                 )}
               </div>
 
