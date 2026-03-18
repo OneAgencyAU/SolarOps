@@ -209,6 +209,7 @@ export default function BillReaderPage() {
   const [toast, setToast] = useState('');
   const [saving, setSaving] = useState(false);
   const [recentExtractions, setRecentExtractions] = useState<SavedExtraction[]>([]);
+  const [selectedRecentId, setSelectedRecentId] = useState<string | null>(null);
   const [stats, setStats] = useState<{ billsProcessed: number; accuracy: number | null; avgProcessingSeconds: number | null } | null>(null);
   const [processingMs, setProcessingMs] = useState<number | null>(null);
 
@@ -271,6 +272,20 @@ export default function BillReaderPage() {
     setStage('idle');
     setCheckReason('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!tenant?.id) return;
+    await fetch(`/api/bill-reader/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenant_id: tenant.id }),
+    });
+    setRecentExtractions(prev => prev.filter(r => r.id !== id));
+    if (selectedRecentId === id) {
+      setExtractedData(null);
+      setSelectedRecentId(null);
+    }
   };
 
   const normaliseConfidence = (score: number | undefined | null): number => {
@@ -704,6 +719,14 @@ export default function BillReaderPage() {
                           {item.status === 'extracted' ? 'Extracted' : 'Pending'}
                         </span>
                       </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                        style={{ fontSize: 14, color: '#cbd5e1', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', marginLeft: 'auto', flexShrink: 0, transition: 'color 0.2s' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#cbd5e1')}
+                      >
+                        ×
+                      </button>
                     </div>
                   );
                 })}

@@ -494,4 +494,19 @@ router.get('/api/bill-reader/recent', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/api/bill-reader/delete/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { tenant_id } = req.body;
+  if (!tenant_id) {
+    res.status(400).json({ error: 'tenant_id required' });
+    return;
+  }
+  const { error } = await supabase.from('bill_extractions').delete().eq('id', id).eq('tenant_id', tenant_id);
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return;
+  }
+  res.json({ success: true });
+});
+
 export default router;
