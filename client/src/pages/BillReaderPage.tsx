@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import '../styles/BillReader.css';
 
 interface BillData {
   nmi: string | null;
@@ -401,20 +400,88 @@ export default function BillReaderPage() {
     ? Math.max(extractedData.usage?.peakKwh || 0, extractedData.usage?.offPeakKwh || 0, 1)
     : 1;
 
+  const sectionLabel: React.CSSProperties = {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: '#f97316',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    marginBottom: '12px',
+    display: 'block',
+  };
+
+  const fieldLabel: React.CSSProperties = {
+    fontSize: '11px',
+    color: '#94a3b8',
+    marginBottom: '3px',
+    display: 'block',
+  };
+
+  const fieldValue: React.CSSProperties = {
+    fontSize: '14px',
+    color: '#0f172a',
+    fontWeight: 500,
+  };
+
+  const divider: React.CSSProperties = {
+    height: '1px',
+    background: '#f1f5f9',
+    margin: '20px 0',
+  };
+
+  const card: React.CSSProperties = {
+    background: 'white',
+    borderRadius: '16px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    overflow: 'hidden',
+  };
+
   return (
-    <div className="bill-reader-page">
-      <div className="bill-reader-header">
-        <h1>Bill & NMI Reader</h1>
-        <p>Upload an electricity bill to extract customer and usage data automatically</p>
-        <div className="br-stats-bar">
-          <span className="br-stat">{stats?.billsProcessed ?? '—'} Bills Processed</span>
-          <span className="br-stat green">{stats?.accuracy != null ? `${stats.accuracy}% Accuracy` : '—'}</span>
-          <span className="br-stat">{stats?.avgProcessingSeconds != null ? `${stats.avgProcessingSeconds}s Avg Processing` : '—'}</span>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '28px 32px' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes progress { 0% { width: 0% } 60% { width: 75% } 100% { width: 90% } }
+        .br-spinner-ring {
+          width: 18px; height: 18px; border: 2px solid #f1f5f9;
+          border-top-color: #f97316; border-radius: 50%;
+          animation: spin 0.7s linear infinite; display: inline-block;
+        }
+        .br-upload-zone:hover { border-color: #f97316 !important; background: #fff7ed !important; }
+        .br-recent-row:hover { background: #f8fafc !important; }
+        .br-extract-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+        .br-extract-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .br-btn-outline:hover { border-color: #f97316 !important; color: #f97316 !important; }
+        .br-btn-primary:hover:not(:disabled) { opacity: 0.9; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>Bill & NMI Reader</h1>
+        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>
+          Upload an electricity bill to extract customer and usage data automatically
+        </p>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: '#475569', fontWeight: 500 }}>
+            <span style={{ fontWeight: 700, color: '#0f172a' }}>{stats?.billsProcessed ?? '—'}</span> Bills Processed
+          </span>
+          {stats?.accuracy != null && (
+            <span style={{ fontSize: '13px', color: '#475569' }}>
+              <span style={{ fontWeight: 700, color: '#22c55e' }}>{stats.accuracy}%</span> Accuracy
+            </span>
+          )}
+          {stats?.avgProcessingSeconds != null && (
+            <span style={{ fontSize: '13px', color: '#475569' }}>
+              <span style={{ fontWeight: 700, color: '#0f172a' }}>{stats.avgProcessingSeconds}s</span> Avg Processing
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="bill-reader-columns">
-        <div className="bill-reader-card">
+      {/* Two-column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '20px', alignItems: 'start' }}>
+
+        {/* LEFT PANEL */}
+        <div style={{ ...card, padding: '24px' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -426,192 +493,258 @@ export default function BillReaderPage() {
             }}
           />
 
+          {/* Upload zone */}
           {!file ? (
             <div
-              className={`br-upload-zone${dragOver ? ' drag-over' : ''}`}
+              className="br-upload-zone"
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
+              style={{
+                border: `2px dashed ${dragOver ? '#f97316' : '#e2e8f0'}`,
+                borderRadius: '12px',
+                background: dragOver ? '#fff7ed' : '#f8fafc',
+                padding: '36px 20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                marginBottom: '16px',
+              }}
             >
-              <div className="br-upload-icon">⬒</div>
-              <h3>Drop a bill here or click to upload</h3>
-              <p>Supports JPG, PNG, PDF, HEIC, WebP · Max 10MB</p>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                Drop a bill here or click to upload
+              </div>
+              <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                JPG, PNG, PDF, HEIC, WebP · Max 10MB
+              </div>
             </div>
           ) : (
-            <div className="br-file-preview-standalone">
-              <div className="br-file-preview">
-                <div className="br-file-icon">📄</div>
-                <div className="br-file-info">
-                  <div className="name">{file.name}</div>
-                  <div className="size">{formatFileSize(file.size)}</div>
+            <div style={{ marginBottom: '16px' }}>
+              {/* File info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#f8fafc', borderRadius: '10px', marginBottom: '12px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>{formatFileSize(file.size)}</div>
                 </div>
-                <button className="br-file-remove" onClick={removeFile}>Remove</button>
+                <button
+                  onClick={removeFile}
+                  style={{ fontSize: '12px', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px' }}
+                >
+                  Remove
+                </button>
               </div>
 
+              {/* Status states */}
               {stage === 'checking' && (
-                <div className="br-status">
-                  <div className="br-status-icon checking"><div className="br-spinner blue" /></div>
-                  <div className="br-status-text">
-                    <h4>Checking document...</h4>
-                    <p>Verifying this is an electricity bill</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f0f9ff', borderRadius: '10px', border: '1px solid #bae6fd' }}>
+                  <span className="br-spinner-ring" />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0369a1' }}>Checking document...</div>
+                    <div style={{ fontSize: '11px', color: '#0284c7' }}>Verifying this is an electricity bill</div>
+                  </div>
+                </div>
+              )}
+
+              {stage === 'extracting' && (
+                <div style={{ padding: '14px', background: '#fff7ed', borderRadius: '10px', border: '1px solid #fed7aa' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <span className="br-spinner-ring" style={{ borderTopColor: '#f97316' } as React.CSSProperties} />
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#c2410c' }}>Extracting data with AI...</div>
+                      <div style={{ fontSize: '11px', color: '#ea580c' }}>Reading bill with OCR</div>
+                    </div>
+                  </div>
+                  <div style={{ height: '4px', background: '#fed7aa', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: 'linear-gradient(90deg, #f97316, #fbbf24)', borderRadius: '2px', animation: 'progress 3s ease forwards' }} />
                   </div>
                 </div>
               )}
 
               {stage === 'not-bill' && (
-                <>
-                  <div className="br-status">
-                    <div className="br-status-icon error">✕</div>
-                    <div className="br-status-text">
-                      <h4>Not an electricity bill</h4>
-                      <p>{checkReason}</p>
-                    </div>
-                  </div>
-                  <button className="br-try-again-btn" onClick={removeFile}>Try a different file</button>
-                </>
-              )}
-
-              {stage === 'extracting' && (
-                <>
-                  <div className="br-status">
-                    <div className="br-status-icon extracting"><div className="br-spinner blue" /></div>
-                    <div className="br-status-text">
-                      <h4>Extracting data...</h4>
-                      <p>Reading bill with Google Vision OCR</p>
-                    </div>
-                  </div>
-                  <div className="br-progress-bar"><div className="br-progress-fill" /></div>
-                </>
+                <div style={{ padding: '12px 14px', background: '#fff1f2', borderRadius: '10px', border: '1px solid #fecdd3', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#be123c', marginBottom: '3px' }}>Not an electricity bill</div>
+                  <div style={{ fontSize: '12px', color: '#e11d48' }}>{checkReason}</div>
+                </div>
               )}
 
               {stage === 'complete' && (
-                <div className="br-status">
-                  <div className="br-status-icon complete">✓</div>
-                  <div className="br-status-text">
-                    <h4>Extraction complete</h4>
-                    <span className="br-confidence-badge">
-                      {Math.round((extractedData?.confidenceScore || 0) * 100)}% confidence
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                  <div style={{ width: '24px', height: '24px', background: '#22c55e', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#15803d' }}>Extraction complete</div>
+                    <div style={{ fontSize: '11px', color: '#16a34a' }}>
+                      {Math.round((extractedData?.confidenceScore || 0) * 100)}% confidence score
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           )}
 
+          {/* Extract button */}
           <button
             className="br-extract-btn"
             disabled={!file || stage === 'checking' || stage === 'extracting'}
             onClick={handleExtract}
+            style={{
+              width: '100%',
+              padding: '13px',
+              background: 'linear-gradient(135deg, #f97316, #fbbf24)',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              marginBottom: '24px',
+            }}
           >
-            {(stage === 'checking' || stage === 'extracting') && <div className="br-spinner" />}
+            {(stage === 'checking' || stage === 'extracting') && (
+              <span className="br-spinner-ring" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' } as React.CSSProperties} />
+            )}
             {stage === 'checking' ? 'Checking...' : stage === 'extracting' ? 'Extracting...' : 'Extract Bill Data'}
           </button>
 
-          <div style={{ marginTop: 28 }}>
-            <div className="br-section-label">Recent extractions</div>
-            <ul className="br-recent-list">
-              {recentExtractions.length === 0 ? (
-                <li className="br-recent-empty">No extractions yet</li>
-              ) : (
-                recentExtractions.map((item) => {
+          {/* Recent extractions */}
+          <div>
+            <span style={sectionLabel}>Recent Extractions</span>
+            {recentExtractions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: '13px' }}>
+                No extractions yet
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {recentExtractions.map((item) => {
                   const retailerShort = (item.retailer || 'UN').slice(0, 3).toUpperCase().replace(' ', '');
                   const nmiDisplay = item.nmi ? item.nmi.slice(0, 4) + '...' + item.nmi.slice(-3) : '—';
                   const dateDisplay = new Date(item.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
                   return (
-                    <li key={item.id} className="br-recent-item" onClick={() => {
-                      setExtractedData({
-                        nmi: item.nmi,
-                        retailer: item.retailer,
-                        customerName: item.customer_name,
-                        propertyAddress: item.property_address,
-                        billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
-                        usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
-                        rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: null, offPeakRate: null, feedInTariff: item.feed_in_tariff },
-                        totals: { totalAmount: item.total_amount, gstAmount: null },
-                        existingSolar: item.existing_solar,
-                        existingBattery: item.existing_battery,
-                        meterType: item.meter_type,
-                        meterCondition: null,
-                        confidenceScore: item.confidence_score ?? 0.85,
-                      });
-                      setRawOcr(item.raw_ocr_text || '');
-                    }}>
-                      <div className="br-retailer-badge">{retailerShort}</div>
-                      <div className="br-recent-info">
-                        <div className="br-recent-name">{item.retailer || 'Unknown'} — {item.customer_name || 'Unknown'}</div>
-                        <div className="br-recent-nmi">NMI: {nmiDisplay}</div>
+                    <div
+                      key={item.id}
+                      className="br-recent-row"
+                      onClick={() => {
+                        setExtractedData({
+                          nmi: item.nmi,
+                          retailer: item.retailer,
+                          customerName: item.customer_name,
+                          propertyAddress: item.property_address,
+                          billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
+                          usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
+                          rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: null, offPeakRate: null, feedInTariff: item.feed_in_tariff },
+                          totals: { totalAmount: item.total_amount, gstAmount: null },
+                          existingSolar: item.existing_solar,
+                          existingBattery: item.existing_battery,
+                          meterType: item.meter_type,
+                          meterCondition: null,
+                          confidenceScore: item.confidence_score ?? 0.85,
+                        });
+                        setRawOcr(item.raw_ocr_text || '');
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.15s' }}
+                    >
+                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #f97316, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                        {retailerShort}
                       </div>
-                      <div className="br-recent-meta">
-                        <span className="br-recent-date">{dateDisplay}</span>
-                        <span className={`br-status-pill ${item.status === 'extracted' ? 'extracted' : 'pending'}`}>
-                          {item.status === 'extracted' ? 'Extracted' : 'Pending Review'}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.retailer || 'Unknown'} — {item.customer_name || 'Unknown'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>NMI: {nmiDisplay}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '3px' }}>{dateDisplay}</div>
+                        <span style={{
+                          fontSize: '10px', fontWeight: 600, padding: '2px 7px', borderRadius: '20px',
+                          background: item.status === 'extracted' ? '#f0fdf4' : '#fff7ed',
+                          color: item.status === 'extracted' ? '#16a34a' : '#c2410c',
+                          border: `1px solid ${item.status === 'extracted' ? '#bbf7d0' : '#fed7aa'}`,
+                        }}>
+                          {item.status === 'extracted' ? 'Extracted' : 'Pending'}
                         </span>
                       </div>
-                    </li>
+                    </div>
                   );
-                })
-              )}
-            </ul>
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bill-reader-card">
+        {/* RIGHT PANEL */}
+        <div style={{ ...card, padding: '28px' }}>
           {!extractedData ? (
-            <div className="br-empty-state">
-              <div className="icon">⬒</div>
-              <h3>Upload a bill to see extracted data</h3>
-              <p>Data will appear here after extraction</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', textAlign: 'center' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px' }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>Upload a bill to see extracted data</div>
+              <div style={{ fontSize: '13px', color: '#94a3b8' }}>Data will appear here after extraction</div>
             </div>
           ) : (
             <>
-              <div className="br-result-header">
-                <div className="customer-info">
-                  <h2>{extractedData.customerName || 'Unknown Customer'}</h2>
-                  <p>{extractedData.propertyAddress || ''}</p>
+              {/* Result header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+                    {extractedData.customerName || 'Unknown Customer'}
+                  </h2>
+                  <p style={{ fontSize: '13px', color: '#64748b' }}>{extractedData.propertyAddress || ''}</p>
                 </div>
-                <div className="br-result-actions">
-                  <span className="br-confidence-badge">
-                    {Math.round(extractedData.confidenceScore * 100)}% confidence
-                  </span>
-                  {extractedData.nmi && (
-                    <button className="br-copy-nmi-btn" onClick={() => copyNmi(extractedData.nmi!)}>
-                      📋 Copy NMI
-                    </button>
-                  )}
-                  <button className="br-save-btn" onClick={handleSave} disabled={saving}>
-                    {saving ? <div className="br-spinner" /> : null}
-                    Save to Dashboard
-                  </button>
-                </div>
+                <span style={{
+                  fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '20px',
+                  background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', flexShrink: 0, marginLeft: '16px',
+                }}>
+                  {Math.round(extractedData.confidenceScore * 100)}% confidence
+                </span>
               </div>
 
-              <div className="br-section-label">Account Details</div>
-              <div className="br-grid">
-                <div className="br-field">
-                  <span className="br-field-label">NMI</span>
-                  <div className="br-nmi-display">
-                    <span className="nmi-text">{extractedData.nmi || '—'}</span>
+              {/* Account Details */}
+              <span style={sectionLabel}>Account Details</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+                <div>
+                  <span style={fieldLabel}>NMI</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ ...fieldValue, fontFamily: 'monospace', letterSpacing: '0.04em' }}>{extractedData.nmi || '—'}</span>
                     {extractedData.nmi && (
-                      <button className="br-nmi-copy-icon" onClick={() => copyNmi(extractedData.nmi!)}>📋</button>
+                      <button onClick={() => copyNmi(extractedData.nmi!)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', color: '#94a3b8', fontSize: '12px' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
                     )}
                   </div>
                 </div>
-                <div className="br-field">
-                  <span className="br-field-label">Retailer</span>
-                  <span className="br-field-value">{extractedData.retailer || '—'}</span>
+                <div>
+                  <span style={fieldLabel}>Retailer</span>
+                  <span style={fieldValue}>{extractedData.retailer || '—'}</span>
                 </div>
-                <div className="br-field">
-                  <span className="br-field-label">Customer Name</span>
-                  <span className="br-field-value">{extractedData.customerName || '—'}</span>
-                </div>
-                <div className="br-field">
-                  <span className="br-field-label">Property Address</span>
-                  <span className="br-field-value">{extractedData.propertyAddress || '—'}</span>
-                </div>
-                <div className="br-field">
-                  <span className="br-field-label">Billing Period</span>
-                  <span className="br-field-value">
+                <div>
+                  <span style={fieldLabel}>Billing Period</span>
+                  <span style={fieldValue}>
                     {(() => {
                       const from = extractedData.billingPeriod?.from;
                       const to = extractedData.billingPeriod?.to;
@@ -625,112 +758,132 @@ export default function BillReaderPage() {
                     })()}
                   </span>
                 </div>
-                <div className="br-field">
-                  <span className="br-field-label">Total Amount</span>
-                  <span className="br-field-value large green">
+                <div>
+                  <span style={fieldLabel}>Total Amount</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
                     {extractedData.totals?.totalAmount != null ? `$${extractedData.totals.totalAmount.toFixed(2)}` : '—'}
                   </span>
                 </div>
               </div>
 
-              <div className="br-section-label" style={{ marginTop: 28 }}>Usage Data</div>
-              <div className="br-usage-bars">
-                {extractedData.usage?.peakKwh != null && (
-                  <div className="br-usage-bar-row">
-                    <span className="label">Peak</span>
-                    <div className="bar-track">
-                      <div className="bar-fill peak" style={{ width: `${(extractedData.usage.peakKwh / maxKwh) * 100}%` }} />
+              <div style={divider} />
+
+              {/* Usage Data */}
+              <span style={sectionLabel}>Usage Data</span>
+              {(extractedData.usage?.peakKwh != null || extractedData.usage?.offPeakKwh != null) && (
+                <div style={{ marginBottom: '16px' }}>
+                  {extractedData.usage?.peakKwh != null && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#64748b', width: '60px' }}>Peak</span>
+                      <div style={{ flex: 1, height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${(extractedData.usage.peakKwh / maxKwh) * 100}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)', borderRadius: '3px' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 500, width: '72px', textAlign: 'right' }}>{extractedData.usage.peakKwh} kWh</span>
                     </div>
-                    <span className="value">{extractedData.usage.peakKwh} kWh</span>
-                  </div>
-                )}
-                {extractedData.usage?.offPeakKwh != null && (
-                  <div className="br-usage-bar-row">
-                    <span className="label">Off-peak</span>
-                    <div className="bar-track">
-                      <div className="bar-fill off-peak" style={{ width: `${(extractedData.usage.offPeakKwh / maxKwh) * 100}%` }} />
+                  )}
+                  {extractedData.usage?.offPeakKwh != null && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '12px', color: '#64748b', width: '60px' }}>Off-peak</span>
+                      <div style={{ flex: 1, height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${(extractedData.usage.offPeakKwh / maxKwh) * 100}%`, background: 'linear-gradient(90deg, #fb923c, #fcd34d)', borderRadius: '3px', opacity: 0.6 }} />
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 500, width: '72px', textAlign: 'right' }}>{extractedData.usage.offPeakKwh} kWh</span>
                     </div>
-                    <span className="value">{extractedData.usage.offPeakKwh} kWh</span>
-                  </div>
-                )}
-              </div>
-              <div className="br-daily-avg">
-                <div className="number">{extractedData.usage?.dailyAvgKwh ?? '—'}</div>
-                <div className="unit">kWh/day average</div>
+                  )}
+                </div>
+              )}
+              <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '10px 16px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '22px', fontWeight: 700, color: '#c2410c' }}>{extractedData.usage?.dailyAvgKwh ?? '—'}</span>
+                <span style={{ fontSize: '12px', color: '#ea580c' }}>kWh/day average</span>
               </div>
 
-              <div className="br-section-label" style={{ marginTop: 28 }}>Tariff & Rates</div>
-              <div className="br-grid">
-                <div className="br-field">
-                  <span className="br-field-label">Supply Charge</span>
-                  <span className="br-field-value">
+              <div style={divider} />
+
+              {/* Tariff & Rates */}
+              <span style={sectionLabel}>Tariff & Rates</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '4px' }}>
+                <div>
+                  <span style={fieldLabel}>Supply Charge</span>
+                  <span style={fieldValue}>
                     {extractedData.rates?.supplyCharge != null ? `$${extractedData.rates.supplyCharge.toFixed(2)}/day` : '—'}
                   </span>
                 </div>
-                <div className="br-field">
-                  <span className="br-field-label">Usage Rate</span>
-                  <span className="br-field-value">
+                <div>
+                  <span style={fieldLabel}>Usage Rate</span>
+                  <span style={fieldValue}>
                     {extractedData.rates?.usageRate != null ? `${extractedData.rates.usageRate}c/kWh` : '—'}
                   </span>
                 </div>
-                <div className="br-field">
-                  <span className="br-field-label">Feed-in Tariff</span>
-                  <span className="br-field-value">
+                <div>
+                  <span style={fieldLabel}>Feed-in Tariff</span>
+                  <span style={fieldValue}>
                     {extractedData.rates?.feedInTariff != null ? `${extractedData.rates.feedInTariff}c/kWh` : 'None detected'}
                   </span>
                 </div>
                 {extractedData.rates?.peakRate != null && (
-                  <div className="br-field">
-                    <span className="br-field-label">Peak Rate</span>
-                    <span className="br-field-value">{extractedData.rates.peakRate}c/kWh</span>
+                  <div>
+                    <span style={fieldLabel}>Peak Rate</span>
+                    <span style={fieldValue}>{extractedData.rates.peakRate}c/kWh</span>
                   </div>
                 )}
                 {extractedData.rates?.offPeakRate != null && (
-                  <div className="br-field">
-                    <span className="br-field-label">Off-peak Rate</span>
-                    <span className="br-field-value">{extractedData.rates.offPeakRate}c/kWh</span>
+                  <div>
+                    <span style={fieldLabel}>Off-peak Rate</span>
+                    <span style={fieldValue}>{extractedData.rates.offPeakRate}c/kWh</span>
                   </div>
                 )}
               </div>
 
-              <div className="br-section-label" style={{ marginTop: 28 }}>System Info</div>
-              <div className="br-pills-row">
+              <div style={divider} />
+
+              {/* System Info */}
+              <span style={sectionLabel}>System Info</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
                 {extractedData.existingSolar === true ? (
-                  <span className="br-pill green">✓ Solar detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Solar detected</span>
                 ) : (
-                  <span className="br-pill grey">No solar detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>⚡ Solar opportunity</span>
                 )}
                 {extractedData.existingBattery === true ? (
-                  <span className="br-pill green">✓ Battery detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Battery detected</span>
                 ) : (
-                  <span className="br-pill grey">No battery detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' }}>No battery detected</span>
                 )}
-                {extractedData.meterType && <span className="br-pill blue">{extractedData.meterType}</span>}
-                {extractedData.meterCondition && <span className="br-pill blue">{extractedData.meterCondition}</span>}
-              </div>
-
-              <div style={{ marginTop: 28 }}>
-                <button className="br-raw-toggle" onClick={() => setRawExpanded(!rawExpanded)}>
-                  <span className="br-section-label">Raw OCR Text</span>
-                  <span className={`arrow ${rawExpanded ? 'open' : ''}`}>▼</span>
-                </button>
-                {rawExpanded && (
-                  <>
-                    <div className="br-raw-text">{rawOcr || 'No raw text available'}</div>
-                    <button className="br-raw-copy-btn" onClick={copyRawText}>Copy raw text</button>
-                  </>
+                {extractedData.meterType && (
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{extractedData.meterType}</span>
+                )}
+                {extractedData.meterCondition && (
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{extractedData.meterCondition}</span>
                 )}
               </div>
 
-              <div className="br-bottom-actions">
-                <button className="br-btn-outline" onClick={() => extractedData.nmi && copyNmi(extractedData.nmi)}>
-                  📋 Copy NMI
+              <div style={divider} />
+
+              {/* Bottom actions */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  className="br-btn-outline"
+                  onClick={() => extractedData.nmi && copyNmi(extractedData.nmi)}
+                  style={{
+                    flex: 1, padding: '11px', background: 'white', border: '1.5px solid #e2e8f0',
+                    borderRadius: '10px', fontSize: '13px', fontWeight: 500, color: '#475569',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                >
+                  Copy NMI
                 </button>
-                <button className="br-btn-disabled" title="Coming Soon" disabled>
-                  Push to Simpro
-                </button>
-                <button className="br-btn-primary" onClick={handleSave} disabled={saving}>
-                  {saving ? <div className="br-spinner" /> : null}
+                <button
+                  className="br-btn-primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    flex: 2, padding: '11px', background: 'linear-gradient(135deg, #f97316, #fbbf24)',
+                    border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+                    color: 'white', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s',
+                  }}
+                >
+                  {saving && <span className="br-spinner-ring" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white', width: '14px', height: '14px' } as React.CSSProperties} />}
                   Save extraction
                 </button>
               </div>
@@ -739,7 +892,16 @@ export default function BillReaderPage() {
         </div>
       </div>
 
-      {toast && <div className="br-toast">{toast}</div>}
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)',
+          background: '#0f172a', color: 'white', padding: '11px 20px', borderRadius: '10px',
+          fontSize: '13px', fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.18)', zIndex: 9999,
+        }}>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

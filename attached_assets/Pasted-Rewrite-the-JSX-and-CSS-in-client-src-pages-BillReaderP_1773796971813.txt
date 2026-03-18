@@ -1,0 +1,40 @@
+Rewrite the JSX and CSS in client/src/pages/BillReaderPage.tsx to make it look professional and clean — less like a developer tool, more like a polished SaaS product. Keep ALL existing logic, state, API calls, and data handling exactly as-is. Only change the visual presentation.
+
+Specific changes:
+
+1. PAGE HEADER — keep "Bill & NMI Reader" title and subtitle. Remove the two icon buttons (the green minus and dash buttons next to "0 Bills Processed"). Keep the bills processed count as plain text only.
+
+2. LEFT PANEL — upload area:
+   - Clean dashed border upload zone, centered icon (use a simple SVG document icon, not emoji), clear CTA text
+   - After file selected: show filename and size cleanly, no clutter
+   - During extraction: show a clean progress indicator with step text ("Reading bill with OCR...", "Extracting data with AI...")
+   - After extraction: show a green success state with confidence score
+   - "Extract Bill Data" button: full width, orange gradient (linear-gradient(135deg, #f97316, #fbbf24)), white text, 14px font, border-radius 12px, no blue
+   - Recent extractions list: clean rows showing retailer + customer name + NMI + date, clickable to load that bill's data into the right panel
+
+3. RIGHT PANEL — results display:
+   - Remove "Raw OCR Text" accordion entirely
+   - Remove "Push to Simpro" disabled button — replace bottom actions with just "Copy NMI" and "Save extraction" 
+   - Customer name as large heading, address as subtitle in muted text
+   - Confidence badge: green pill, top right
+   - Section labels: small uppercase orange text (color #f97316, fontSize 10px, letterSpacing 0.12em)
+   - Data fields: clean two-column grid, label in small muted text above value in darker text
+   - Total amount: large, bold, dark (not green)
+   - Usage bars: keep but make them orange/amber instead of blue
+   - Daily avg kWh: keep as a highlight stat
+   - System info pills: 
+     - "Solar detected" → green pill with ✓
+     - "No solar detected" → orange pill with ⚡ and label "Solar opportunity"
+     - "Battery detected" → green pill
+     - "No battery detected" → muted grey pill
+     - Meter type → light blue pill
+   - Empty state: clean centered message, simple SVG icon, no emoji
+
+4. OVERALL STYLING — inline styles only, remove all CSS class dependencies for new styles. Use:
+   - Background: #f8fafc for page, white cards
+   - Border radius: 16px on cards
+   - Font: inherit (Inter already loaded globally)
+   - Card shadow: 0 1px 3px rgba(0,0,0,0.08)
+   - Section dividers: 1px solid #f1f5f9
+
+Do not change any function logic, state variables, API calls, or data interfaces. Do not touch any other files.
