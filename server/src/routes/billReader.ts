@@ -1,3 +1,7 @@
+// -- ALTER TABLE bill_extractions ADD COLUMN IF NOT EXISTS phone_number text;
+// -- ALTER TABLE bill_extractions ADD COLUMN IF NOT EXISTS email_address text;
+// -- ALTER TABLE bill_extractions ADD COLUMN IF NOT EXISTS account_number text;
+
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import Anthropic from '@anthropic-ai/sdk';
@@ -260,7 +264,7 @@ router.post('/api/bill-reader/extract', upload.single('file'), async (req: Reque
       messages: [
         {
           role: 'user',
-          content: `You are an Australian electricity bill parser.\nExtract the following fields from this bill text.\nIf a field is not found, return null.\nRespond with JSON only, no other text:\n{\n  "nmi": "string | null",\n  "retailer": "string | null",\n  "customerName": "string | null",\n  "propertyAddress": "string | null",\n  "billingPeriod": {\n    "from": "string | null",\n    "to": "string | null",\n    "days": "number | null"\n  },\n  "usage": {\n    "dailyAvgKwh": "number | null",\n    "totalKwh": "number | null",\n    "peakKwh": "number | null",\n    "offPeakKwh": "number | null",\n    "shoulderKwh": "number | null"\n  },\n  "rates": {\n    "supplyCharge": "number | null",\n    "usageRate": "number | null",\n    "peakRate": "number | null",\n    "offPeakRate": "number | null",\n    "feedInTariff": "number | null"\n  },\n  "totals": {\n    "totalAmount": "number | null",\n    "gstAmount": "number | null"\n  },\n  "existingSolar": "boolean | null",\n  "existingBattery": "boolean | null",\n  "meterType": "string | null",\n  "meterCondition": "string | null",\n  "confidenceScore": "number"\n}\nFor "billingPeriod.days": calculate the exact number of days between the from and to dates and return as an integer. Do not return null if you have both dates.\nBill text: ${fullText}`,
+          content: `You are an Australian electricity bill parser.\nExtract the following fields from this bill text.\nIf a field is not found, return null.\nRespond with JSON only, no other text:\n{\n  "nmi": "string | null",\n  "retailer": "string | null",\n  "customerName": "string | null",\n  "phoneNumber": "string | null",\n  "emailAddress": "string | null",\n  "accountNumber": "string | null",\n  "propertyAddress": "string | null",\n  "billingPeriod": {\n    "from": "string | null",\n    "to": "string | null",\n    "days": "number | null"\n  },\n  "usage": {\n    "dailyAvgKwh": "number | null",\n    "totalKwh": "number | null",\n    "peakKwh": "number | null",\n    "offPeakKwh": "number | null",\n    "shoulderKwh": "number | null"\n  },\n  "rates": {\n    "supplyCharge": "number | null",\n    "usageRate": "number | null",\n    "peakRate": "number | null",\n    "offPeakRate": "number | null",\n    "feedInTariff": "number | null"\n  },\n  "totals": {\n    "totalAmount": "number | null",\n    "gstAmount": "number | null"\n  },\n  "existingSolar": "boolean | null",\n  "existingBattery": "boolean | null",\n  "meterType": "string | null",\n  "meterCondition": "string | null",\n  "confidenceScore": "number"\n}\nFor "phoneNumber": the customer's phone number if printed on the bill, else null.\nFor "emailAddress": the customer's email address if printed on the bill, else null.\nFor "accountNumber": the account or customer number (distinct from the NMI) if present, else null.\nFor "billingPeriod.days": calculate the exact number of days between the from and to dates and return as an integer. Do not return null if you have both dates.\nBill text: ${fullText}`,
         },
       ],
     });
@@ -386,6 +390,9 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
       raw_ocr_text,
       confidence_score,
       processing_ms,
+      phone_number,
+      email_address,
+      account_number,
     } = req.body;
 
     if (!tenant_id) {
@@ -418,6 +425,9 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
         raw_ocr_text,
         confidence_score,
         processing_ms: processing_ms ?? null,
+        phone_number: phone_number || null,
+        email_address: email_address || null,
+        account_number: account_number || null,
         status: 'extracted',
       })
       .select()
