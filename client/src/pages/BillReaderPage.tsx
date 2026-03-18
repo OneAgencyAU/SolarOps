@@ -196,6 +196,7 @@ export default function BillReaderPage() {
   const { tenant } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [stage, setStage] = useState<ProcessStage>('idle');
   const [checkReason, setCheckReason] = useState('');
@@ -247,6 +248,7 @@ export default function BillReaderPage() {
 
   const handleFileSelect = (f: File) => {
     setFile(f);
+    setUploadedFile(f);
     setStage('idle');
     setCheckReason('');
     setExtractedData(null);
@@ -262,6 +264,7 @@ export default function BillReaderPage() {
 
   const removeFile = () => {
     setFile(null);
+    setUploadedFile(null);
     setStage('idle');
     setCheckReason('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -590,18 +593,31 @@ export default function BillReaderPage() {
               )}
 
               {stage === 'complete' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                  <div style={{ width: '24px', height: '24px', background: '#22c55e', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#15803d' }}>Extraction complete</div>
-                    <div style={{ fontSize: '11px', color: '#16a34a' }}>
-                      {Math.round((extractedData?.confidenceScore || 0) * 100)}% confidence score
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0', marginBottom: '8px' }}>
+                    <div style={{ width: '24px', height: '24px', background: '#22c55e', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#15803d' }}>Extraction complete</div>
+                      <div style={{ fontSize: '11px', color: '#16a34a' }}>
+                        {Math.round((extractedData?.confidenceScore || 0) * 100)}% confidence score
+                      </div>
                     </div>
                   </div>
+                  {uploadedFile && (
+                    <button
+                      onClick={() => {
+                        const url = URL.createObjectURL(uploadedFile);
+                        window.open(url, '_blank');
+                      }}
+                      style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: '#64748b', background: 'white', cursor: 'pointer', width: '100%', marginTop: 8 }}
+                    >
+                      View Original
+                    </button>
+                  )}
                 </div>
               )}
             </div>
