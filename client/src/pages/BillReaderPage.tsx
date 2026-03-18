@@ -905,20 +905,20 @@ export default function BillReaderPage() {
               <span style={sectionLabel}>System Info</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
                 {extractedData.existingSolar === true ? (
-                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Solar detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>✓ Solar detected</span>
                 ) : (
-                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#4F8EF7', border: '1px solid #bae6fd' }}>⚡ Solar opportunity</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#4F8EF7', border: '1px solid #bae6fd', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>⚡ Solar opportunity</span>
                 )}
                 {extractedData.existingBattery === true ? (
-                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>✓ Battery detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '20px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>✓ Battery detected</span>
                 ) : (
-                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '20px', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' }}>No battery detected</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>No battery detected</span>
                 )}
                 {extractedData.meterType && (
-                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{extractedData.meterType}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>{extractedData.meterType}</span>
                 )}
                 {extractedData.meterCondition && (
-                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{extractedData.meterCondition}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 500, padding: '6px 12px', borderRadius: '20px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>{extractedData.meterCondition}</span>
                 )}
               </div>
 
