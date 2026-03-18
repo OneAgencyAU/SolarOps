@@ -65,6 +65,9 @@ interface SavedExtraction {
   property_address: string | null;
   raw_ocr_text: string | null;
   confidence_score: number | null;
+  phone_number: string | null;
+  email_address: string | null;
+  account_number: string | null;
 }
 
 const placeholderRecents: RecentItem[] = [
@@ -607,17 +610,6 @@ export default function BillReaderPage() {
                       </div>
                     </div>
                   </div>
-                  {uploadedFile && (
-                    <button
-                      onClick={() => {
-                        const url = URL.createObjectURL(uploadedFile);
-                        window.open(url, '_blank');
-                      }}
-                      style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: '#64748b', background: 'white', cursor: 'pointer', width: '100%', marginTop: 8 }}
-                    >
-                      View Original
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -674,6 +666,9 @@ export default function BillReaderPage() {
                           nmi: item.nmi,
                           retailer: item.retailer,
                           customerName: item.customer_name,
+                          phoneNumber: item.phone_number ?? null,
+                          emailAddress: item.email_address ?? null,
+                          accountNumber: item.account_number ?? null,
                           propertyAddress: item.property_address,
                           billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
                           usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
@@ -755,12 +750,22 @@ export default function BillReaderPage() {
                     )}
                   </div>
                 </div>
-                <span style={{
-                  fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '20px',
-                  background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', flexShrink: 0, marginLeft: '16px',
-                }}>
-                  {Math.round(extractedData.confidenceScore * 100)}% confidence
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '16px' }}>
+                  {uploadedFile && (
+                    <button
+                      onClick={() => { const url = URL.createObjectURL(uploadedFile); window.open(url, '_blank'); }}
+                      style={{ border: '1px solid #e2e8f0', background: 'white', color: '#64748b', fontSize: 12, borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+                    >
+                      View Original
+                    </button>
+                  )}
+                  <span style={{
+                    fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '20px',
+                    background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0',
+                  }}>
+                    {Math.round(extractedData.confidenceScore * 100)}% confidence
+                  </span>
+                </div>
               </div>
 
               {/* Account Details */}
