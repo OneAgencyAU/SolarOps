@@ -69,6 +69,12 @@ export default function VoiceOverviewPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!loading && !config) {
+      navigate('/voice-agent/setup', { replace: true });
+    }
+  }, [loading, config, navigate]);
+
   const handleToggleLive = async () => {
     if (!tenant?.id) return;
     const newLive = !isLive;
