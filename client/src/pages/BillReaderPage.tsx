@@ -52,10 +52,16 @@ interface SavedExtraction {
   status: string;
   daily_avg_kwh: number | null;
   total_kwh: number | null;
+  peak_kwh: number | null;
+  off_peak_kwh: number | null;
+  shoulder_kwh: number | null;
   supply_charge: number | null;
   usage_rate: number | null;
+  peak_rate: number | null;
+  off_peak_rate: number | null;
   feed_in_tariff: number | null;
   total_amount: number | null;
+  gst_amount: number | null;
   existing_solar: boolean | null;
   existing_battery: boolean | null;
   meter_type: string | null;
@@ -371,10 +377,16 @@ export default function BillReaderPage() {
         billing_days: extractedData.billingPeriod?.days,
         daily_avg_kwh: extractedData.usage?.dailyAvgKwh,
         total_kwh: extractedData.usage?.totalKwh,
+        peak_kwh: extractedData.usage?.peakKwh ?? null,
+        off_peak_kwh: extractedData.usage?.offPeakKwh ?? null,
+        shoulder_kwh: extractedData.usage?.shoulderKwh ?? null,
         supply_charge: extractedData.rates?.supplyCharge,
         usage_rate: extractedData.rates?.usageRate,
+        peak_rate: extractedData.rates?.peakRate ?? null,
+        off_peak_rate: extractedData.rates?.offPeakRate ?? null,
         feed_in_tariff: extractedData.rates?.feedInTariff,
         total_amount: extractedData.totals?.totalAmount,
+        gst_amount: extractedData.totals?.gstAmount ?? null,
         existing_solar: extractedData.existingSolar,
         existing_battery: extractedData.existingBattery,
         meter_type: extractedData.meterType,
@@ -686,9 +698,9 @@ export default function BillReaderPage() {
                           accountNumber: item.account_number ?? null,
                           propertyAddress: item.property_address,
                           billingPeriod: { from: item.billing_period_from, to: item.billing_period_to, days: item.billing_days },
-                          usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: null, offPeakKwh: null, shoulderKwh: null },
-                          rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: null, offPeakRate: null, feedInTariff: item.feed_in_tariff },
-                          totals: { totalAmount: item.total_amount, gstAmount: null },
+                          usage: { dailyAvgKwh: item.daily_avg_kwh, totalKwh: item.total_kwh, peakKwh: item.peak_kwh ?? null, offPeakKwh: item.off_peak_kwh ?? null, shoulderKwh: item.shoulder_kwh ?? null },
+                          rates: { supplyCharge: item.supply_charge, usageRate: item.usage_rate, peakRate: item.peak_rate ?? null, offPeakRate: item.off_peak_rate ?? null, feedInTariff: item.feed_in_tariff },
+                          totals: { totalAmount: item.total_amount, gstAmount: item.gst_amount ?? null },
                           existingSolar: item.existing_solar,
                           existingBattery: item.existing_battery,
                           meterType: item.meter_type,

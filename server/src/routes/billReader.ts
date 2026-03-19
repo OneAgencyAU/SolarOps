@@ -380,10 +380,16 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
       billing_days,
       daily_avg_kwh,
       total_kwh,
+      peak_kwh,
+      off_peak_kwh,
+      shoulder_kwh,
       supply_charge,
       usage_rate,
+      peak_rate,
+      off_peak_rate,
       feed_in_tariff,
       total_amount,
+      gst_amount,
       existing_solar,
       existing_battery,
       meter_type,
@@ -400,38 +406,61 @@ router.post('/api/bill-reader/save', async (req: Request, res: Response) => {
       return;
     }
 
-    const { data, error } = await supabase
+    const baseRecord = {
+      tenant_id,
+      file_name,
+      source: 'manual',
+      nmi,
+      retailer,
+      customer_name,
+      property_address,
+      billing_period_from: billing_period_from || null,
+      billing_period_to: billing_period_to || null,
+      billing_days,
+      daily_avg_kwh,
+      total_kwh,
+      supply_charge,
+      usage_rate,
+      feed_in_tariff,
+      total_amount,
+      existing_solar,
+      existing_battery,
+      meter_type,
+      raw_ocr_text,
+      confidence_score,
+      processing_ms: processing_ms ?? null,
+      phone_number: phone_number || null,
+      email_address: email_address || null,
+      account_number: account_number || null,
+      status: 'extracted',
+    };
+
+    const extendedRecord = {
+      ...baseRecord,
+      peak_kwh: peak_kwh ?? null,
+      off_peak_kwh: off_peak_kwh ?? null,
+      shoulder_kwh: shoulder_kwh ?? null,
+      peak_rate: peak_rate ?? null,
+      off_peak_rate: off_peak_rate ?? null,
+      gst_amount: gst_amount ?? null,
+    };
+
+    let { data, error } = await supabase
       .from('bill_extractions')
-      .insert({
-        tenant_id,
-        file_name,
-        source: 'manual',
-        nmi,
-        retailer,
-        customer_name,
-        property_address,
-        billing_period_from: billing_period_from || null,
-        billing_period_to: billing_period_to || null,
-        billing_days,
-        daily_avg_kwh,
-        total_kwh,
-        supply_charge,
-        usage_rate,
-        feed_in_tariff,
-        total_amount,
-        existing_solar,
-        existing_battery,
-        meter_type,
-        raw_ocr_text,
-        confidence_score,
-        processing_ms: processing_ms ?? null,
-        phone_number: phone_number || null,
-        email_address: email_address || null,
-        account_number: account_number || null,
-        status: 'extracted',
-      })
+      .insert(extendedRecord)
       .select()
       .single();
+
+    if (error && error.code === 'PGRST204') {
+      console.warn('[Bill Reader] New columns not yet migrated — saving without extended fields');
+      const fallback = await supabase
+        .from('bill_extractions')
+        .insert(baseRecord)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error('[Bill Reader] Save error:', error);
