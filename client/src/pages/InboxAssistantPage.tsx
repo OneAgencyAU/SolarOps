@@ -145,7 +145,7 @@ Sol Energy Team`,
 ];
 
 export default function InboxAssistantPage() {
-  const { tenant } = useAuth();
+  const { user, tenant } = useAuth();
   const [selectedId, setSelectedId] = useState<string | number>(1);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [drafts, setDrafts] = useState<Record<string, string>>(() => {
@@ -163,6 +163,10 @@ export default function InboxAssistantPage() {
   const [sending, setSending] = useState(false);
   const [sentEmails, setSentEmails] = useState<Set<string>>(new Set());
   const [readEmails, setReadEmails] = useState<Set<string>>(new Set());
+  const [activeProvider, setActiveProvider] = useState<'google' | 'microsoft'>('google');
+  const [msConnected, setMsConnected] = useState(false);
+  const [msEmails, setMsEmails] = useState<any[]>([]);
+  const [msSyncing, setMsSyncing] = useState(false);
 
   const fetchConnections = async () => {
     if (!tenant?.id) return;
@@ -194,6 +198,38 @@ export default function InboxAssistantPage() {
       }
     } catch (e) { console.error('Draft fetch failed', e); }
     finally { setDraftLoading(p => ({ ...p, [emailId]: false })); }
+  };
+
+  const checkMsStatus = async () => {
+    if (!tenant?.id) return;
+    try {
+      const res = await fetch(`/api/auth/microsoft/status?tenant_id=${tenant.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMsConnected(data.connected);
+      }
+    } catch {}
+  };
+
+  const fetchMsEmails = async () => {
+    if (!tenant?.id) return;
+    setMsSyncing(true);
+    try {
+      const res = await fetch(`/api/microsoft/emails?tenant_id=${tenant.id}&folder=inbox&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setMsEmails(data);
+      }
+    } catch (e) { console.error('MS email fetch failed', e); }
+    finally { setMsSyncing(false); }
+  };
+
+  const handleMsDisconnect = async () => {
+    if (!tenant?.id) return;
+    await fetch(`/api/auth/microsoft/disconnect?tenant_id=${tenant.id}`, { method: 'DELETE' });
+    setMsConnected(false);
+    setMsEmails([]);
+    if (activeProvider === 'microsoft') setActiveProvider('google');
   };
 
   const handleDisconnect = async (provider: string) => {
@@ -235,6 +271,7 @@ export default function InboxAssistantPage() {
   useEffect(() => {
     fetchConnections();
     fetchEmails();
+    checkMsStatus();
     const interval = setInterval(() => { fetchEmails(); }, 180000);
     return () => clearInterval(interval);
   }, [tenant?.id]);
@@ -243,6 +280,11 @@ export default function InboxAssistantPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('connected') === 'gmail') {
       handleSync();
+      window.history.replaceState({}, '', '/inbox');
+    } else if (params.get('connected') === 'outlook') {
+      setActiveProvider('microsoft');
+      setMsConnected(true);
+      fetchMsEmails();
       window.history.replaceState({}, '', '/inbox');
     }
   }, []);
@@ -253,7 +295,24 @@ export default function InboxAssistantPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const emailSource = useRealEmails ? realEmails.map((e: any) => ({
+  const msEmailSource = msEmails.map((e: any) => ({
+    id: e.id || e.external_id,
+    sender: e.from_name || e.from_email,
+    email: e.from_email,
+    subject: e.subject || '(no subject)',
+    preview: e.body_preview || '',
+    time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
+    tags: [],
+    body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• ').replace(/<[^>]*>/g, ''),
+    aiSummary: '',
+    draft: '',
+    is_read: e.is_read || readEmails.has(String(e.id || e.external_id)),
+    is_sent: sentEmails.has(String(e.id || e.external_id)) || aiDrafts[String(e.id || e.external_id)]?.status === 'sent',
+    message_id: e.external_id || null,
+    provider: 'microsoft' as const,
+  }));
+
+  const gmailEmailSource = useRealEmails ? realEmails.map((e: any) => ({
     id: e.id,
     sender: e.from_name || e.from_email,
     email: e.from_email,
@@ -267,7 +326,10 @@ export default function InboxAssistantPage() {
     is_read: e.is_read || readEmails.has(String(e.id)),
     is_sent: sentEmails.has(String(e.id)) || aiDrafts[String(e.id)]?.status === 'sent',
     message_id: e.message_id || null,
-  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false, message_id: null })) : [];
+    provider: 'gmail' as const,
+  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false, message_id: null, provider: 'gmail' as const })) : [];
+
+  const emailSource = activeProvider === 'microsoft' ? msEmailSource : gmailEmailSource;
 
   const selected = emailSource.find((e) => String(e.id) === String(selectedId)) || emailSource[0];
 
@@ -293,26 +355,62 @@ export default function InboxAssistantPage() {
     if (!draftText.trim()) { setToast('No draft to send'); return; }
     setSending(true);
     try {
-      const res = await fetch('/api/inbox/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: tenant.id,
-          email_id: emailId,
-          draft_id: draft?.id || null,
-          draft_text: draftText,
-          message_id: selected.message_id || null,
-        }),
-      });
-      if (res.ok) {
-        setToast('Reply sent via Gmail ✓');
-        setSentEmails(p => new Set([...p, emailId]));
-        if (draft) {
-          setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
+      if (activeProvider === 'microsoft') {
+        const draftRes = await fetch('/api/microsoft/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenant.id,
+            to: selected.email,
+            subject: selected.subject?.startsWith('Re:') ? selected.subject : `Re: ${selected.subject}`,
+            body: draftText,
+            replyToMessageId: selected.message_id || null,
+          }),
+        });
+        if (!draftRes.ok) {
+          const err = await draftRes.json();
+          setToast(`Failed to create draft: ${err.error}`);
+          setSending(false);
+          return;
+        }
+        const { draftId } = await draftRes.json();
+        const sendRes = await fetch('/api/microsoft/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant_id: tenant.id, draftId }),
+        });
+        if (sendRes.ok) {
+          setToast('Reply sent via Outlook ✓');
+          setSentEmails(p => new Set([...p, emailId]));
+          if (draft) {
+            setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
+          }
+        } else {
+          const err = await sendRes.json();
+          setToast(`Failed to send: ${err.error}`);
         }
       } else {
-        const err = await res.json();
-        setToast(`Failed to send: ${err.error}`);
+        const res = await fetch('/api/inbox/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenant.id,
+            email_id: emailId,
+            draft_id: draft?.id || null,
+            draft_text: draftText,
+            message_id: selected.message_id || null,
+          }),
+        });
+        if (res.ok) {
+          setToast('Reply sent via Gmail ✓');
+          setSentEmails(p => new Set([...p, emailId]));
+          if (draft) {
+            setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
+          }
+        } else {
+          const err = await res.json();
+          setToast(`Failed to send: ${err.error}`);
+        }
       }
     } catch (e: any) {
       setToast('Send failed — check connection');
@@ -329,10 +427,35 @@ export default function InboxAssistantPage() {
         <p className="inbox-stats-bar">4 in queue · 134 drafted this week · Avg 4.2min response time</p>
       </div>
 
-      {connections.length > 0 && (
+      {(connections.length > 0 || msConnected) && (
         <div className="inbox-connection-bar">
+          <div className="inbox-provider-toggle">
+            {connections.length > 0 && (
+              <button
+                className={`inbox-provider-pill${activeProvider === 'google' ? ' active' : ''}`}
+                onClick={() => setActiveProvider('google')}
+              >
+                <img src="https://www.google.com/favicon.ico" width={14} height={14} style={{ marginRight: 4 }} />
+                Google
+              </button>
+            )}
+            {msConnected && (
+              <button
+                className={`inbox-provider-pill${activeProvider === 'microsoft' ? ' active' : ''}`}
+                onClick={() => { setActiveProvider('microsoft'); if (msEmails.length === 0) fetchMsEmails(); }}
+              >
+                <svg width="14" height="14" viewBox="0 0 22 22" style={{ marginRight: 4 }}>
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                  <rect x="12" y="1" width="9" height="9" fill="#7FBA00"/>
+                  <rect x="1" y="12" width="9" height="9" fill="#00A4EF"/>
+                  <rect x="12" y="12" width="9" height="9" fill="#FFB900"/>
+                </svg>
+                Microsoft
+              </button>
+            )}
+          </div>
           <div className="inbox-connected-status">
-            {connections.map(c => (
+            {activeProvider === 'google' && connections.map(c => (
               <span key={c.provider} className="inbox-connected-pill">
                 {c.email} connected
                 <button
@@ -344,14 +467,33 @@ export default function InboxAssistantPage() {
                 </button>
               </span>
             ))}
-            <button className="inbox-sync-btn" onClick={handleSync} disabled={syncing}>
-              {syncing ? 'Syncing...' : 'Sync now'}
-            </button>
+            {activeProvider === 'microsoft' && msConnected && (
+              <span className="inbox-connected-pill">
+                Microsoft 365 connected
+                <button
+                  onClick={handleMsDisconnect}
+                  className="inbox-sync-btn"
+                  style={{ borderColor: '#ff3b30', color: '#ff3b30' }}
+                >
+                  Disconnect
+                </button>
+              </span>
+            )}
+            {activeProvider === 'google' && (
+              <button className="inbox-sync-btn" onClick={handleSync} disabled={syncing}>
+                {syncing ? 'Syncing...' : 'Sync now'}
+              </button>
+            )}
+            {activeProvider === 'microsoft' && (
+              <button className="inbox-sync-btn" onClick={fetchMsEmails} disabled={msSyncing}>
+                {msSyncing ? 'Syncing...' : 'Sync now'}
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {connections.length === 0 && (
+      {connections.length === 0 && !msConnected && (
         <div className="inbox-empty-state">
           <div className="inbox-empty-icon">📭</div>
           <h2 className="inbox-empty-title">Connect your inbox to get started</h2>
@@ -363,16 +505,21 @@ export default function InboxAssistantPage() {
               <img src="https://www.google.com/favicon.ico" width={18} height={18} />
               Connect Gmail
             </a>
-            <button className="inbox-provider-btn outlook" disabled>
-              <img src="https://outlook.com/favicon.ico" width={18} height={18} />
-              Outlook — Coming Soon
-            </button>
+            <a href={`/api/auth/microsoft?tenant_id=${tenant?.id}&user_id=${user?.uid || ''}`} className="inbox-provider-btn outlook">
+              <svg width="18" height="18" viewBox="0 0 22 22">
+                <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                <rect x="12" y="1" width="9" height="9" fill="#7FBA00"/>
+                <rect x="1" y="12" width="9" height="9" fill="#00A4EF"/>
+                <rect x="12" y="12" width="9" height="9" fill="#FFB900"/>
+              </svg>
+              Connect Outlook
+            </a>
           </div>
           <p className="inbox-empty-note">Your emails are never stored without your permission. AI drafts require your approval before sending.</p>
         </div>
       )}
 
-      {connections.length > 0 && (
+      {(connections.length > 0 || msConnected) && (
       <div className="inbox-panels">
         {/* ── LEFT PANEL ── */}
         <div className="inbox-left">
@@ -391,10 +538,10 @@ export default function InboxAssistantPage() {
           </div>
 
           <div className="inbox-email-list">
-            {connections.length > 0 && emailSource.length === 0 && !syncing ? (
+            {(connections.length > 0 || msConnected) && emailSource.length === 0 && !syncing && !msSyncing ? (
               <div className="inbox-sync-prompt">
                 <p>No emails loaded yet.</p>
-                <button className="inbox-connect-btn" onClick={handleSync}>Sync inbox now</button>
+                <button className="inbox-connect-btn" onClick={activeProvider === 'microsoft' ? fetchMsEmails : handleSync}>Sync inbox now</button>
               </div>
             ) : filtered.map((e) => (
               <button

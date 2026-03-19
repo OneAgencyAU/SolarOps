@@ -1,0 +1,89 @@
+Build a Microsoft 365 / Outlook OAuth connector for SolarOps. This mirrors the existing Google OAuth connector exactly. Use @azure/msal-node for the OAuth flow.
+
+PACKAGE INSTALL:
+npm install @azure/msal-node @microsoft/microsoft-graph-client
+
+ENVIRONMENT VARIABLES (already in Replit secrets):
+- MS_CLIENT_ID
+- MS_CLIENT_SECRET  
+- MS_TENANT_ID (value is "common")
+
+BACKEND — create server/src/routes/microsoft.ts with these routes:
+
+1. GET /api/auth/microsoft
+   - Builds Microsoft OAuth URL using MSAL ConfidentialClientApplication
+   - Config: { auth: { clientId: MS_CLIENT_ID, clientSecret: MS_CLIENT_SECRET, authority: `https://login.microsoftonline.com/${MS_TENANT_ID}` }}
+   - Scopes: ['Mail.Read', 'Mail.ReadWrite', 'Mail.Send', 'User.Read', 'offline_access']
+   - redirectUri: `${process.env.APP_URL || 'https://solarops.com.au'}/api/auth/microsoft/callback`
+   - Store tenant_id and user_id in session before redirecting
+   - Redirect user to the auth URL
+
+2. GET /api/auth/microsoft/callback
+   - Exchange code for tokens using MSAL acquireTokenByCode
+   - Get user email by calling https://graph.microsoft.com/v1.0/me with the access token
+   - Upsert into tenant_connections table: ms_access_token, ms_refresh_token, ms_email, ms_connected_at = now(), ms_last_sync = now()
+   - Redirect to /connections?ms_connected=true on success, /connections?error=ms_auth_failed on failure
+
+3. GET /api/auth/microsoft/status?tenant_id=X
+   - Query tenant_connections for ms_email and ms_connected_at
+   - Return { connected: boolean, email: string|null, lastSync: string|null }
+
+4. DELETE /api/auth/microsoft/disconnect?tenant_id=X
+   - Clear ms_access_token, ms_refresh_token, ms_email, ms_connected_at, ms_last_sync for the tenant
+   - Return { success: true }
+
+5. GET /api/microsoft/emails?tenant_id=X&folder=inbox&limit=20
+   - Fetch ms_access_token from tenant_connections
+   - Call https://graph.microsoft.com/v1.0/me/messages?$top=20&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,conversationId
+   - Return formatted emails matching the same shape as the Google emails endpoint: { id, threadId, subject, from: { name, email }, date, snippet, isRead, labelIds }
+
+6. GET /api/microsoft/email/:id?tenant_id=X
+   - Fetch full email body from https://graph.microsoft.com/v1.0/me/messages/{id}
+   - Return { id, subject, from, date, body, headers }
+
+7. POST /api/microsoft/draft
+   - Body: { tenant_id, to, subject, body, replyToMessageId? }
+   - If replyToMessageId provided, use reply endpoint: POST /v1.0/me/messages/{id}/createReply
+   - Otherwise create draft: POST /v1.0/me/messages with isDraft: true
+   - Return { draftId, success }
+
+8. POST /api/microsoft/send
+   - Body: { tenant_id, draftId }
+   - Call POST /v1.0/me/messages/{draftId}/send
+   - Update ms_last_sync in tenant_connections
+   - Return { success }
+
+Register the router in server/src/index.ts:
+import microsoftRouter from './routes/microsoft';
+app.use(microsoftRouter);
+
+FRONTEND — ConnectionsPage.tsx:
+
+1. Add Microsoft status state alongside Google:
+   const [msStatus, setMsStatus] = useState({ connected: false, email: null, lastSync: null });
+
+2. In useEffect, also fetch /api/auth/microsoft/status?tenant_id= and set msStatus
+
+3. Check for ms_connected=true query param and show toast "Microsoft 365 connected successfully"
+
+4. Add handleMsConnect: window.location.href = `/api/auth/microsoft?tenant_id=${tenant.id}&user_id=${user.uid}`
+
+5. Add handleMsDisconnect: DELETE /api/auth/microsoft/disconnect
+
+6. In the Connected section, show Microsoft connected card when msStatus.connected (same design as Google card but with Microsoft logo SVG — use the Windows/Microsoft logo: 4 coloured squares in a 2x2 grid: red #F25022, green #7FBA00, blue #00A4EF, yellow #FFB900)
+
+7. In the Available grid, remove Microsoft 365 from the connectors array (it's now real) and show it as a proper Connect card when not connected — same style as Google card with the Microsoft logo
+
+FRONTEND — InboxAssistantPage.tsx:
+
+1. Add a provider toggle at the top of the inbox: two pills "Google" and "Microsoft" — active pill is blue, inactive is grey. Default to whichever is connected. If both connected, show both. If neither connected, show connection prompt.
+
+2. When Microsoft is selected as provider, fetch emails from /api/microsoft/emails instead of /api/google/emails
+
+3. When generating a draft for a Microsoft email, call /api/microsoft/draft instead of the Google draft endpoint
+
+4. When sending, call /api/microsoft/send
+
+5. The email list, draft panel, and send flow should work identically regardless of provider — same UI, just different API calls based on selected provider
+
+Do not break any existing Google functionality. Do not touch any other files.

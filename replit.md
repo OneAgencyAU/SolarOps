@@ -10,7 +10,7 @@ Solar operations management platform for Australian solar businesses.
 - **Auth**: Firebase Authentication (Google Sign-In only)
 - **AI**: Anthropic Claude (Haiku for validation, Sonnet for extraction/drafting)
 - **OCR**: Google Cloud Vision API
-- **Email**: Gmail API (via Google OAuth 2.0)
+- **Email**: Gmail API (via Google OAuth 2.0) + Microsoft Graph API (via MSAL)
 - **Routing**: React Router v6
 - **Runner**: `concurrently` starts both dev servers from `npm run dev`
 
@@ -56,6 +56,7 @@ Solar operations management platform for Australian solar businesses.
 │           ├── billReader.ts  # Bill OCR + extraction endpoints
 │           ├── usage.ts       # API usage log endpoints
 │           ├── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
+│           ├── microsoft.ts   # Microsoft 365 OAuth + Graph API email endpoints
 │           ├── voice.ts       # Retell AI + Telnyx voice agent endpoints
 │           └── campaigns.ts   # Outbound campaign management endpoints
 ├── supabase/
@@ -119,6 +120,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `google_connections` — stores Google OAuth tokens for Connections page (`id UUID`, `tenant_id UUID FK`, `user_id TEXT FK`, `google_email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `scopes TEXT[]`, `connected_at`, `last_sync`). Unique index on `(tenant_id, user_id)`.
 - `bill_extractions` — OCR bill results (`id UUID`, `tenant_id UUID`, `customer_name`, `nmi`, `retailer`, `address`, `billing_period_start`, `billing_period_end`, `total_amount`, `daily_avg_kwh`, `supply_charge`, `usage_rate`, `fit_rate`, `solar_detected BOOL`, `battery_detected BOOL`, `meter_type`, `raw_ocr_text`, `confidence_score`, `status`, `processing_ms`, `created_at`)
 - `api_usage_log` — tracks all AI/OCR API calls per tenant (`id UUID`, `tenant_id UUID`, `module TEXT`, `service TEXT`, `model TEXT`, `input_tokens INT`, `output_tokens INT`, `cost_usd NUMERIC`, `status TEXT`, `created_at`). Filtered with `.or(tenant_id.eq.${id},tenant_id.is.null)` to support legacy NULL rows.
+- `tenant_connections` — Microsoft 365 OAuth tokens per tenant (`tenant_id TEXT PK`, `ms_access_token TEXT`, `ms_refresh_token TEXT`, `ms_email TEXT`, `ms_connected_at TIMESTAMPTZ`, `ms_last_sync TIMESTAMPTZ`). Used for Microsoft Graph API email access.
 - `inbox_connections` — Gmail OAuth tokens per tenant (`tenant_id UUID`, `provider TEXT`, `email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `token_expiry TIMESTAMPTZ`, `updated_at`). Unique on `(tenant_id, provider)`.
 - `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`, `message_id TEXT`). Unique on `(tenant_id, external_id)`.
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
@@ -144,6 +146,10 @@ All required secrets are stored in Replit's Secrets pane:
 | `SUPABASE_SECRET_KEY` | Backend |
 | `GOOGLE_CLIENT_ID` | Backend (OAuth — Connections page + Gmail inbox) |
 | `GOOGLE_CLIENT_SECRET` | Backend (OAuth — Connections page + Gmail inbox) |
+| `MS_CLIENT_ID` | Backend (Microsoft 365 OAuth — Outlook inbox) |
+| `MS_CLIENT_SECRET` | Backend (Microsoft 365 OAuth — Outlook inbox) |
+| `MS_TENANT_ID` | Backend (Microsoft 365 OAuth — defaults to 'common') |
+| `APP_URL` | Backend (Microsoft OAuth redirect URI base — defaults to solarops.com.au) |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Backend (Cloud Vision OCR) |
 | `ANTHROPIC_API_KEY` | Backend (Claude Haiku + Sonnet) |
 | `SESSION_SECRET` | Backend (express-session) |
@@ -194,6 +200,16 @@ All required secrets are stored in Replit's Secrets pane:
 - `DELETE /api/inbox/drafts/:id` — Deletes a specific draft.
 - `POST /api/inbox/send` — Sends reply via Gmail API, marks draft as sent + email as read.
 - `POST /api/inbox/mark-read` — Marks email as read in Supabase + removes UNREAD label in Gmail.
+
+### Microsoft 365 (`/api/auth/microsoft` + `/api/microsoft`)
+- `GET /api/auth/microsoft` — Initiates Microsoft OAuth flow via MSAL.
+- `GET /api/auth/microsoft/callback` — OAuth callback, stores tokens in `tenant_connections`.
+- `GET /api/auth/microsoft/status` — Returns connection status (connected, email, lastSync).
+- `DELETE /api/auth/microsoft/disconnect` — Clears Microsoft tokens from `tenant_connections`.
+- `GET /api/microsoft/emails` — Fetches emails from Graph API, also syncs to `inbox_emails`.
+- `GET /api/microsoft/email/:id` — Gets a single email from Graph API.
+- `POST /api/microsoft/draft` — Creates a draft in Outlook (supports reply via `replyToMessageId`).
+- `POST /api/microsoft/send` — Sends a draft via Graph API.
 
 ### Voice Agent (`/api/voice`)
 - `GET /api/voice/numbers/search?state=SA` — Search available AU phone numbers on Telnyx by state.
@@ -275,4 +291,15 @@ npm run dev:server # Express only (tsx watch)
 - **Helpdesk** — Backend ticket management (create, update, assign)
 - **Activity Log** — Real data from audit trail
 - **Settings** — Save workspace/notification/AI settings to Supabase
-- **Inbox: Outlook** — Microsoft Graph API integration (currently shows "Coming Soon")
+- **Inbox: Outlook** — ✅ DONE. Microsoft 365 OAuth + Graph API integration. Requires `tenant_connections` table in Supabase:
+  ```sql
+  CREATE TABLE IF NOT EXISTS tenant_connections (
+    tenant_id TEXT PRIMARY KEY,
+    ms_access_token TEXT,
+    ms_refresh_token TEXT,
+    ms_email TEXT,
+    ms_connected_at TIMESTAMPTZ,
+    ms_last_sync TIMESTAMPTZ
+  );
+  ```
+  Also requires `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_TENANT_ID`, and `APP_URL` env vars.
