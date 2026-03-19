@@ -84,7 +84,7 @@ async function graphFetch(accessToken: string, url: string, options: any = {}) {
 }
 
 router.get('/api/auth/microsoft', (req: Request, res: Response) => {
-  const { tenant_id, user_id } = req.query;
+  const { tenant_id, user_id, redirect } = req.query;
   if (!tenant_id || !user_id) {
     res.status(400).json({ error: 'tenant_id and user_id required' });
     return;
@@ -93,11 +93,13 @@ router.get('/api/auth/microsoft', (req: Request, res: Response) => {
   (req.session as any).ms_tenant_id = tenant_id;
   (req.session as any).ms_user_id = user_id;
 
+  const state = JSON.stringify({ t: tenant_id as string, r: (redirect as string) || '' });
+
   const cca = getMsalClient();
   cca.getAuthCodeUrl({
     scopes: SCOPES,
     redirectUri: getRedirectUri(),
-    state: tenant_id as string,
+    state,
   }).then(url => {
     res.redirect(url);
   }).catch(err => {
@@ -107,9 +109,33 @@ router.get('/api/auth/microsoft', (req: Request, res: Response) => {
 });
 
 router.get('/api/auth/microsoft/callback', async (req: Request, res: Response) => {
-  const { code, state: tenant_id } = req.query;
-  if (!code || !tenant_id) {
+  const { code, state: rawState } = req.query;
+  if (!code || !rawState) {
     res.redirect('/connections?error=ms_auth_failed');
+    return;
+  }
+
+  let tenant_id: string;
+  let redirectPath: string;
+  try {
+    const parsed = JSON.parse(rawState as string);
+    tenant_id = parsed.t;
+    redirectPath = parsed.r || '';
+  } catch {
+    tenant_id = rawState as string;
+    redirectPath = '';
+  }
+
+  const baseUrl = 'https://solarops.com.au';
+  const successUrl = redirectPath
+    ? `${baseUrl}${redirectPath}?ms_connected=true`
+    : `${baseUrl}/connections?ms_connected=true`;
+  const errorUrl = redirectPath
+    ? `${baseUrl}${redirectPath}?error=ms_auth_failed`
+    : `${baseUrl}/connections?error=ms_auth_failed`;
+
+  if (!tenant_id) {
+    res.redirect(errorUrl);
     return;
   }
 
@@ -166,10 +192,10 @@ router.get('/api/auth/microsoft/callback', async (req: Request, res: Response) =
       });
     }
 
-    res.redirect('/connections?ms_connected=true');
+    res.redirect(successUrl);
   } catch (err: any) {
     console.error('[Microsoft OAuth] Callback error:', err);
-    res.redirect('/connections?error=ms_auth_failed');
+    res.redirect(errorUrl);
   }
 });
 

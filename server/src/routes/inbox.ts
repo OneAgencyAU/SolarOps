@@ -30,20 +30,39 @@ function getOAuthClient() {
 
 router.get('/api/auth/gmail', (req: Request, res: Response) => {
   const tenant_id = req.query.tenant_id as string;
+  const redirect = req.query.redirect as string | undefined;
   if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
   const oauth2Client = getOAuthClient();
+  const state = JSON.stringify({ t: tenant_id, r: redirect || '' });
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: GMAIL_SCOPES,
-    state: tenant_id,
+    state,
     prompt: 'consent',
   });
   res.redirect(url);
 });
 
 router.get('/api/auth/gmail/callback', async (req: Request, res: Response) => {
-  const { code, state: tenant_id } = req.query;
-  if (!code || !tenant_id) { res.status(400).send('Missing code or state'); return; }
+  const { code, state: rawState } = req.query;
+  if (!code || !rawState) { res.status(400).send('Missing code or state'); return; }
+
+  let tenant_id: string;
+  let redirectPath: string;
+  try {
+    const parsed = JSON.parse(rawState as string);
+    tenant_id = parsed.t;
+    redirectPath = parsed.r || '';
+  } catch {
+    tenant_id = rawState as string;
+    redirectPath = '';
+  }
+
+  const baseUrl = 'https://solarops.com.au';
+  const successUrl = redirectPath
+    ? `${baseUrl}${redirectPath}?connected=gmail`
+    : `${baseUrl}/inbox-assistant?connected=gmail`;
+
   try {
     const oauth2Client = getOAuthClient();
     const { tokens } = await oauth2Client.getToken(code as string);
@@ -53,7 +72,7 @@ router.get('/api/auth/gmail/callback', async (req: Request, res: Response) => {
     const { data: userInfo } = await oauth2.userinfo.get();
 
     const { error } = await supabase.from('inbox_connections').upsert({
-      tenant_id: tenant_id as string,
+      tenant_id,
       provider: 'gmail',
       email: userInfo.email,
       access_token: tokens.access_token,
@@ -63,7 +82,7 @@ router.get('/api/auth/gmail/callback', async (req: Request, res: Response) => {
     }, { onConflict: 'tenant_id,provider' });
 
     if (error) { res.status(500).send('Failed to save connection'); return; }
-    res.redirect(`https://solarops.com.au/inbox?connected=gmail`);
+    res.redirect(successUrl);
   } catch (err: any) {
     console.error('[Gmail OAuth] Callback error:', err);
     res.status(500).send('OAuth failed: ' + err.message);

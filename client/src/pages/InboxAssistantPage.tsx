@@ -290,12 +290,15 @@ export default function InboxAssistantPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('connected') === 'gmail') {
       handleSync();
-      window.history.replaceState({}, '', '/inbox');
-    } else if (params.get('connected') === 'outlook') {
+      window.history.replaceState({}, '', '/inbox-assistant');
+    } else if (params.get('connected') === 'outlook' || params.get('ms_connected') === 'true') {
       setActiveProvider('microsoft');
       setMsConnected(true);
       fetchMsEmails();
-      window.history.replaceState({}, '', '/inbox');
+      window.history.replaceState({}, '', '/inbox-assistant');
+    } else if (params.get('error') === 'ms_auth_failed') {
+      setToast('Microsoft connection failed. Please try again.');
+      window.history.replaceState({}, '', '/inbox-assistant');
     }
   }, []);
 
@@ -516,11 +519,11 @@ export default function InboxAssistantPage() {
             SolarOps will read incoming emails and generate AI-drafted replies for your team to review and send.
           </p>
           <div className="inbox-provider-options">
-            <a href={`/api/auth/gmail?tenant_id=${tenant?.id}`} className="inbox-provider-btn gmail">
+            <a href={`/api/auth/gmail?tenant_id=${tenant?.id}&redirect=/inbox-assistant`} className="inbox-provider-btn gmail">
               <img src="https://www.google.com/favicon.ico" width={18} height={18} />
               Connect Gmail
             </a>
-            <a href={`/api/auth/microsoft?tenant_id=${tenant?.id}&user_id=${user?.uid || ''}`} className="inbox-provider-btn outlook">
+            <a href={`/api/auth/microsoft?tenant_id=${tenant?.id}&user_id=${user?.uid || ''}&redirect=/inbox-assistant`} className="inbox-provider-btn outlook">
               <svg width="18" height="18" viewBox="0 0 22 22">
                 <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
                 <rect x="12" y="1" width="9" height="9" fill="#7FBA00"/>
