@@ -4,160 +4,14 @@ import '../styles/InboxAssistantPage.css';
 
 type FilterType = 'All' | 'Urgent' | 'New Lead' | 'Support' | 'Completed';
 
-interface Email {
-  id: number;
-  sender: string;
-  email: string;
-  subject: string;
-  preview: string;
-  time: string;
-  tags: { label: string; color: 'blue' | 'red' | 'orange' }[];
-  body: string;
-  aiSummary: string;
-  draft: string;
-}
-
-const emails: Email[] = [
-  {
-    id: 1,
-    sender: 'James Hartley',
-    email: 'james@suncoastcommercial.com.au',
-    subject: 'Commercial solar quote — 85kW system',
-    preview: "Hi, we're looking to install solar across our warehouse...",
-    time: '9:41 AM',
-    tags: [
-      { label: 'New Lead', color: 'blue' },
-      { label: 'Urgent', color: 'red' },
-    ],
-    body: `Hi Sol Energy team,
-
-We've been considering going solar for our warehouse in Bibra Lake for a while now. We're looking at roughly an 85kW system across the main roof. I'm the operations manager here and have sign-off authority for this kind of project.
-
-Could you provide a quote and potentially arrange a site visit? We'd like to move fairly quickly on this.
-
-Thanks,
-James Hartley
-Operations Manager — Suncoast Commercial`,
-    aiSummary:
-      'Commercial enquiry for an 85kW system across a warehouse facility. Decision maker is James (Operations Manager). Budget not yet discussed. Requesting quote and site visit.',
-    draft: `Hi James,
-
-Thanks for reaching out — an 85kW system for a warehouse in Bibra Lake sounds like a great fit for what we do.
-
-I'd love to arrange a site visit and put together a detailed quote for you. Could I grab a few details first?
-
-- What's the best number to reach you on?
-- Are you the primary contact for this project?
-- Do you have a rough timeline in mind?
-
-Looking forward to connecting.
-
-Warm regards,
-Sol Energy Team`,
-  },
-  {
-    id: 2,
-    sender: 'Rachel Wong',
-    email: 'rachel.wong@gmail.com',
-    subject: 'Re: System monitoring not showing data',
-    preview: "Thanks for getting back to me. The app still isn't...",
-    time: '9:22 AM',
-    tags: [{ label: 'Support', color: 'orange' }],
-    body: `Hi,
-
-Thanks for getting back to me. The app still isn't showing any generation data since last Thursday. I've tried restarting the inverter like you suggested but it hasn't helped.
-
-The system is only 3 months old so I'm hoping this is a simple fix. Can someone come and take a look?
-
-Cheers,
-Rachel`,
-    aiSummary:
-      'Existing customer reporting monitoring data outage since last Thursday. Inverter restart attempted without success. System is 3 months old — may be under warranty.',
-    draft: `Hi Rachel,
-
-Sorry to hear the monitoring issue is persisting. Since the inverter restart didn't resolve it, this may be a connectivity issue between your inverter and the monitoring platform.
-
-I'll arrange for one of our technicians to visit and diagnose the issue. Since your system is under warranty, there'll be no charge.
-
-Could you let me know a couple of times that suit you this week?
-
-Best regards,
-Sol Energy Team`,
-  },
-  {
-    id: 3,
-    sender: 'Mark Deluca',
-    email: 'mark@delucabuilders.com.au',
-    subject: 'Interested in solar for new development',
-    preview: 'We have a 12-unit residential development starting...',
-    time: '8:55 AM',
-    tags: [{ label: 'New Lead', color: 'blue' }],
-    body: `Hi there,
-
-We have a 12-unit residential development starting construction in Joondalup next month. We'd like to include solar as standard on each unit — probably 6.6kW systems with battery-ready inverters.
-
-Is this something you can help with? We'd need bulk pricing and coordination with our build schedule.
-
-Mark Deluca
-Director — Deluca Builders`,
-    aiSummary:
-      'Developer enquiry for 12-unit residential project in Joondalup. Looking for 6.6kW systems per unit with battery-ready inverters. Needs bulk pricing and build schedule coordination.',
-    draft: `Hi Mark,
-
-Great to hear about the Joondalup development — we work with several builders on projects like this and would be happy to put together a bulk proposal.
-
-For 12 units at 6.6kW each, we can offer competitive volume pricing and coordinate installations around your build schedule.
-
-Could we schedule a quick call to discuss the specifics? I'd also like to understand your inverter preferences and whether you'd like us to include EV charger pre-wiring.
-
-Kind regards,
-Sol Energy Team`,
-  },
-  {
-    id: 4,
-    sender: 'Priya Sharma',
-    email: 'priya.sharma@hotmail.com',
-    subject: 'Battery rebate question',
-    preview: "I saw on the news that there's a new government rebate...",
-    time: '8:30 AM',
-    tags: [{ label: 'Support', color: 'orange' }],
-    body: `Hi,
-
-I saw on the news that there's a new government rebate for home batteries in WA. I already have a 10kW solar system installed by you guys last year.
-
-Am I eligible for the rebate? And how much would a battery add-on cost? I'm thinking of a Tesla Powerwall or similar.
-
-Thanks,
-Priya`,
-    aiSummary:
-      'Existing customer enquiring about WA government battery rebate eligibility. Has a 10kW system installed last year. Interested in Tesla Powerwall or similar.',
-    draft: `Hi Priya,
-
-Great question! Yes, there is a current rebate available for home batteries in WA, and as an existing solar customer you should be eligible.
-
-The rebate covers up to $3,000 depending on the battery size. For a Tesla Powerwall 2 (13.5kWh), the installed price is typically around $12,000–$14,000 before the rebate.
-
-Would you like me to send through a detailed quote with the rebate applied? I can also check compatibility with your existing inverter.
-
-Best regards,
-Sol Energy Team`,
-  },
-];
-
 export default function InboxAssistantPage() {
   const { user, tenant } = useAuth();
-  const [selectedId, setSelectedId] = useState<string | number>(1);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
-  const [drafts, setDrafts] = useState<Record<string, string>>(() => {
-    const d: Record<string, string> = {};
-    emails.forEach((e) => (d[String(e.id)] = e.draft));
-    return d;
-  });
   const [toast, setToast] = useState<string | null>(null);
   const [connections, setConnections] = useState<{ provider: string; email: string }[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [realEmails, setRealEmails] = useState<any[]>([]);
-  const [useRealEmails, setUseRealEmails] = useState(false);
   const [aiDrafts, setAiDrafts] = useState<Record<string, { id: string; draft_text: string; ai_summary: string; status: string }>>({});
   const [draftLoading, setDraftLoading] = useState<Record<string, boolean>>({});
   const [sending, setSending] = useState(false);
@@ -188,7 +42,7 @@ export default function InboxAssistantPage() {
     const res = await fetch(`/api/inbox/emails?tenant_id=${tenant.id}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.length > 0) { setRealEmails(data); setUseRealEmails(true); }
+      setRealEmails(data);
     }
   };
 
@@ -255,8 +109,8 @@ export default function InboxAssistantPage() {
     });
     setConnections([]);
     setRealEmails([]);
-    setUseRealEmails(false);
     setAiDrafts({});
+    setSelectedId(null);
   };
 
   const markAsRead = async (emailId: string) => {
@@ -313,36 +167,32 @@ export default function InboxAssistantPage() {
     subject: e.subject || '(no subject)',
     preview: e.body_preview || '',
     time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    tags: [],
+    tags: [] as { label: string; color: 'blue' | 'red' | 'orange' }[],
     body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• ').replace(/<[^>]*>/g, ''),
-    aiSummary: '',
-    draft: '',
     is_read: e.is_read || readEmails.has(String(e.id || e.external_id)),
     is_sent: sentEmails.has(String(e.id || e.external_id)) || aiDrafts[String(e.id || e.external_id)]?.status === 'sent',
     message_id: e.external_id || null,
     provider: 'microsoft' as const,
   }));
 
-  const gmailEmailSource = useRealEmails ? realEmails.map((e: any) => ({
+  const gmailEmailSource = realEmails.map((e: any) => ({
     id: e.id,
     sender: e.from_name || e.from_email,
     email: e.from_email,
     subject: e.subject || '(no subject)',
     preview: e.body_preview || '',
     time: new Date(e.received_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }),
-    tags: [],
+    tags: [] as { label: string; color: 'blue' | 'red' | 'orange' }[],
     body: (e.body_text || '').replace(/^\s*\*\s*/gm, '• '),
-    aiSummary: '',
-    draft: '',
     is_read: e.is_read || readEmails.has(String(e.id)),
     is_sent: sentEmails.has(String(e.id)) || aiDrafts[String(e.id)]?.status === 'sent',
     message_id: e.message_id || null,
     provider: 'gmail' as const,
-  })) : connections.length === 0 ? emails.map(e => ({ ...e, is_read: true, is_sent: false, message_id: null, provider: 'gmail' as const })) : [];
+  }));
 
   const emailSource = activeProvider === 'microsoft' ? msEmailSource : gmailEmailSource;
 
-  const selected = emailSource.find((e) => String(e.id) === String(selectedId)) || emailSource[0];
+  const selected = emailSource.find((e) => String(e.id) === String(selectedId)) ?? null;
 
   const filterCounts: Record<FilterType, number> = {
     All: emailSource.filter(e => !e.is_sent).length,
@@ -362,7 +212,7 @@ export default function InboxAssistantPage() {
     if (!tenant?.id || !selected) return;
     const emailId = String(selected.id);
     const draft = aiDrafts[emailId];
-    const draftText = draft?.draft_text ?? drafts[emailId] ?? '';
+    const draftText = draft?.draft_text ?? '';
     if (!draftText.trim()) { setToast('No draft to send'); return; }
     setSending(true);
     try {
@@ -393,9 +243,7 @@ export default function InboxAssistantPage() {
         if (sendRes.ok) {
           setToast('Reply sent via Outlook ✓');
           setSentEmails(p => new Set([...p, emailId]));
-          if (draft) {
-            setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
-          }
+          if (draft) setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
         } else {
           const err = await sendRes.json();
           setToast(`Failed to send: ${err.error}`);
@@ -415,15 +263,13 @@ export default function InboxAssistantPage() {
         if (res.ok) {
           setToast('Reply sent via Gmail ✓');
           setSentEmails(p => new Set([...p, emailId]));
-          if (draft) {
-            setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
-          }
+          if (draft) setAiDrafts(p => ({ ...p, [emailId]: { ...p[emailId], status: 'sent' } }));
         } else {
           const err = await res.json();
           setToast(`Failed to send: ${err.error}`);
         }
       }
-    } catch (e: any) {
+    } catch {
       setToast('Send failed — check connection');
     } finally {
       setSending(false);
@@ -536,159 +382,165 @@ export default function InboxAssistantPage() {
       )}
 
       {(connections.length > 0 || msConnected) && (
-      <div className="inbox-panels">
-        {/* ── LEFT PANEL ── */}
-        <div className="inbox-left">
-          <div className="inbox-left-topbar">
-            <div className="inbox-filters">
-              {(['All', 'Urgent', 'New Lead', 'Support', 'Completed'] as FilterType[]).map((f) => (
-                <button
-                  key={f}
-                  className={`filter-pill${activeFilter === f ? ' active' : ''}`}
-                  onClick={() => setActiveFilter(f)}
-                >
-                  {f} ({filterCounts[f]})
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="inbox-email-list">
-            {(connections.length > 0 || msConnected) && emailSource.length === 0 && !syncing && !msSyncing ? (
-              <div className="inbox-sync-prompt">
-                <p>No emails loaded yet.</p>
-                <button className="inbox-connect-btn" onClick={activeProvider === 'microsoft' ? fetchMsEmails : handleSync}>Sync inbox now</button>
+        <div className="inbox-panels">
+          {/* ── LEFT PANEL ── */}
+          <div className="inbox-left">
+            <div className="inbox-left-topbar">
+              <div className="inbox-filters">
+                {(['All', 'Urgent', 'New Lead', 'Support', 'Completed'] as FilterType[]).map((f) => (
+                  <button
+                    key={f}
+                    className={`filter-pill${activeFilter === f ? ' active' : ''}`}
+                    onClick={() => setActiveFilter(f)}
+                  >
+                    {f} ({filterCounts[f]})
+                  </button>
+                ))}
               </div>
-            ) : filtered.map((e) => (
-              <button
-                key={e.id}
-                className={`email-card${selectedId === e.id ? ' selected' : ''}${!e.is_read ? ' unread' : ''}${e.is_sent ? ' sent' : ''}`}
-                onClick={() => {
-                  setSelectedId(e.id);
-                  if (useRealEmails) {
-                    fetchOrGenerateDraft(String(e.id));
-                    markAsRead(String(e.id));
-                  }
-                }}
-              >
-                <div className="email-card-top">
-                  <span className="email-sender">{e.sender}</span>
-                  <span className="email-time">{e.time}</span>
-                </div>
-                <div className="email-subject">{e.subject}</div>
-                <div className="email-preview">{e.preview}</div>
-                <div className="email-tags">
-                  {e.tags.map((t) => (
-                    <span key={t.label} className={`email-tag ${t.color}`}>
-                      {t.label}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className="inbox-right" key={selected?.id}>
-          {selected && (
-            <>
-              {/* Thread */}
-              <div className="thread-section">
-                <div className="thread-header">
-                  <div className="thread-subject">{selected.subject}</div>
-                  <div className="thread-meta-row">
-                    <span className="thread-meta">
-                      {selected.sender} · {selected.email} · Today {selected.time}
-                    </span>
-                    <div className="thread-badges">
-                      {selected.tags.map((t) => (
-                        <span key={t.label} className={`thread-badge ${t.color}`}>
+            <div className="inbox-email-list">
+              {emailSource.length === 0 && !syncing && !msSyncing ? (
+                <div className="inbox-sync-prompt">
+                  <p>No emails loaded yet.</p>
+                  <button
+                    className="inbox-connect-btn"
+                    onClick={activeProvider === 'microsoft' ? fetchMsEmails : handleSync}
+                  >
+                    Sync inbox now
+                  </button>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="inbox-sync-prompt">
+                  <p>No emails in this category.</p>
+                </div>
+              ) : (
+                filtered.map((e) => (
+                  <button
+                    key={e.id}
+                    className={`email-card${String(selectedId) === String(e.id) ? ' selected' : ''}${!e.is_read ? ' unread' : ''}${e.is_sent ? ' sent' : ''}`}
+                    onClick={() => {
+                      setSelectedId(String(e.id));
+                      fetchOrGenerateDraft(String(e.id));
+                      markAsRead(String(e.id));
+                    }}
+                  >
+                    <div className="email-card-top">
+                      <span className="email-sender">{e.sender}</span>
+                      <span className="email-time">{e.time}</span>
+                    </div>
+                    <div className="email-subject">{e.subject}</div>
+                    <div className="email-preview">{e.preview}</div>
+                    <div className="email-tags">
+                      {e.tags.map((t) => (
+                        <span key={t.label} className={`email-tag ${t.color}`}>
                           {t.label}
                         </span>
                       ))}
                     </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ── RIGHT PANEL ── */}
+          <div className="inbox-right" key={selected?.id ?? 'empty'}>
+            {!selected ? (
+              <div className="inbox-sync-prompt" style={{ height: '100%', justifyContent: 'center' }}>
+                <p style={{ color: '#6e6e73' }}>Select an email to view</p>
+              </div>
+            ) : (
+              <>
+                {/* Thread */}
+                <div className="thread-section">
+                  <div className="thread-header">
+                    <div className="thread-subject">{selected.subject}</div>
+                    <div className="thread-meta-row">
+                      <span className="thread-meta">
+                        {selected.sender} · {selected.email} · Today {selected.time}
+                      </span>
+                      <div className="thread-badges">
+                        {selected.tags.map((t) => (
+                          <span key={t.label} className={`thread-badge ${t.color}`}>
+                            {t.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+
+                  {aiDrafts[String(selected.id)]?.ai_summary && (
+                    <div className="ai-summary-box">
+                      <span className="ai-icon">✦</span> AI Summary: {aiDrafts[String(selected.id)].ai_summary}
+                    </div>
+                  )}
+
+                  <div className="email-body" style={{ whiteSpace: 'pre-wrap' }}>{selected.body}</div>
                 </div>
 
-                {(selected.aiSummary || aiDrafts[String(selected?.id)]?.ai_summary) && (
-                  <div className="ai-summary-box">
-                    <span className="ai-icon">✦</span> AI Summary: {aiDrafts[String(selected?.id)]?.ai_summary || selected.aiSummary}
-                  </div>
-                )}
+                {/* Divider */}
+                <div className="panel-divider" />
 
-                <div className="email-body" style={{ whiteSpace: 'pre-wrap' }}>{selected.body}</div>
-              </div>
-
-              {/* Divider */}
-              <div className="panel-divider" />
-
-              {/* Draft */}
-              <div className="draft-section">
-                <div className="draft-header">
-                  <span className="draft-label">✦ AI Draft</span>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="regen-btn" onClick={() => {
-                      if (useRealEmails && selected?.id) {
+                {/* Draft */}
+                <div className="draft-section">
+                  <div className="draft-header">
+                    <span className="draft-label">✦ AI Draft</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="regen-btn" onClick={() => {
                         const id = String(selected.id);
                         setAiDrafts(p => { const n = { ...p }; delete n[id]; return n; });
                         fetchOrGenerateDraft(id);
-                      }
-                    }}>Regenerate</button>
-                    {aiDrafts[String(selected?.id)] && (
-                      <button className="regen-btn" style={{ color: '#ff3b30' }} onClick={async () => {
-                        const draft = aiDrafts[String(selected?.id)];
-                        if (!draft || !tenant?.id) return;
-                        await fetch(`/api/inbox/drafts/${draft.id}`, {
-                          method: 'DELETE',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ tenant_id: tenant.id }),
-                        });
-                        setAiDrafts(p => { const n = { ...p }; delete n[String(selected?.id)]; return n; });
-                      }}>Delete Draft</button>
-                    )}
+                      }}>Regenerate</button>
+                      {aiDrafts[String(selected.id)] && (
+                        <button className="regen-btn" style={{ color: '#ff3b30' }} onClick={async () => {
+                          const draft = aiDrafts[String(selected.id)];
+                          if (!draft || !tenant?.id) return;
+                          await fetch(`/api/inbox/drafts/${draft.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tenant_id: tenant.id }),
+                          });
+                          setAiDrafts(p => { const n = { ...p }; delete n[String(selected.id)]; return n; });
+                        }}>Delete Draft</button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {draftLoading[String(selected?.id)] ? (
-                  <div className="draft-generating">✦ Generating AI draft...</div>
-                ) : (
-                  <textarea
-                    className="draft-textarea"
-                    readOnly={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
-                    style={aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? { background: '#f9f9f9', color: '#6e6e73' } : {}}
-                    value={aiDrafts[String(selected?.id)]?.draft_text ?? drafts[String(selected?.id)] ?? ''}
-                    onChange={(ev) => {
-                      const id = String(selected?.id);
-                      if (aiDrafts[id]) {
+                  {draftLoading[String(selected.id)] ? (
+                    <div className="draft-generating">✦ Generating AI draft...</div>
+                  ) : (
+                    <textarea
+                      className="draft-textarea"
+                      readOnly={aiDrafts[String(selected.id)]?.status === 'sent' || sentEmails.has(String(selected.id))}
+                      style={aiDrafts[String(selected.id)]?.status === 'sent' || sentEmails.has(String(selected.id)) ? { background: '#f9f9f9', color: '#6e6e73' } : {}}
+                      value={aiDrafts[String(selected.id)]?.draft_text ?? ''}
+                      onChange={(ev) => {
+                        const id = String(selected.id);
                         setAiDrafts(p => ({ ...p, [id]: { ...p[id], draft_text: ev.target.value } }));
-                      } else {
-                        setDrafts(p => ({ ...p, [id]: ev.target.value }));
-                      }
-                    }}
-                    placeholder={useRealEmails ? 'Click an email to generate an AI draft' : ''}
-                  />
-                )}
-                <div className="draft-actions">
-                  <div className="draft-actions-left">
-                    <button className="action-btn secondary">Create Ticket</button>
-                    <button className="action-btn secondary">Link to Ticket</button>
+                      }}
+                      placeholder="Click an email to generate an AI draft"
+                    />
+                  )}
+                  <div className="draft-actions">
+                    <div className="draft-actions-left">
+                      <button className="action-btn secondary">Create Ticket</button>
+                      <button className="action-btn secondary">Link to Ticket</button>
+                    </div>
+                    <button
+                      className={`action-btn ${aiDrafts[String(selected.id)]?.status === 'sent' || sentEmails.has(String(selected.id)) ? 'sent' : 'primary'}`}
+                      onClick={handleApprove}
+                      disabled={sending || aiDrafts[String(selected.id)]?.status === 'sent' || sentEmails.has(String(selected.id))}
+                    >
+                      {sending ? 'Sending...' : aiDrafts[String(selected.id)]?.status === 'sent' || sentEmails.has(String(selected.id)) ? '✓ Sent' : 'Approve & Send'}
+                    </button>
                   </div>
-                  <button
-                    className={`action-btn ${aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? 'sent' : 'primary'}`}
-                    onClick={handleApprove}
-                    disabled={sending || aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id))}
-                  >
-                    {sending ? 'Sending...' : aiDrafts[String(selected?.id)]?.status === 'sent' || sentEmails.has(String(selected?.id)) ? '✓ Sent' : 'Approve & Send'}
-                  </button>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
-      {/* Toast */}
       {toast && <div className="inbox-toast">{toast}</div>}
     </div>
   );
