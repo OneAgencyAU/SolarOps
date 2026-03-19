@@ -15,6 +15,7 @@ interface AuthContextValue {
   firstName: string | null;
   lastName: string | null;
   loading: boolean;
+  tenantLoading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -26,9 +27,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [lastName, setLastName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tenantLoading, setTenantLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      setTenantLoading(true);
       setUser(firebaseUser);
 
       if (firebaseUser) {
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLastName(null);
       }
 
+      setTenantLoading(false);
       setLoading(false);
     });
 
@@ -80,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, tenant, firstName, lastName, loading, signOut }}>
+    <AuthContext.Provider value={{ user, tenant, firstName, lastName, loading, tenantLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

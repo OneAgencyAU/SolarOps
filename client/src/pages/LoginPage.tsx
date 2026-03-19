@@ -104,7 +104,7 @@ const stats = [
 ];
 
 export default function LoginPage() {
-  const { user, tenant, loading } = useAuth();
+  const { user, tenant, loading, tenantLoading } = useAuth();
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
 
@@ -113,10 +113,10 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && !tenantLoading && user) {
       navigate(tenant ? '/dashboard' : '/onboarding', { replace: true });
     }
-  }, [user, tenant, loading, navigate]);
+  }, [user, tenant, loading, tenantLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     try {

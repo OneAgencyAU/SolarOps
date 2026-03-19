@@ -86,8 +86,13 @@ const AnimatedBackground = () => {
 };
 
 export default function OnboardingPage() {
-  const { user } = useAuth();
+  const { user, tenant } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (tenant) navigate('/dashboard', { replace: true });
+  }, [tenant, navigate]);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
