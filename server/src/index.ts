@@ -11,6 +11,9 @@ import voiceRouter from './routes/voice';
 import campaignsRouter from './routes/campaigns';
 import dashboardRouter from './routes/dashboard';
 import microsoftRouter from './routes/microsoft';
+import webhooksRouter from './routes/webhooks';
+import activityLogRouter from './routes/activityLog';
+import { startJobRunner } from './services/jobRunner';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +44,8 @@ app.use(voiceRouter);
 app.use(campaignsRouter);
 app.use(dashboardRouter);
 app.use(microsoftRouter);
+app.use(webhooksRouter);
+app.use(activityLogRouter);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });
@@ -145,4 +150,5 @@ app.get('*', (_req: Request, res: Response) => {
 
 app.listen(PORT, () => {
   console.log(`SolarOps API running on port ${PORT}`);
+  startJobRunner();
 });

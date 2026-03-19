@@ -282,8 +282,6 @@ export default function InboxAssistantPage() {
     fetchEmails();
     checkMsStatus();
     fetchStats();
-    const interval = setInterval(() => { fetchEmails(); fetchStats(); }, 180000);
-    return () => clearInterval(interval);
   }, [tenant?.id]);
 
   useEffect(() => {

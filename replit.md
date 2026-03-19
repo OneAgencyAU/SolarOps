@@ -51,6 +51,9 @@ Solar operations management platform for Australian solar businesses.
 │       ├── index.ts           # Express API (Supabase secret key, session, passport)
 │       ├── config/
 │       │   └── passport.ts    # Google OAuth strategy (passport-google-oauth20)
+│       ├── services/
+│       │   ├── inboxSync.ts   # Extracted Gmail sync logic (reusable by job runner + API)
+│       │   └── jobRunner.ts   # Background job runner (60s cycle), seeders, activity logging
 │       └── routes/
 │           ├── auth.ts        # Google OAuth endpoints (/api/auth/google/*)
 │           ├── billReader.ts  # Bill OCR + extraction endpoints
@@ -58,7 +61,9 @@ Solar operations management platform for Australian solar businesses.
 │           ├── inbox.ts       # Gmail OAuth + email sync + draft + send endpoints
 │           ├── microsoft.ts   # Microsoft 365 OAuth + Graph API email endpoints
 │           ├── voice.ts       # Retell AI + Telnyx voice agent endpoints
-│           └── campaigns.ts   # Outbound campaign management endpoints
+│           ├── campaigns.ts   # Outbound campaign management endpoints
+│           ├── webhooks.ts    # Generic webhook receiver (POST /api/webhooks/:source)
+│           └── activityLog.ts # Activity log API (GET /api/activity-log)
 ├── supabase/
 │   └── migrations/
 │       ├── 001_initial_schema.sql
@@ -124,6 +129,8 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `inbox_connections` — Gmail OAuth tokens per tenant (`tenant_id UUID`, `provider TEXT`, `email TEXT`, `access_token TEXT`, `refresh_token TEXT`, `token_expiry TIMESTAMPTZ`, `updated_at`). Unique on `(tenant_id, provider)`.
 - `inbox_emails` — synced Gmail messages (`id UUID`, `tenant_id UUID`, `connection_id UUID`, `provider TEXT`, `external_id TEXT`, `from_name TEXT`, `from_email TEXT`, `subject TEXT`, `body_text TEXT`, `body_preview TEXT`, `received_at TIMESTAMPTZ`, `is_read BOOL`, `message_id TEXT`). Unique on `(tenant_id, external_id)`.
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
+- `automation_jobs` — background job queue (`id UUID`, `tenant_id TEXT`, `job_type TEXT` [inbox_sync/connection_health/webhook_event], `status TEXT` [pending/running/success/failed/retrying], `payload JSONB`, `result JSONB`, `error_message TEXT`, `attempts INT`, `max_attempts INT DEFAULT 3`, `next_run_at TIMESTAMPTZ`, `last_run_at TIMESTAMPTZ`, `created_at`, `updated_at`). Index on `(status, next_run_at)`.
+- `activity_log` — audit trail for all automated actions (`id UUID`, `tenant_id TEXT`, `module TEXT`, `action TEXT`, `details TEXT`, `trigger TEXT DEFAULT 'system'`, `status TEXT`, `metadata JSONB`, `created_at`). Index on `(tenant_id, created_at DESC)`.
 - `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `created_at`, `updated_at`). Unique on `tenant_id`.
 - `outbound_campaigns` — outbound call campaigns (`id UUID`, `tenant_id TEXT`, `name TEXT`, `campaign_type TEXT`, `script TEXT`, `lead_count INT`, `retell_batch_id TEXT`, `status TEXT`, `created_at TIMESTAMPTZ`)
 - `voice_calls` — inbound call records (`id UUID`, `tenant_id UUID`, `vapi_call_id TEXT UNIQUE`, `caller_number TEXT`, `caller_name TEXT`, `caller_email TEXT`, `caller_suburb TEXT`, `reason TEXT`, `call_type TEXT`, `callback_window TEXT`, `transcript TEXT`, `summary TEXT`, `status TEXT`, `duration_seconds INT`, `created_at`)
@@ -170,7 +177,7 @@ All required secrets are stored in Replit's Secrets pane:
 - `/connections` — Google Workspace OAuth (passport-google-oauth20). Tokens stored in `google_connections`. Connect/disconnect working.
 - `/voice-agent` — **COMPLETE & LIVE**. Self-serve onboarding: Step 1 (Telnyx AU number search + purchase), Step 2 (configure Retell AI agent — name, greeting, tone, email), Step 3 (call forwarding instructions per carrier). Full dashboard after onboarding: live/offline toggle, call stats, recent calls with transcript detail panel. Webhook logs calls to `voice_calls`. Uses Retell AI (11labs-Matilda voice, en-AU) + Telnyx for telephony.
 - `/helpdesk` — UI only. Kanban board, ticket detail panel. No backend connected.
-- `/activity-log` — UI only. Log table with drawer. No backend connected.
+- `/activity-log` — **COMPLETE & LIVE**. Real data from `activity_log` table. Shows job runner activity (inbox syncs, connection health checks, webhook events). Stats bar with today's totals + success rate. Filters by module, trigger type, status. Detail drawer shows metadata JSON. Fetches from `GET /api/activity-log`.
 - `/settings` — UI only. Workspace, notifications, AI behaviour, team, billing, time-saved cards. No backend connected.
 - `/privacy` — Privacy Policy page. No auth required.
 - `/terms` — Terms of Service page. No auth required.
@@ -219,6 +226,20 @@ All required secrets are stored in Replit's Secrets pane:
 - `GET /api/voice/calls?tenant_id=X` — List recent calls for a tenant.
 - `GET /api/voice/config?tenant_id=X` — Get voice config for a tenant.
 - `POST /api/voice/toggle` — Toggle agent live/offline.
+
+### Activity Log (`/api/activity-log`)
+- `GET /api/activity-log?tenant_id=X&limit=50` — Returns recent activity log entries for a tenant, ordered by `created_at` desc.
+- `GET /api/activity-log/stats?tenant_id=X` — Returns today's stats: `total`, `success`, `failed`, `successRate`.
+
+### Webhooks (`/api/webhooks`)
+- `POST /api/webhooks/:source` — Generic webhook receiver. Accepts any POST, stores as `webhook_event` job in `automation_jobs`. Returns 200 immediately. Does NOT replace the existing Retell voice webhook at `/api/voice/webhook`.
+
+### Automation / Job Runner
+- Runs on 60-second interval, processes up to 10 jobs per cycle
+- Job types: `inbox_sync` (Gmail sync via extracted `syncGmailForTenant`), `connection_health` (token expiry checks), `webhook_event` (stores payload)
+- Retry logic: exponential backoff (attempts × 2 minutes), max 3 attempts
+- Seeders: inbox_sync every 3 minutes, connection_health every 15 minutes — only creates jobs for tenants with active connections
+- Logs every completed job to `activity_log` table
 
 ### Campaigns (`/api/campaigns`)
 - `POST /api/campaigns/create` — Create outbound batch call campaign via Retell. Looks up tenant's `retell_agent_id` + `telnyx_number` from `voice_config`, posts to Retell `/v2/create-batch-call`, saves to `outbound_campaigns`.
@@ -289,7 +310,7 @@ npm run dev:server # Express only (tsx watch)
 - **Push to Simpro** — Wire up disabled "Push to Simpro" button on Bill Reader to Simpro API
 - **Voice Agent** — Run 010_voice_retell_telnyx.sql migration in Supabase to add Retell/Telnyx columns
 - **Helpdesk** — Backend ticket management (create, update, assign)
-- **Activity Log** — Real data from audit trail
+- **Activity Log** — DONE. Real data from `activity_log` table via job runner
 - **Settings** — Save workspace/notification/AI settings to Supabase
 - **Inbox: Outlook** — ✅ DONE. Microsoft 365 OAuth + Graph API integration. Requires `tenant_connections` table in Supabase:
   ```sql

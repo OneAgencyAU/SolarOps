@@ -1,0 +1,111 @@
+Build a server-side automation runtime for SolarOps. This replaces 
+the current client-side polling with proper backend scheduled jobs, 
+a generic webhook receiver, and retry logic. All built inside Express 
+— no external tools.
+
+=== 1. SUPABASE TABLE: automation_jobs ===
+
+Create this table (run via Supabase SQL editor or migration):
+
+  id              uuid primary key default gen_random_uuid()
+  tenant_id       text not null
+  job_type        text not null  -- 'inbox_sync', 'connection_health', 'webhook_event'
+  status          text not null default 'pending'  -- 'pending', 'running', 'success', 'failed', 'retrying'
+  payload         jsonb default '{}'
+  result          jsonb default null
+  error_message   text default null
+  attempts        int default 0
+  max_attempts    int default 3
+  next_run_at     timestamptz default now()
+  last_run_at     timestamptz default null
+  created_at      timestamptz default now()
+  updated_at      timestamptz default now()
+
+Add index on (status, next_run_at) for the job runner query.
+
+=== 2. JOB RUNNER: server/src/services/jobRunner.ts ===
+
+Create a simple job runner that:
+- Runs on a setInterval (every 60 seconds)
+- Queries automation_jobs for rows where status IN ('pending','retrying') 
+  AND next_run_at <= now(), ordered by next_run_at ASC, limit 10
+- For each job, sets status = 'running', increments attempts, 
+  sets last_run_at = now()
+- Executes the job based on job_type:
+  - 'inbox_sync': calls the existing /api/inbox/sync logic internally 
+    (extract the sync function from server/src/routes/inbox.ts into a 
+    reusable function, don't make an HTTP call to itself)
+  - 'connection_health': checks google_connections and ms_connections 
+    tables — for each connected tenant, verify the token hasn't expired. 
+    If token refresh fails, log a warning to automation_jobs result.
+  - 'webhook_event': generic — just stores the event payload for now 
+    (future modules will process these)
+- On success: sets status = 'success', stores result
+- On failure: if attempts < max_attempts, sets status = 'retrying' 
+  and next_run_at = now() + (attempts * 2 minutes) for exponential 
+  backoff. If attempts >= max_attempts, sets status = 'failed'.
+- Logs every job execution to console: [JobRunner] job_type tenant_id status
+
+=== 3. SCHEDULED JOB SEEDING ===
+
+When the Express server starts (in server/src/index.ts), after all 
+routes are registered:
+- Start the job runner interval (60s)
+- Create a secondary interval (every 3 minutes) that queries all 
+  tenants with active inbox connections (from inbox_connections and 
+  ms_connections where tokens exist) and upserts an 'inbox_sync' 
+  job for each tenant into automation_jobs IF one doesn't already 
+  exist with status 'pending' or 'running' for that tenant.
+- Create a tertiary interval (every 15 minutes) that creates 
+  'connection_health' jobs for all connected tenants.
+
+=== 4. GENERIC WEBHOOK RECEIVER ===
+
+Add route: POST /api/webhooks/:source
+
+This accepts any POST from external services. It:
+- Reads the :source param (e.g. 'retell', 'telnyx', 'simpro')
+- Stores the entire request body as a new automation_jobs row with 
+  job_type = 'webhook_event', payload = { source, body: req.body }
+- Returns 200 immediately (external services need fast responses)
+- The job runner will pick it up on next tick
+
+Do NOT move the existing Retell webhook (/api/voice/webhook) — that 
+stays as-is since it has specific real-time logic. The generic 
+receiver is for future integrations.
+
+=== 5. ACTIVITY LOG INTEGRATION ===
+
+Every time the job runner completes a job (success or failed), also 
+insert a row into a new Supabase table: activity_log
+
+  id              uuid primary key default gen_random_uuid()
+  tenant_id       text not null
+  module          text not null  -- 'inbox', 'voice', 'connections', 'system'
+  action          text not null  -- 'inbox_synced', 'connection_check', 'webhook_received'
+  details         text
+  trigger         text default 'system'  -- 'system', 'ai_auto', 'user'
+  status          text not null  -- 'success', 'failed'
+  metadata        jsonb default '{}'
+  created_at      timestamptz default now()
+
+Then update the Activity Log page (client/src/pages/ActivityLogPage.tsx) 
+to fetch from GET /api/activity-log?tenant_id=X instead of using 
+hardcoded placeholder data. Add this API route that reads from 
+the activity_log table, ordered by created_at desc, limit 50.
+
+=== 6. REMOVE CLIENT-SIDE POLLING ===
+
+In client/src/pages/InboxAssistantPage.tsx, remove the setInterval 
+that polls fetchEmails() every 180000ms. The server now handles 
+inbox syncing. Keep the manual "Sync now" button — that should 
+still call POST /api/inbox/sync directly.
+
+=== IMPORTANT ===
+- Do not break existing routes or logic
+- Do not touch the Retell voice webhook
+- Do not touch bill reader or usage routes
+- The job runner must be resilient — if one job fails, it should 
+  not crash the runner or block other jobs
+- Wrap each job execution in try/catch
+- Log clearly so we can debug from the Replit console
