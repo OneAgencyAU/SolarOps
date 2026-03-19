@@ -423,6 +423,60 @@ router.post('/api/inbox/send', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/api/inbox/stats', async (req: Request, res: Response) => {
+  const { tenant_id } = req.query;
+  if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+
+  try {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: draftsThisWeek } = await supabase
+      .from('inbox_drafts')
+      .select('id, created_at, email_id')
+      .eq('tenant_id', tenant_id as string)
+      .gte('created_at', weekAgo);
+
+    const { data: pendingEmails } = await supabase
+      .from('inbox_emails')
+      .select('id')
+      .eq('tenant_id', tenant_id as string)
+      .eq('is_read', false);
+
+    const draftCount = draftsThisWeek?.length ?? 0;
+    const queueCount = pendingEmails?.length ?? 0;
+
+    let avgMins: number | null = null;
+    if (draftsThisWeek && draftsThisWeek.length > 0) {
+      const emailIds = draftsThisWeek.map((d: any) => d.email_id).filter(Boolean);
+      if (emailIds.length > 0) {
+        const { data: emailTimes } = await supabase
+          .from('inbox_emails')
+          .select('id, received_at')
+          .in('id', emailIds);
+
+        if (emailTimes && emailTimes.length > 0) {
+          const diffs: number[] = [];
+          for (const draft of draftsThisWeek) {
+            const email = emailTimes.find((e: any) => e.id === draft.email_id);
+            if (email?.received_at && draft.created_at) {
+              const diffMs = new Date(draft.created_at).getTime() - new Date(email.received_at).getTime();
+              if (diffMs > 0) diffs.push(diffMs / 60000);
+            }
+          }
+          if (diffs.length > 0) {
+            avgMins = Math.round((diffs.reduce((a, b) => a + b, 0) / diffs.length) * 10) / 10;
+          }
+        }
+      }
+    }
+
+    res.json({ queueCount, draftCount, avgMins });
+  } catch (err: any) {
+    console.error('[Inbox Stats] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/api/inbox/mark-read', async (req: Request, res: Response) => {
   try {
     const { tenant_id, email_id } = req.body;

@@ -167,11 +167,20 @@ export default function InboxAssistantPage() {
   const [msConnected, setMsConnected] = useState(false);
   const [msEmails, setMsEmails] = useState<any[]>([]);
   const [msSyncing, setMsSyncing] = useState(false);
+  const [stats, setStats] = useState<{ queueCount: number; draftCount: number; avgMins: number | null } | null>(null);
 
   const fetchConnections = async () => {
     if (!tenant?.id) return;
     const res = await fetch(`/api/inbox/connections?tenant_id=${tenant.id}`);
     if (res.ok) setConnections(await res.json());
+  };
+
+  const fetchStats = async () => {
+    if (!tenant?.id) return;
+    try {
+      const res = await fetch(`/api/inbox/stats?tenant_id=${tenant.id}`);
+      if (res.ok) setStats(await res.json());
+    } catch {}
   };
 
   const fetchEmails = async () => {
@@ -272,7 +281,8 @@ export default function InboxAssistantPage() {
     fetchConnections();
     fetchEmails();
     checkMsStatus();
-    const interval = setInterval(() => { fetchEmails(); }, 180000);
+    fetchStats();
+    const interval = setInterval(() => { fetchEmails(); fetchStats(); }, 180000);
     return () => clearInterval(interval);
   }, [tenant?.id]);
 
@@ -423,8 +433,13 @@ export default function InboxAssistantPage() {
     <div className="inbox-page">
       <div className="inbox-header-row">
         <h1 className="inbox-title">Inbox Assistant</h1>
-        <p className="inbox-subtitle">AI-drafted replies, ready for your approval</p>
-        <p className="inbox-stats-bar">4 in queue · 134 drafted this week · Avg 4.2min response time</p>
+        {(connections.length > 0 || msConnected) && stats && (
+          <p className="inbox-stats-bar">
+            {stats.queueCount} in queue
+            {stats.draftCount > 0 && ` · ${stats.draftCount} drafted this week`}
+            {stats.avgMins !== null && ` · Avg ${stats.avgMins}min response time`}
+          </p>
+        )}
       </div>
 
       {(connections.length > 0 || msConnected) && (
