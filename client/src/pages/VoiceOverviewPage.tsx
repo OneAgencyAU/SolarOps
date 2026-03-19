@@ -97,7 +97,7 @@ export default function VoiceOverviewPage() {
     return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${time}`;
   };
 
-  if (loading) {
+  if (loading || !config) {
     return (
       <div className="va-page">
         <div style={{ padding: '60px 0', textAlign: 'center', color: '#6e6e73', fontSize: '0.9rem' }}>Loading...</div>
