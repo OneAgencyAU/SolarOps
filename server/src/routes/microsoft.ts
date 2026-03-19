@@ -113,8 +113,8 @@ router.get('/api/auth/microsoft/callback', async (req: Request, res: Response) =
 
     const accessToken = tokenResponse.accessToken;
 
-    const userInfo = await graphFetch(accessToken, 'https://graph.microsoft.com/v1.0/me');
-    const email = userInfo?.mail || userInfo?.userPrincipalName || '';
+    const profile = await graphFetch(accessToken, 'https://graph.microsoft.com/v1.0/me') as { mail?: string; userPrincipalName?: string; displayName?: string };
+    const email = profile.mail || profile.userPrincipalName || '';
 
     const refreshToken = (tokenResponse as any)?.refreshToken ||
       (tokenResponse as any)?.tokenCache?.serialize?.() || '';
@@ -231,8 +231,8 @@ router.get('/api/microsoft/emails', async (req: Request, res: Response) => {
     const top = Math.min(Number(limit) || 20, 50);
     const url = `https://graph.microsoft.com/v1.0/me/mailFolders/${folder}/messages?$top=${top}&$orderby=receivedDateTime desc&$select=id,subject,from,receivedDateTime,bodyPreview,isRead,conversationId,body`;
 
-    const data = await graphFetch(accessToken, url);
-    const messages = data?.value || [];
+    const data = await graphFetch(accessToken, url) as { value?: any[] };
+    const messages = data.value || [];
 
     const formatted = messages.map((msg: any) => ({
       id: msg.id,
@@ -290,7 +290,15 @@ router.get('/api/microsoft/email/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    const msg = await graphFetch(accessToken, `https://graph.microsoft.com/v1.0/me/messages/${id}`);
+    const msg = await graphFetch(accessToken, `https://graph.microsoft.com/v1.0/me/messages/${id}`) as {
+      id: string;
+      subject?: string;
+      from?: { emailAddress?: { name?: string; address?: string } };
+      receivedDateTime?: string;
+      body?: { content?: string };
+      internetMessageId?: string;
+      conversationId?: string;
+    };
 
     res.json({
       id: msg.id,
