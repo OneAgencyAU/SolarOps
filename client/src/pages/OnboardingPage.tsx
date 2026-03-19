@@ -143,7 +143,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      navigate('/dashboard', { replace: true });
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Network error — could not reach the server';
       console.error('[Onboarding] Unexpected error:', err);
