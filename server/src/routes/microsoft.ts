@@ -27,6 +27,16 @@ function getRedirectUri() {
   return `${process.env.APP_URL || 'https://solarops.com.au'}/api/auth/microsoft/callback`;
 }
 
+function cleanMsEmail(mail: string | undefined, upn: string | undefined): string {
+  if (mail) return mail;
+  if (!upn) return '';
+  if (!upn.includes('#EXT#')) return upn;
+  const beforeExt = upn.split('#EXT#')[0];
+  const lastUnderscore = beforeExt.lastIndexOf('_');
+  if (lastUnderscore === -1) return beforeExt;
+  return beforeExt.slice(0, lastUnderscore) + '@' + beforeExt.slice(lastUnderscore + 1);
+}
+
 function getMsalClient() {
   return new ConfidentialClientApplication(msalConfig);
 }
@@ -114,7 +124,7 @@ router.get('/api/auth/microsoft/callback', async (req: Request, res: Response) =
     const accessToken = tokenResponse.accessToken;
 
     const profile = await graphFetch(accessToken, 'https://graph.microsoft.com/v1.0/me') as { mail?: string; userPrincipalName?: string; displayName?: string };
-    const email = profile.mail || profile.userPrincipalName || '';
+    const email = cleanMsEmail(profile.mail, profile.userPrincipalName);
 
     const refreshToken = (tokenResponse as any)?.refreshToken ||
       (tokenResponse as any)?.tokenCache?.serialize?.() || '';
@@ -181,9 +191,18 @@ router.get('/api/auth/microsoft/status', async (req: Request, res: Response) => 
     return;
   }
 
+  let email = data.ms_email;
+  if (email.includes('#EXT#')) {
+    email = cleanMsEmail(undefined, email);
+    await supabase
+      .from('tenant_connections')
+      .update({ ms_email: email })
+      .eq('tenant_id', tenant_id as string);
+  }
+
   res.json({
     connected: true,
-    email: data.ms_email,
+    email,
     lastSync: data.ms_last_sync,
   });
 });
