@@ -131,7 +131,7 @@ Firebase user IDs (e.g. `xt5XTE5MXGTpTYizQpR9ILmqEwD3`) are plain strings, not U
 - `inbox_drafts` — AI-generated reply drafts (`id UUID`, `tenant_id UUID`, `email_id UUID`, `draft_text TEXT`, `ai_summary TEXT`, `status TEXT` [pending/sent], `created_at`, `updated_at`)
 - `automation_jobs` — background job queue (`id UUID`, `tenant_id TEXT`, `job_type TEXT` [inbox_sync/connection_health/webhook_event], `status TEXT` [pending/running/success/failed/retrying], `payload JSONB`, `result JSONB`, `error_message TEXT`, `attempts INT`, `max_attempts INT DEFAULT 3`, `next_run_at TIMESTAMPTZ`, `last_run_at TIMESTAMPTZ`, `created_at`, `updated_at`). Index on `(status, next_run_at)`.
 - `activity_log` — audit trail for all automated actions (`id UUID`, `tenant_id TEXT`, `module TEXT`, `action TEXT`, `details TEXT`, `trigger TEXT DEFAULT 'system'`, `status TEXT`, `metadata JSONB`, `created_at`). Index on `(tenant_id, created_at DESC)`.
-- `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `created_at`, `updated_at`). Unique on `tenant_id`.
+- `voice_config` — AI receptionist config per tenant (`tenant_id UUID`, `assistant_id TEXT`, `retell_agent_id TEXT`, `retell_agent_id_jake TEXT`, `retell_agent_id_brooke TEXT`, `business_name TEXT`, `notification_email TEXT`, `phone_number TEXT`, `telnyx_number TEXT`, `telnyx_number_id TEXT`, `telnyx_connection_id TEXT`, `is_live BOOL`, `onboarding_step INT DEFAULT 1`, `voice TEXT`, `created_at`, `updated_at`). Unique on `tenant_id`.
 - `outbound_campaigns` — outbound call campaigns (`id UUID`, `tenant_id TEXT`, `name TEXT`, `campaign_type TEXT`, `script TEXT`, `lead_count INT`, `retell_batch_id TEXT`, `status TEXT`, `created_at TIMESTAMPTZ`)
 - `voice_calls` — inbound call records (`id UUID`, `tenant_id UUID`, `vapi_call_id TEXT UNIQUE`, `caller_number TEXT`, `caller_name TEXT`, `caller_email TEXT`, `caller_suburb TEXT`, `reason TEXT`, `call_type TEXT`, `callback_window TEXT`, `transcript TEXT`, `summary TEXT`, `status TEXT`, `duration_seconds INT`, `created_at`)
 - Row Level Security is enabled on all tables; SELECT is open via policy, writes use service role
@@ -221,6 +221,7 @@ All required secrets are stored in Replit's Secrets pane:
 ### Voice Agent (`/api/voice`)
 - `GET /api/voice/numbers/search?state=SA` — Search available AU phone numbers on Telnyx by state.
 - `POST /api/voice/numbers/purchase` — Purchase a Telnyx number and save to `voice_config`.
+- `POST /api/voice/assign-number` — Assigns a Telnyx number to a SIP credential connection and imports it into Retell AI. Steps: find/create `SolarOps Retell SIP` credential connection → look up number ID → PATCH connection_id → POST Retell import-phone-number → update `voice_config.telnyx_connection_id`.
 - `POST /api/voice/setup` — Create/update Retell AI agent + LLM with system prompt. Imports Telnyx number to Retell.
 - `POST /api/voice/webhook` — Retell webhook for `call_ended` events. Extracts caller details, logs to `voice_calls` and `api_usage_log`.
 - `GET /api/voice/calls?tenant_id=X` — List recent calls for a tenant.

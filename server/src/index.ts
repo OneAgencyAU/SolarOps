@@ -148,7 +148,23 @@ app.get('*', (_req: Request, res: Response) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`SolarOps API running on port ${PORT}`);
   startJobRunner();
+
+  try {
+    const { data: orphanedConfigs } = await supabase
+      .from('voice_config')
+      .select('tenant_id, telnyx_number')
+      .not('telnyx_number', 'is', null)
+      .is('telnyx_connection_id', null);
+
+    if (orphanedConfigs && orphanedConfigs.length > 0) {
+      for (const cfg of orphanedConfigs) {
+        console.warn(`[Voice] Tenant ${cfg.tenant_id} has number ${cfg.telnyx_number} but no SIP connection — run POST /api/voice/assign-number to fix`);
+      }
+    }
+  } catch (err) {
+    // telnyx_connection_id column may not exist yet — ignore
+  }
 });

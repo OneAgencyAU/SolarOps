@@ -1,0 +1,93 @@
+Add an API endpoint that assigns an existing Telnyx phone number 
+to a Telnyx SIP connection, so inbound calls route correctly to 
+Retell AI via SIP.
+
+=== 1. NEW ENDPOINT: POST /api/voice/assign-number ===
+
+In server/src/routes/voice.ts, add a new route:
+
+POST /api/voice/assign-number
+Body: { tenant_id, phone_number }
+
+This endpoint does the following steps in order:
+
+Step A — Find or create a SIP connection on Telnyx:
+  - Call GET https://api.telnyx.com/v2/credential_connections 
+    to list existing SIP connections
+  - Look for one named "SolarOps Retell SIP" or similar
+  - If none exists, create one:
+    POST https://api.telnyx.com/v2/credential_connections
+    {
+      "connection_name": "SolarOps Retell SIP",
+      "active": true,
+      "outbound": {
+        "outbound_voice_profile_id": null
+      },
+      "inbound": {
+        "sip_subdomain": "solarops",
+        "codecs": ["G722", "PCMU"],
+        "ani_number_format": "E.164"
+      }
+    }
+  - Store the connection_id from the response
+
+Step B — Assign the phone number to the SIP connection:
+  - First, look up the number's ID on Telnyx:
+    GET https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=+61240727423
+  - Get the phone number resource ID from the response
+  - Then update the number to point to the SIP connection:
+    PATCH https://api.telnyx.com/v2/phone_numbers/{id}
+    {
+      "connection_id": "<sip_connection_id>"
+    }
+
+Step C — Import the number into Retell AI:
+  - Look up the tenant's retell_agent_id from voice_config
+  - POST https://api.retellai.com/v2/import-phone-number
+    {
+      "phone_number": "+61240727423",
+      "termination_uri": "sip.telnyx.com",
+      "inbound_agent_id": "<retell_agent_id>"
+    }
+  - This tells Retell to handle inbound calls on this number
+
+Step D — Update voice_config in Supabase:
+  - Set telnyx_number = phone_number
+  - Set telnyx_connection_id = the SIP connection ID (add this 
+    column to voice_config if it doesn't exist: 
+    telnyx_connection_id TEXT)
+
+Return { success: true, connection_id, phone_number }
+
+=== 2. INTEGRATE INTO SETUP WIZARD ===
+
+In the VoiceSetupPage, after a number is purchased in Step 3 
+(or if a number already exists), call this new endpoint to 
+assign it to the SIP connection. Add a status message like 
+"Configuring phone number..." while it runs.
+
+Also in VoiceOverviewPage, if the voice_config has a 
+telnyx_number but no telnyx_connection_id, show a button 
+"Fix phone setup" that calls this endpoint.
+
+=== 3. AUTH ===
+
+All Telnyx API calls use:
+  Authorization: Bearer ${process.env.TELNYX_API_KEY}
+  Content-Type: application/json
+
+All Retell API calls use:
+  Authorization: Bearer ${process.env.RETELL_API_KEY}
+  Content-Type: application/json
+
+=== 4. FOR THE EXISTING NUMBER ===
+
+After building the endpoint, also add a one-time startup check 
+in server/src/index.ts: if voice_config rows exist with a 
+telnyx_number but no telnyx_connection_id, log a warning:
+"[Voice] Tenant X has number but no SIP connection — run 
+POST /api/voice/assign-number to fix"
+
+Do not change any existing voice setup, webhook, or Retell 
+agent creation logic. This is purely about the Telnyx SIP 
+connection and number assignment.

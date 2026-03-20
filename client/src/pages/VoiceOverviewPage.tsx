@@ -15,6 +15,7 @@ interface VoiceConfig {
   phone_number: string;
   telnyx_number: string;
   telnyx_number_id: string;
+  telnyx_connection_id?: string;
   is_live: boolean;
   onboarding_step: number;
   voice?: string;
@@ -39,6 +40,7 @@ export default function VoiceOverviewPage() {
   const [calls, setCalls] = useState<VoiceCall[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
+  const [fixingPhone, setFixingPhone] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!tenant?.id) return;
@@ -84,6 +86,23 @@ export default function VoiceOverviewPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenant_id: tenant.id, is_live: newLive }),
     });
+  };
+
+  const handleFixPhoneSetup = async () => {
+    if (!tenant?.id || !config?.telnyx_number) return;
+    setFixingPhone(true);
+    try {
+      const res = await fetch(`${API}/api/voice/assign-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenant.id, phone_number: config.telnyx_number }),
+      });
+      if (res.ok) {
+        await fetchData();
+      }
+    } finally {
+      setFixingPhone(false);
+    }
   };
 
   const formatDuration = (seconds: number | null) => {
@@ -243,18 +262,36 @@ export default function VoiceOverviewPage() {
 
           <div className="va-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="card-title">Phone Number Setup</div>
-            <div className="info-box">
-              Your AI receptionist is configured and ready on <strong>{displayNumber}</strong>
-            </div>
-            <p style={{ fontSize: '0.82rem', color: '#6e6e73', margin: 0 }}>
-              Forward your existing business number to your SolarOps number using the code below.
-            </p>
-            <div className="info-box" style={{ fontFamily: 'monospace', fontSize: '0.95rem', letterSpacing: 1 }}>
-              {forwardingCodes['Telstra']}
-            </div>
-            <p style={{ fontSize: '0.78rem', color: '#aeaeb2', margin: 0 }}>
-              Dial this code from your business phone. Works with Telstra, Optus, TPG, and iiNet.
-            </p>
+            {config.telnyx_number && !config.telnyx_connection_id ? (
+              <>
+                <div className="info-box" style={{ background: 'rgba(255,69,58,0.08)', color: '#FF453A' }}>
+                  Your number <strong>{displayNumber}</strong> is not connected to a SIP trunk. Inbound calls won't reach the AI agent until this is fixed.
+                </div>
+                <button
+                  className="va-btn primary"
+                  onClick={handleFixPhoneSetup}
+                  disabled={fixingPhone}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  {fixingPhone ? 'Fixing…' : 'Fix phone setup'}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="info-box">
+                  Your AI receptionist is configured and ready on <strong>{displayNumber}</strong>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#6e6e73', margin: 0 }}>
+                  Forward your existing business number to your SolarOps number using the code below.
+                </p>
+                <div className="info-box" style={{ fontFamily: 'monospace', fontSize: '0.95rem', letterSpacing: 1 }}>
+                  {forwardingCodes['Telstra']}
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#aeaeb2', margin: 0 }}>
+                  Dial this code from your business phone. Works with Telstra, Optus, TPG, and iiNet.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
