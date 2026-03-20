@@ -271,16 +271,35 @@ Rude caller: First warning then end call.`;
     ]);
     console.log('[Retell LLM Jake]', jakeLlm.llm_id, '[Retell LLM Brooke]', brookeLlm.llm_id);
 
+    const voices = await retell.voice.list();
+    console.log('[Voice Setup] Available voices:', voices.map(v => ({ id: v.voice_id, name: v.voice_name, provider: v.provider, gender: v.gender })));
+
+    const maleVoice =
+      voices.find(v => v.gender === 'male' && /adrian/i.test(v.voice_name)) ||
+      voices.find(v => v.gender === 'male' && v.provider === 'elevenlabs') ||
+      voices.find(v => v.gender === 'male' && v.provider === 'platform') ||
+      voices.find(v => v.gender === 'male');
+
+    const femaleVoice =
+      voices.find(v => v.gender === 'female' && /rachel|aria|charlotte/i.test(v.voice_name)) ||
+      voices.find(v => v.gender === 'female' && v.provider === 'elevenlabs') ||
+      voices.find(v => v.gender === 'female' && v.provider === 'platform') ||
+      voices.find(v => v.gender === 'female');
+
+    const jakeVoiceId = maleVoice?.voice_id ?? '11labs-Adrian';
+    const brookeVoiceId = femaleVoice?.voice_id ?? '11labs-Charlotte';
+    console.log(`[Voice Setup] Jake voice: ${jakeVoiceId} (${maleVoice?.voice_name ?? 'fallback'}) | Brooke voice: ${brookeVoiceId} (${femaleVoice?.voice_name ?? 'fallback'})`);
+
     const [jakeAgent, brookeAgent] = await Promise.all([
       retell.agent.create({
-        voice_id: '11labs-Adrian',
+        voice_id: jakeVoiceId,
         response_engine: { type: 'retell-llm', llm_id: jakeLlm.llm_id },
         agent_name: `${business_name} - Jake`,
         language: 'en-AU',
         webhook_url: 'https://solarops.com.au/api/voice/webhook',
       }),
       retell.agent.create({
-        voice_id: '11labs-Charlotte',
+        voice_id: brookeVoiceId,
         response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
         agent_name: `${business_name} - Brooke`,
         language: 'en-AU',
