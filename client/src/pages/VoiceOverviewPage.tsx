@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/VoiceAgentPage.css';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 interface VoiceConfig {
   assistant_id: string;
   retell_agent_id: string;
@@ -46,8 +44,8 @@ export default function VoiceOverviewPage() {
     if (!tenant?.id) return;
     try {
       const [configRes, callsRes] = await Promise.all([
-        fetch(`${API}/api/voice/config?tenant_id=${tenant.id}`),
-        fetch(`${API}/api/voice/calls?tenant_id=${tenant.id}`),
+        fetch(`/api/voice/config?tenant_id=${tenant.id}`),
+        fetch(`/api/voice/calls?tenant_id=${tenant.id}`),
       ]);
       if (configRes.ok) {
         const cfg = await configRes.json();
@@ -81,7 +79,7 @@ export default function VoiceOverviewPage() {
     if (!tenant?.id) return;
     const newLive = !isLive;
     setIsLive(newLive);
-    await fetch(`${API}/api/voice/toggle`, {
+    await fetch('/api/voice/toggle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenant_id: tenant.id, is_live: newLive }),
@@ -92,7 +90,7 @@ export default function VoiceOverviewPage() {
     if (!tenant?.id || !config?.telnyx_number) return;
     setFixingPhone(true);
     try {
-      const res = await fetch(`${API}/api/voice/assign-number`, {
+      const res = await fetch('/api/voice/assign-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant_id: tenant.id, phone_number: config.telnyx_number }),

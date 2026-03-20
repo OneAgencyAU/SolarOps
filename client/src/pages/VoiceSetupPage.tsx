@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/VoiceSetupPage.css';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 type Tone = 'Professional' | 'Friendly' | 'Formal';
 
 interface AvailableNumber {
@@ -50,7 +48,7 @@ export default function VoiceSetupPage() {
     setStep(3);
     setLoadingNumbers(true);
     try {
-      const res = await fetch(`${API}/api/voice/numbers/available`);
+      const res = await fetch('/api/voice/numbers/available');
       if (res.ok) {
         const data = await res.json();
         setAvailableNumbers(Array.isArray(data) ? data : []);
@@ -67,7 +65,7 @@ export default function VoiceSetupPage() {
   const handleSearch = async () => {
     setSearching(true);
     try {
-      const res = await fetch(`${API}/api/voice/numbers/search`);
+      const res = await fetch('/api/voice/numbers/search');
       if (res.ok) {
         const data = await res.json();
         setSearchResults(Array.isArray(data) ? data : []);
@@ -83,7 +81,7 @@ export default function VoiceSetupPage() {
     if (!tenant?.id) return;
     setAssigning(true);
     try {
-      const res = await fetch(`${API}/api/voice/assign-number`, {
+      const res = await fetch('/api/voice/assign-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant_id: tenant.id, phone_number: phoneNumber }),
@@ -103,7 +101,7 @@ export default function VoiceSetupPage() {
     if (!selectedNumber || !tenant?.id) return;
     setPurchasing(true);
     try {
-      const res = await fetch(`${API}/api/voice/numbers/purchase`, {
+      const res = await fetch('/api/voice/numbers/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant_id: tenant.id, phone_number: selectedNumber }),
@@ -123,7 +121,7 @@ export default function VoiceSetupPage() {
     setActivating(true);
     setError('');
     try {
-      const res = await fetch(`${API}/api/voice/setup`, {
+      const res = await fetch('/api/voice/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
