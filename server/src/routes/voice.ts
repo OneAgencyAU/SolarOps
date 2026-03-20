@@ -208,7 +208,7 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
 router.post('/api/voice/setup', async (req: Request, res: Response) => {
   try {
     console.log('[Setup] Starting...');
-    const { tenant_id, business_name = 'Sol Energy', notification_email, greeting, tone, escalation_phone, escalation_message, keywords } = req.body;
+    const { tenant_id, business_name = 'Sol Energy', notification_email, greeting, tone, phone_number, escalation_phone, escalation_message, keywords } = req.body;
     if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
 
     const { data: config } = await supabase.from('voice_config').select('*').eq('tenant_id', tenant_id).single();
@@ -325,6 +325,7 @@ Rude caller: First warning then end call.`;
       console.log('[Retell SIP Jake]', sipJake.status, '[Retell SIP Brooke]', sipBrooke.status);
     }
 
+    const telnyxNumber = phone_number || config?.telnyx_number || null;
     await supabase.from('voice_config').upsert({
       tenant_id,
       retell_agent_id: jakeAgent.agent_id,
@@ -332,6 +333,7 @@ Rude caller: First warning then end call.`;
       retell_agent_id_brooke: brookeAgent.agent_id,
       business_name,
       notification_email,
+      telnyx_number: telnyxNumber,
       is_live: true,
       onboarding_step: 3,
       updated_at: new Date().toISOString(),
