@@ -280,7 +280,7 @@ Rude caller: First warning then end call.`;
         webhook_url: 'https://solarops.com.au/api/voice/webhook',
       }),
       retell.agent.create({
-        voice_id: '11labs-Matilda',
+        voice_id: '11labs-Charlotte',
         response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
         agent_name: `${business_name} - Brooke`,
         language: 'en-AU',
