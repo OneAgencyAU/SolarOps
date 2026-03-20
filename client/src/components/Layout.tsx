@@ -17,7 +17,7 @@ const navItems = [
 export default function Layout() {
   const { user, tenant, signOut } = useAuth();
   const { pathname } = useLocation();
-  const voiceExpanded = pathname === '/voice-agent' || pathname === '/voice-agent/inbound' || pathname === '/outbound' || pathname === '/voice-agent/setup';
+  const voiceExpanded = (pathname === '/voice-agent' || pathname === '/voice-agent/inbound' || pathname === '/outbound') && pathname !== '/voice-agent/setup';
 
   return (
     <div className="app-shell">
