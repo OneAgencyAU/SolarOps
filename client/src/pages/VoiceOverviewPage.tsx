@@ -39,6 +39,7 @@ export default function VoiceOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
   const [fixingPhone, setFixingPhone] = useState(false);
+  const [fixError, setFixError] = useState('');
 
   const fetchData = useCallback(async () => {
     if (!tenant?.id) return;
@@ -87,17 +88,23 @@ export default function VoiceOverviewPage() {
   };
 
   const handleFixPhoneSetup = async () => {
-    if (!tenant?.id || !config?.telnyx_number) return;
+    if (!tenant?.id) return;
     setFixingPhone(true);
+    setFixError('');
     try {
       const res = await fetch('/api/voice/assign-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant_id: tenant.id, phone_number: config.telnyx_number }),
+        body: JSON.stringify({ tenant_id: tenant.id }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         await fetchData();
+      } else {
+        setFixError(data.error || 'Failed to fix phone setup. Please try again.');
       }
+    } catch {
+      setFixError('Network error. Please try again.');
     } finally {
       setFixingPhone(false);
     }
@@ -273,6 +280,7 @@ export default function VoiceOverviewPage() {
                 >
                   {fixingPhone ? 'Fixing…' : 'Fix phone setup'}
                 </button>
+                {fixError && <div className="va-error" style={{ marginTop: 8, color: '#FF453A', fontSize: 14 }}>{fixError}</div>}
               </>
             ) : (
               <>

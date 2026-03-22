@@ -1,0 +1,60 @@
+The "Fix phone setup" button on the Voice Agent overview page does 
+nothing. It needs to call an endpoint that assigns the Telnyx phone 
+number to a SIP connection and imports it to Retell.
+
+Build POST /api/voice/assign-number in server/src/routes/voice.ts:
+
+Body: { tenant_id }
+
+Steps:
+
+1. Look up the tenant's voice_config to get telnyx_number and 
+   retell_agent_id (use the voice field or retell_agent_id_brooke 
+   / retell_agent_id_jake based on the stored voice preference)
+
+2. Look up the Telnyx number's ID:
+   GET https://api.telnyx.com/v2/phone_numbers?filter[phone_number]={telnyx_number}
+   Headers: Authorization: Bearer TELNYX_API_KEY
+   Extract the number's "id" from the response data array
+
+3. Find or create a SIP connection on Telnyx:
+   GET https://api.telnyx.com/v2/ip_connections
+   Look for one with connection_name containing "solarops"
+   If none exists, the purchase step already created one — use 
+   that connection ID. If still none found, create one:
+   POST https://api.telnyx.com/v2/ip_connections
+   { "connection_name": "solarops_sip", "transport_protocol": "UDP" }
+
+4. Assign the phone number to the SIP connection:
+   PATCH https://api.telnyx.com/v2/phone_numbers/{number_id}
+   { "connection_id": "<sip_connection_id>" }
+
+5. Import the number into Retell for the active agent:
+   POST https://api.retellai.com/v2/import-phone-number
+   {
+     "phone_number": "{telnyx_number}",
+     "termination_uri": "sip.telnyx.com",
+     "inbound_agent_id": "{retell_agent_id}"
+   }
+   Headers: Authorization: Bearer RETELL_API_KEY
+   
+   Note: If this returns 409 (already imported), that's fine — 
+   just log it and continue.
+
+6. Update voice_config in Supabase:
+   Set telnyx_connection_id = the SIP connection ID
+   (add column telnyx_connection_id TEXT to voice_config if it 
+   doesn't exist)
+
+7. Return { success: true }
+
+Log every step with [Assign Number] prefix so we can debug.
+
+Then wire the "Fix phone setup" button on the frontend 
+(VoiceOverviewPage.tsx) to call POST /api/voice/assign-number 
+with { tenant_id }. Show a loading state while it runs, and 
+refresh the page data on success. On error, show the error 
+message to the user.
+
+All Telnyx calls use: Authorization: Bearer TELNYX_API_KEY
+All Retell calls use: Authorization: Bearer RETELL_API_KEY

@@ -90,66 +90,83 @@ router.post('/api/voice/numbers/purchase', async (req: Request, res: Response) =
 
 router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
   try {
-    const { tenant_id, phone_number } = req.body;
-    if (!tenant_id || !phone_number) {
-      res.status(400).json({ error: 'tenant_id and phone_number are required' });
+    const { tenant_id, phone_number: bodyPhone } = req.body;
+    if (!tenant_id) {
+      res.status(400).json({ error: 'tenant_id is required' });
       return;
     }
 
-    console.log(`[AssignNumber] Starting for tenant ${tenant_id}, number ${phone_number}`);
+    console.log(`[Assign Number] Starting for tenant ${tenant_id}`);
+
+    const { data: config } = await supabase
+      .from('voice_config')
+      .select('telnyx_number, retell_agent_id, retell_agent_id_jake, retell_agent_id_brooke, voice')
+      .eq('tenant_id', tenant_id)
+      .maybeSingle();
+
+    const phoneNumber = bodyPhone || config?.telnyx_number;
+    if (!phoneNumber) {
+      console.error('[Assign Number] No phone number found for tenant');
+      res.status(400).json({ error: 'No phone number found — purchase a number first' });
+      return;
+    }
+
+    const voicePref = config?.voice ?? 'brooke';
+    const retellAgentId =
+      (voicePref === 'jake' ? config?.retell_agent_id_jake : config?.retell_agent_id_brooke)
+      || config?.retell_agent_id
+      || null;
+    console.log(`[Assign Number] Phone: ${phoneNumber}, voice: ${voicePref}, retell_agent_id: ${retellAgentId}`);
 
     const telnyxHeaders = { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' };
     const retellHeaders = { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' };
 
-    let sipConnectionId: string | null = null;
-
-    const listRes = await fetch('https://api.telnyx.com/v2/credential_connections', { headers: telnyxHeaders });
-    const listData = await listRes.json() as { data: any[] };
-    const existing = (listData.data || []).find((c: any) => c.connection_name === 'SolarOps Retell SIP');
-
-    if (existing) {
-      sipConnectionId = existing.id;
-      console.log(`[AssignNumber] Found existing SIP connection: ${sipConnectionId}`);
-    } else {
-      const createRes = await fetch('https://api.telnyx.com/v2/credential_connections', {
-        method: 'POST',
-        headers: telnyxHeaders,
-        body: JSON.stringify({
-          connection_name: 'SolarOps Retell SIP',
-          active: true,
-          outbound: { outbound_voice_profile_id: null },
-          inbound: {
-            sip_subdomain: 'solarops',
-            codecs: ['G722', 'PCMU'],
-            ani_number_format: 'E.164',
-          },
-        }),
-      });
-      const createData = await createRes.json() as { data: { id: string } };
-      if (!createData.data?.id) {
-        console.error('[AssignNumber] Failed to create SIP connection:', JSON.stringify(createData));
-        res.status(500).json({ error: 'Failed to create SIP connection on Telnyx' });
-        return;
-      }
-      sipConnectionId = createData.data.id;
-      console.log(`[AssignNumber] Created SIP connection: ${sipConnectionId}`);
-    }
-
     const lookupRes = await fetch(
-      `https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=${encodeURIComponent(phone_number)}`,
+      `https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=${encodeURIComponent(phoneNumber)}`,
       { headers: telnyxHeaders }
     );
     const lookupData = await lookupRes.json() as { data: any[] };
     const numberResource = lookupData.data?.[0];
 
     if (!numberResource) {
-      console.error('[AssignNumber] Phone number not found on Telnyx:', phone_number);
+      console.error('[Assign Number] Phone number not found on Telnyx:', phoneNumber);
       res.status(404).json({ error: 'Phone number not found on Telnyx account' });
       return;
     }
 
     const numberId = numberResource.id;
-    console.log(`[AssignNumber] Found number resource ID: ${numberId}`);
+    console.log(`[Assign Number] Found Telnyx number resource ID: ${numberId}`);
+
+    let sipConnectionId: string | null = null;
+
+    const listRes = await fetch('https://api.telnyx.com/v2/ip_connections', { headers: telnyxHeaders });
+    const listData = await listRes.json() as { data: any[] };
+    const existing = (listData.data || []).find((c: any) =>
+      /solarops/i.test(c.connection_name || '')
+    );
+
+    if (existing) {
+      sipConnectionId = existing.id;
+      console.log(`[Assign Number] Found existing IP connection: ${sipConnectionId} (${existing.connection_name})`);
+    } else {
+      console.log('[Assign Number] No IP connection found — creating one');
+      const createRes = await fetch('https://api.telnyx.com/v2/ip_connections', {
+        method: 'POST',
+        headers: telnyxHeaders,
+        body: JSON.stringify({
+          connection_name: 'solarops_sip',
+          transport_protocol: 'UDP',
+        }),
+      });
+      const createData = await createRes.json() as { data: { id: string } };
+      if (!createData.data?.id) {
+        console.error('[Assign Number] Failed to create IP connection:', JSON.stringify(createData));
+        res.status(500).json({ error: 'Failed to create SIP connection on Telnyx' });
+        return;
+      }
+      sipConnectionId = createData.data.id;
+      console.log(`[Assign Number] Created IP connection: ${sipConnectionId}`);
+    }
 
     const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberId}`, {
       method: 'PATCH',
@@ -157,50 +174,46 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       body: JSON.stringify({ connection_id: sipConnectionId }),
     });
     const patchData = await patchRes.json();
-    console.log(`[AssignNumber] Assigned number to SIP connection:`, patchRes.status);
+    console.log(`[Assign Number] PATCH number to IP connection: ${patchRes.status}`);
 
     if (!patchRes.ok) {
-      console.error('[AssignNumber] Failed to assign number:', JSON.stringify(patchData));
+      console.error('[Assign Number] Failed to assign number:', JSON.stringify(patchData));
       res.status(500).json({ error: 'Failed to assign number to SIP connection' });
       return;
     }
 
-    const { data: config } = await supabase
-      .from('voice_config')
-      .select('retell_agent_id')
-      .eq('tenant_id', tenant_id)
-      .maybeSingle();
-
-    if (config?.retell_agent_id) {
+    if (retellAgentId) {
       const importRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
         method: 'POST',
         headers: retellHeaders,
         body: JSON.stringify({
-          phone_number,
+          phone_number: phoneNumber,
           termination_uri: 'sip.telnyx.com',
-          inbound_agent_id: config.retell_agent_id,
+          inbound_agent_id: retellAgentId,
         }),
       });
-      console.log(`[AssignNumber] Retell import status: ${importRes.status}`);
-      if (!importRes.ok) {
+      console.log(`[Assign Number] Retell import status: ${importRes.status}`);
+      if (importRes.status === 409) {
+        console.log('[Assign Number] Number already imported to Retell — continuing');
+      } else if (!importRes.ok) {
         const importErr = await importRes.text();
-        console.warn('[AssignNumber] Retell import warning:', importErr);
+        console.warn('[Assign Number] Retell import warning:', importErr);
       }
     } else {
-      console.log('[AssignNumber] No retell_agent_id yet — skipping Retell import');
+      console.log('[Assign Number] No retell_agent_id yet — skipping Retell import');
     }
 
     await supabase.from('voice_config').upsert({
       tenant_id,
-      telnyx_number: phone_number,
+      telnyx_number: phoneNumber,
       telnyx_connection_id: sipConnectionId,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
 
-    console.log(`[AssignNumber] Complete for tenant ${tenant_id}`);
-    res.json({ success: true, connection_id: sipConnectionId, phone_number });
+    console.log(`[Assign Number] Complete for tenant ${tenant_id}`);
+    res.json({ success: true, connection_id: sipConnectionId, phone_number: phoneNumber });
   } catch (err: any) {
-    console.error('[AssignNumber] Error:', err);
+    console.error('[Assign Number] Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
