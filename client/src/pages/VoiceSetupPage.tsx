@@ -302,14 +302,6 @@ export default function VoiceSetupPage() {
                       <div className="vs-number-list">
                         {numberCards(searchResults)}
                       </div>
-                      <button
-                        className="vs-btn primary"
-                        onClick={handlePurchase}
-                        disabled={!selectedNumber || purchasing}
-                        style={{ marginTop: 12 }}
-                      >
-                        {assigning ? 'Configuring phone number…' : purchasing ? 'Purchasing…' : `Purchase ${selectedNumber || 'selected number'}`}
-                      </button>
                     </div>
                   )}
                 </div>
@@ -319,10 +311,10 @@ export default function VoiceSetupPage() {
                 <button className="vs-btn secondary" onClick={() => setStep(2)}>Back</button>
                 <button
                   className="vs-btn primary"
-                  onClick={() => setStep(4)}
-                  disabled={!selectedNumber}
+                  onClick={selectedNumber ? handlePurchase : undefined}
+                  disabled={!selectedNumber || purchasing || assigning}
                 >
-                  Next
+                  {purchasing || assigning ? 'Purchasing…' : selectedNumber ? 'Purchase & Continue' : 'Next'}
                 </button>
               </div>
             </>
