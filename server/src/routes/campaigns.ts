@@ -28,6 +28,7 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
       .eq('tenant_id', tenant_id)
       .single();
 
+    console.log('[Campaign Create] Voice config:', JSON.stringify(voiceConfig));
     if (configErr || !voiceConfig?.telnyx_number) {
       res.status(400).json({ error: 'Voice agent not configured for this tenant' });
       return;
@@ -55,21 +56,27 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
       },
     }));
 
+    const batchPayload = {
+      from_number: voiceConfig.telnyx_number,
+      override_agent_id: selectedAgentId,
+      name,
+      tasks,
+    };
+    console.log('[Campaign Create] Retell request payload:', JSON.stringify(batchPayload));
+
     const batchRes = await fetch('https://api.retellai.com/v2/create-batch-call', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.RETELL_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from_number: voiceConfig.telnyx_number,
-        override_agent_id: selectedAgentId,
-        name,
-        tasks,
-      }),
+      body: JSON.stringify(batchPayload),
     });
 
-    const batchData = await batchRes.json() as { batch_call_id?: string; error?: string };
+    const batchText = await batchRes.text();
+    console.log('[Campaign Create] Retell response status:', batchRes.status);
+    console.log('[Campaign Create] Retell response body:', batchText);
+    const batchData = JSON.parse(batchText) as { batch_call_id?: string; error?: string };
     console.log('[Campaigns] Retell batch response:', JSON.stringify(batchData));
 
     if (!batchRes.ok) {
