@@ -197,22 +197,28 @@ export default function VoiceOverviewPage() {
               <span style={{ fontSize: '0.82rem', color: '#6e6e73' }}>Phone number</span>
               <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1d1d1f', marginLeft: 'auto' }}>{displayNumber}</span>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                className="va-btn primary"
-                style={{ flex: 1 }}
-                onClick={() => navigate('/voice-agent/inbound')}
-              >
-                Configure Inbound
-              </button>
-              <button
-                className="va-btn primary"
-                style={{ flex: 1, background: '#1d1d1f' }}
-                onClick={() => navigate('/outbound')}
-              >
-                Manage Campaigns
-              </button>
-            </div>
+            {config.telnyx_connection_id ? (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  className="va-btn primary"
+                  style={{ flex: 1 }}
+                  onClick={() => navigate('/voice-agent/inbound')}
+                >
+                  Configure Inbound
+                </button>
+                <button
+                  className="va-btn primary"
+                  style={{ flex: 1, background: '#1d1d1f' }}
+                  onClick={() => navigate('/outbound')}
+                >
+                  Manage Campaigns
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.85rem', color: '#6e6e73', padding: '10px 0' }}>
+                Complete your phone setup to enable inbound and outbound calling.
+              </div>
+            )}
           </div>
         </div>
 
