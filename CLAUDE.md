@@ -152,6 +152,12 @@ MS_CLIENT_ID / MS_CLIENT_SECRET / MS_TENANT_ID
 
 ---
 
+## Git Workflow
+Push all commits directly to the main branch.
+Do not create feature branches or pull requests.
+
+---
+
 ## File Structure (key paths)
 
 ```
