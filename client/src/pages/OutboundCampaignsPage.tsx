@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/OutboundCampaignsPage.css';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 const campaignScripts: Record<string, string> = {
   lead_reactivation: "Hi {{customer_name}}, it's {{agent_name}} calling from {{business_name}}. You'd enquired with us a little while back about solar — I'm just following up to see how things are going?",
   maintenance_reminder: "Hi {{customer_name}}, it's {{agent_name}} from {{business_name}}. Just a quick one — your solar system is coming up for its annual service check. Is now an okay time?",
@@ -75,7 +73,7 @@ export default function OutboundCampaignsPage() {
   const fetchCampaigns = useCallback(async () => {
     if (!tenantId) return;
     try {
-      const res = await fetch(`${API}/api/campaigns/list?tenant_id=${tenantId}`);
+      const res = await fetch(`/api/campaigns/list?tenant_id=${tenantId}`);
       const data = await res.json();
       setCampaigns(Array.isArray(data) ? data : []);
     } catch {
@@ -100,7 +98,7 @@ export default function OutboundCampaignsPage() {
 
     setLaunching(true);
     try {
-      const res = await fetch(`${API}/api/campaigns/create`, {
+      const res = await fetch(`/api/campaigns/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

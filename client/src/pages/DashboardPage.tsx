@@ -7,8 +7,6 @@ import {
 } from 'recharts';
 import '../styles/DashboardPage.css';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 type Period = 'This Week' | 'This Month' | 'All Time';
 
 const PERIOD_MAP: Record<Period, string> = {
@@ -82,7 +80,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!tenant?.id) return;
     setLoading(true);
-    fetch(`${API}/api/dashboard/stats?tenant_id=${tenant.id}&period=${PERIOD_MAP[period]}`)
+    fetch(`/api/dashboard/stats?tenant_id=${tenant.id}&period=${PERIOD_MAP[period]}`)
       .then((r) => r.json())
       .then((data) => setStats(data))
       .catch(() => setStats(null))

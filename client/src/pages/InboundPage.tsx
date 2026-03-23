@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/InboundPage.css';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 type Tone = 'Professional' | 'Friendly' | 'Formal';
 
 interface VoiceConfig {
@@ -55,7 +53,7 @@ export default function InboundPage() {
   const fetchConfig = useCallback(async () => {
     if (!tenantId) return;
     try {
-      const res = await fetch(`${API}/api/voice/config?tenant_id=${tenantId}`);
+      const res = await fetch(`/api/voice/config?tenant_id=${tenantId}`);
       if (res.ok) {
         const cfg: VoiceConfig = await res.json();
         if (cfg) {
@@ -102,7 +100,7 @@ export default function InboundPage() {
     setSaving(true);
     setSaveMsg('');
     try {
-      const res = await fetch(`${API}/api/voice/setup`, {
+      const res = await fetch(`/api/voice/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,7 +134,7 @@ export default function InboundPage() {
     if (!tenantId) return;
     const newLive = !isLive;
     setIsLive(newLive);
-    await fetch(`${API}/api/voice/toggle`, {
+    await fetch(`/api/voice/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tenant_id: tenantId, is_live: newLive }),
