@@ -546,7 +546,7 @@ router.post('/api/voice/telnyx-webhook', async (req: Request, res: Response) => 
         }),
       });
 
-      const registerData = await registerRes.json();
+      const registerData = await registerRes.json() as any;
       console.log('[Telnyx Webhook] Retell register response:', registerRes.status, JSON.stringify(registerData));
 
       if (!registerRes.ok || !registerData.sip_uri) {
