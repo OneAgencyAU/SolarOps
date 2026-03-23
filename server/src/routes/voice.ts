@@ -161,10 +161,21 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       .eq('tenant_id', tenant_id)
       .maybeSingle();
 
+    console.log('[Assign Number] Config from Supabase:', JSON.stringify(config));
+    console.log('[Assign Number] bodyPhone:', bodyPhone, 'config.telnyx_number:', config?.telnyx_number);
     const phoneNumber = bodyPhone || config?.telnyx_number;
+    console.log('[Assign Number] Resolved phoneNumber:', phoneNumber);
     if (!phoneNumber) {
       console.error('[Assign Number] No phone number found for tenant');
-      res.status(400).json({ error: 'No phone number found — purchase a number first' });
+      res.status(400).json({ 
+        error: 'No phone number found — purchase a number first',
+        debug: { 
+          config_exists: !!config, 
+          config_telnyx: config?.telnyx_number,
+          bodyPhone,
+          tenant_id 
+        }
+      });
       return;
     }
 
