@@ -245,7 +245,7 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       { headers: telnyxHeaders }
     );
     const lookup1Data = await lookup1Res.json() as { data: any[] };
-    console.log('[Assign Number] Telnyx lookup response (attempt 1):', JSON.stringify(lookup1Data));
+    console.log('[Assign Number] Lookup attempt 1:', JSON.stringify(lookup1Data));
     let numberResource = lookup1Data.data?.[0];
 
     if (!numberResource) {
@@ -255,26 +255,30 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
         { headers: telnyxHeaders }
       );
       const lookup2Data = await lookup2Res.json() as { data: any[] };
-      console.log('[Assign Number] Telnyx lookup response (attempt 2, no +):', JSON.stringify(lookup2Data));
+      console.log('[Assign Number] Lookup attempt 2:', JSON.stringify(lookup2Data));
       numberResource = lookup2Data.data?.[0];
     }
 
+    let allNumbersData: any = null;
     if (!numberResource) {
       const lookup3Res = await fetch('https://api.telnyx.com/v2/phone_numbers', { headers: telnyxHeaders });
       const lookup3Data = await lookup3Res.json() as { data: any[] };
-      console.log('[Assign Number] Telnyx all numbers (attempt 3):', JSON.stringify(lookup3Data));
+      console.log('[Assign Number] All numbers:', JSON.stringify(lookup3Data));
+      allNumbersData = lookup3Data;
       const all: any[] = lookup3Data.data || [];
-      const normalized = phoneNumber.replace(/\s+/g, '');
-      numberResource = all.find((n: any) =>
-        n.phone_number === normalized ||
-        n.phone_number === normalized.replace(/^\+/, '') ||
-        n.phone_number?.replace(/^\+/, '') === normalized.replace(/^\+/, '')
-      );
+      const normalized = phoneNumber.replace(/[^0-9]/g, ''); // digits only for loose matching
+      numberResource = all.find((n: any) => {
+        const num = (n.phone_number || '').replace(/[^0-9]/g, '');
+        return num === normalized || num.endsWith(normalized) || normalized.endsWith(num);
+      });
     }
 
     if (!numberResource) {
-      console.error('[Assign Number] Phone number not found on Telnyx after all attempts:', phoneNumber);
-      res.status(404).json({ error: 'Number not found on Telnyx — it may not have been purchased successfully. Please go to Voice Agent setup to purchase a new number.' });
+      console.error('[Assign Number] Phone number not found after all attempts. Target:', phoneNumber, 'All numbers data:', JSON.stringify(allNumbersData));
+      res.status(404).json({
+        error: 'Number not found on Telnyx — it may not have been purchased successfully. Please go to Voice Agent setup to purchase a new number.',
+        debug: { target: phoneNumber, allNumbers: allNumbersData },
+      });
       return;
     }
 
