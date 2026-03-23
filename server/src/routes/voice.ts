@@ -58,25 +58,82 @@ router.post('/api/voice/numbers/purchase', async (req: Request, res: Response) =
     const { tenant_id, phone_number } = req.body;
     if (!tenant_id || !phone_number) { res.status(400).json({ error: 'Missing params' }); return; }
 
-    const connRes = await fetch('https://api.telnyx.com/v2/ip_connections', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ connection_name: `solarops_${tenant_id}`, transport_protocol: 'UDP' }),
-    });
-    const conn = await connRes.json() as { data: { id: string } };
+    const telnyxHeaders = { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' };
 
     const orderRes = await fetch('https://api.telnyx.com/v2/number_orders', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: telnyxHeaders,
       body: JSON.stringify({ phone_numbers: [{ phone_number }] }),
     });
     const order = await orderRes.json() as { data: { id: string, phone_numbers: any[] } };
-    console.log('[Telnyx Purchase]', JSON.stringify(order));
+    console.log('[Telnyx Purchase] Order:', JSON.stringify(order));
+
+    let fqdnConnectionId: string | null = null;
+
+    const fqdnListRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', { headers: telnyxHeaders });
+    const fqdnListData = await fqdnListRes.json() as { data: any[] };
+    const existingFqdn = (fqdnListData.data || []).find((c: any) => /solarops/i.test(c.connection_name || ''));
+
+    if (existingFqdn) {
+      fqdnConnectionId = existingFqdn.id;
+      console.log(`[Telnyx Purchase] Reusing existing FQDN connection: ${fqdnConnectionId}`);
+    } else {
+      console.log('[Telnyx Purchase] Creating new FQDN connection');
+      const fqdnConnRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', {
+        method: 'POST',
+        headers: telnyxHeaders,
+        body: JSON.stringify({
+          connection_name: 'solarops-retell',
+          active: true,
+          transport_protocol: 'UDP',
+        }),
+      });
+      const fqdnConnData = await fqdnConnRes.json() as { data: { id: string } };
+      if (fqdnConnData.data?.id) {
+        fqdnConnectionId = fqdnConnData.data.id;
+        console.log(`[Telnyx Purchase] Created FQDN connection: ${fqdnConnectionId}`);
+
+        const fqdnTargetRes = await fetch('https://api.telnyx.com/v2/fqdns', {
+          method: 'POST',
+          headers: telnyxHeaders,
+          body: JSON.stringify({
+            fqdn_connection_id: fqdnConnectionId,
+            fqdn: 'sip.retellai.com',
+            port: 5060,
+          }),
+        });
+        console.log(`[Telnyx Purchase] Added FQDN target: ${fqdnTargetRes.status}`);
+      } else {
+        console.error('[Telnyx Purchase] Failed to create FQDN connection:', JSON.stringify(fqdnConnData));
+      }
+    }
+
+    if (fqdnConnectionId) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const lookupRes = await fetch(
+        `https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=${encodeURIComponent(phone_number)}`,
+        { headers: telnyxHeaders }
+      );
+      const lookupData = await lookupRes.json() as { data: any[] };
+      const numberId = lookupData.data?.[0]?.id;
+      if (numberId) {
+        const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberId}`, {
+          method: 'PATCH',
+          headers: telnyxHeaders,
+          body: JSON.stringify({ connection_id: fqdnConnectionId }),
+        });
+        console.log(`[Telnyx Purchase] Assigned number to FQDN connection: ${patchRes.status}`);
+      } else {
+        console.warn('[Telnyx Purchase] Could not look up purchased number yet — assign-number will handle it');
+      }
+    }
 
     await supabase.from('voice_config').upsert({
       tenant_id,
       telnyx_number: phone_number,
       telnyx_number_id: order.data?.id,
+      telnyx_connection_id: fqdnConnectionId,
+      telnyx_connection_type: fqdnConnectionId ? 'fqdn' : null,
       onboarding_step: 2,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
@@ -100,7 +157,7 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
 
     const { data: config } = await supabase
       .from('voice_config')
-      .select('telnyx_number, retell_agent_id, retell_agent_id_jake, retell_agent_id_brooke, voice')
+      .select('telnyx_number, telnyx_connection_id, retell_agent_id, retell_agent_id_jake, retell_agent_id_brooke, voice')
       .eq('tenant_id', tenant_id)
       .maybeSingle();
 
@@ -121,7 +178,68 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
     const telnyxHeaders = { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' };
     const retellHeaders = { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' };
 
-    // Attempt 1: filter with full number including +
+    // === Step 1: Delete old IP connections ===
+    if (config?.telnyx_connection_id) {
+      console.log(`[Assign Number] Deleting old connection from config: ${config.telnyx_connection_id}`);
+      const delRes = await fetch(`https://api.telnyx.com/v2/ip_connections/${config.telnyx_connection_id}`, {
+        method: 'DELETE',
+        headers: telnyxHeaders,
+      });
+      console.log(`[Assign Number] Deleted old IP connection: ${config.telnyx_connection_id} (status: ${delRes.status})`);
+    }
+
+    const ipListRes = await fetch('https://api.telnyx.com/v2/ip_connections', { headers: telnyxHeaders });
+    const ipListData = await ipListRes.json() as { data: any[] };
+    const solaropsConns = (ipListData.data || []).filter((c: any) => /solarops/i.test(c.connection_name || ''));
+    for (const conn of solaropsConns) {
+      console.log(`[Assign Number] Deleting stale IP connection: ${conn.id} (${conn.connection_name})`);
+      await fetch(`https://api.telnyx.com/v2/ip_connections/${conn.id}`, { method: 'DELETE', headers: telnyxHeaders });
+      console.log(`[Assign Number] Deleted old IP connection: ${conn.id}`);
+    }
+
+    // Also clean up any old FQDN connections with solarops name to avoid duplicates
+    const fqdnListRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', { headers: telnyxHeaders });
+    const fqdnListData = await fqdnListRes.json() as { data: any[] };
+    const oldFqdnConns = (fqdnListData.data || []).filter((c: any) => /solarops/i.test(c.connection_name || ''));
+    for (const conn of oldFqdnConns) {
+      console.log(`[Assign Number] Deleting old FQDN connection: ${conn.id} (${conn.connection_name})`);
+      await fetch(`https://api.telnyx.com/v2/fqdn_connections/${conn.id}`, { method: 'DELETE', headers: telnyxHeaders });
+      console.log(`[Assign Number] Deleted old FQDN connection: ${conn.id}`);
+    }
+
+    // === Step 2: Create new FQDN connection ===
+    console.log('[Assign Number] Creating new FQDN connection');
+    const fqdnConnRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', {
+      method: 'POST',
+      headers: telnyxHeaders,
+      body: JSON.stringify({
+        connection_name: 'solarops-retell',
+        active: true,
+        transport_protocol: 'UDP',
+      }),
+    });
+    const fqdnConnData = await fqdnConnRes.json() as { data: { id: string } };
+    if (!fqdnConnData.data?.id) {
+      console.error('[Assign Number] Failed to create FQDN connection:', JSON.stringify(fqdnConnData));
+      res.status(500).json({ error: 'Failed to create FQDN connection on Telnyx' });
+      return;
+    }
+    const fqdnConnectionId = fqdnConnData.data.id;
+    console.log(`[Assign Number] Created FQDN connection: ${fqdnConnectionId}`);
+
+    const fqdnTargetRes = await fetch('https://api.telnyx.com/v2/fqdns', {
+      method: 'POST',
+      headers: telnyxHeaders,
+      body: JSON.stringify({
+        fqdn_connection_id: fqdnConnectionId,
+        fqdn: 'sip.retellai.com',
+        port: 5060,
+      }),
+    });
+    const fqdnTargetData = await fqdnTargetRes.json();
+    console.log(`[Assign Number] Added FQDN target sip.retellai.com: ${fqdnTargetRes.status}`, JSON.stringify(fqdnTargetData));
+
+    // === Step 3: Look up phone number and assign to FQDN connection ===
     const lookup1Res = await fetch(
       `https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=${encodeURIComponent(phoneNumber)}`,
       { headers: telnyxHeaders }
@@ -130,7 +248,6 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
     console.log('[Assign Number] Telnyx lookup response (attempt 1):', JSON.stringify(lookup1Data));
     let numberResource = lookup1Data.data?.[0];
 
-    // Attempt 2: strip leading + and retry
     if (!numberResource) {
       const stripped = phoneNumber.replace(/^\+/, '');
       const lookup2Res = await fetch(
@@ -142,7 +259,6 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       numberResource = lookup2Data.data?.[0];
     }
 
-    // Attempt 3: list all owned numbers and match client-side
     if (!numberResource) {
       const lookup3Res = await fetch('https://api.telnyx.com/v2/phone_numbers', { headers: telnyxHeaders });
       const lookup3Data = await lookup3Res.json() as { data: any[] };
@@ -165,51 +281,21 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
     const numberId = numberResource.id;
     console.log(`[Assign Number] Found Telnyx number resource ID: ${numberId}`);
 
-    let sipConnectionId: string | null = null;
-
-    const listRes = await fetch('https://api.telnyx.com/v2/ip_connections', { headers: telnyxHeaders });
-    const listData = await listRes.json() as { data: any[] };
-    const existing = (listData.data || []).find((c: any) =>
-      /solarops/i.test(c.connection_name || '')
-    );
-
-    if (existing) {
-      sipConnectionId = existing.id;
-      console.log(`[Assign Number] Found existing IP connection: ${sipConnectionId} (${existing.connection_name})`);
-    } else {
-      console.log('[Assign Number] No IP connection found — creating one');
-      const createRes = await fetch('https://api.telnyx.com/v2/ip_connections', {
-        method: 'POST',
-        headers: telnyxHeaders,
-        body: JSON.stringify({
-          connection_name: 'solarops_sip',
-          transport_protocol: 'UDP',
-        }),
-      });
-      const createData = await createRes.json() as { data: { id: string } };
-      if (!createData.data?.id) {
-        console.error('[Assign Number] Failed to create IP connection:', JSON.stringify(createData));
-        res.status(500).json({ error: 'Failed to create SIP connection on Telnyx' });
-        return;
-      }
-      sipConnectionId = createData.data.id;
-      console.log(`[Assign Number] Created IP connection: ${sipConnectionId}`);
-    }
-
     const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberId}`, {
       method: 'PATCH',
       headers: telnyxHeaders,
-      body: JSON.stringify({ connection_id: sipConnectionId }),
+      body: JSON.stringify({ connection_id: fqdnConnectionId }),
     });
     const patchData = await patchRes.json();
-    console.log(`[Assign Number] PATCH number to IP connection: ${patchRes.status}`);
+    console.log(`[Assign Number] Assigned number to FQDN connection: ${patchRes.status}`);
 
     if (!patchRes.ok) {
       console.error('[Assign Number] Failed to assign number:', JSON.stringify(patchData));
-      res.status(500).json({ error: 'Failed to assign number to SIP connection' });
+      res.status(500).json({ error: 'Failed to assign number to FQDN connection' });
       return;
     }
 
+    // === Step 4: Import number to Retell ===
     if (retellAgentId) {
       const importRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
         method: 'POST',
@@ -231,15 +317,17 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       console.log('[Assign Number] No retell_agent_id yet — skipping Retell import');
     }
 
+    // === Step 5: Update Supabase ===
     await supabase.from('voice_config').upsert({
       tenant_id,
       telnyx_number: phoneNumber,
-      telnyx_connection_id: sipConnectionId,
+      telnyx_connection_id: fqdnConnectionId,
+      telnyx_connection_type: 'fqdn',
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
 
     console.log(`[Assign Number] Complete for tenant ${tenant_id}`);
-    res.json({ success: true, connection_id: sipConnectionId, phone_number: phoneNumber });
+    res.json({ success: true, connection_id: fqdnConnectionId, connection_type: 'fqdn' });
   } catch (err: any) {
     console.error('[Assign Number] Error:', err);
     res.status(500).json({ error: err.message });

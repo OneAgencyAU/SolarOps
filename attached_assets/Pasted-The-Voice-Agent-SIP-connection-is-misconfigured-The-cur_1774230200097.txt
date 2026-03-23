@@ -1,0 +1,96 @@
+The Voice Agent SIP connection is misconfigured. The current Telnyx 
+IP connection doesn't route calls to Retell. We need to replace it 
+with a proper FQDN connection.
+
+In server/src/routes/voice.ts, update the POST /api/voice/assign-number 
+endpoint to do the following steps in order:
+
+=== Step 1: Delete the old IP connection ===
+
+Look up the tenant's current telnyx_connection_id from voice_config.
+If it exists, delete it:
+  DELETE https://api.telnyx.com/v2/ip_connections/{connection_id}
+  Headers: Authorization: Bearer TELNYX_API_KEY
+
+If no telnyx_connection_id stored, search for any connection with 
+"solarops" in the name and delete it:
+  GET https://api.telnyx.com/v2/ip_connections
+  Find any with connection_name containing "solarops" and delete them.
+
+Log: console.log('[Assign Number] Deleted old IP connection:', id)
+
+=== Step 2: Create a new FQDN connection ===
+
+POST https://api.telnyx.com/v2/fqdn_connections
+{
+  "connection_name": "solarops-retell",
+  "active": true,
+  "transport_protocol": "UDP"
+}
+
+Then add the FQDN target for Retell:
+POST https://api.telnyx.com/v2/fqdns
+{
+  "fqdn_connection_id": "<new_connection_id>",
+  "fqdn": "sip.retellai.com",
+  "port": 5060
+}
+
+Log: console.log('[Assign Number] Created FQDN connection:', id)
+
+=== Step 3: Assign the phone number to the new connection ===
+
+Look up the number ID:
+  GET https://api.telnyx.com/v2/phone_numbers?filter[phone_number]={telnyx_number}
+  
+If empty, also try without + prefix. Log the raw response.
+
+Then update:
+  PATCH https://api.telnyx.com/v2/phone_numbers/{number_id}
+  { "connection_id": "<fqdn_connection_id>" }
+
+Log: console.log('[Assign Number] Assigned number to FQDN connection')
+
+=== Step 4: Import number to Retell ===
+
+Get the tenant's active retell_agent_id from voice_config (use 
+voice preference to pick jake or brooke agent).
+
+POST https://api.retellai.com/v2/import-phone-number
+{
+  "phone_number": "{telnyx_number}",
+  "termination_uri": "sip.telnyx.com",
+  "inbound_agent_id": "{retell_agent_id}"
+}
+Headers: Authorization: Bearer RETELL_API_KEY
+
+Handle 409 (already imported) gracefully — log and continue.
+
+=== Step 5: Update Supabase ===
+
+Update voice_config:
+  telnyx_connection_id = new FQDN connection ID
+  telnyx_connection_type = 'fqdn'
+
+Add column telnyx_connection_type TEXT to voice_config if it 
+doesn't exist.
+
+=== Step 6: Also fix the purchase flow ===
+
+In the POST /api/voice/numbers/purchase handler, replace the 
+ip_connections creation with the same FQDN connection pattern:
+- Create FQDN connection (or reuse existing one for the tenant)
+- Add sip.retellai.com as the FQDN target
+- Assign the purchased number to it
+
+This ensures all future number purchases are correctly configured 
+from the start.
+
+=== All API calls use ===
+Telnyx: Authorization: Bearer TELNYX_API_KEY
+Retell: Authorization: Bearer RETELL_API_KEY
+
+Log every step with [Assign Number] prefix. Return 
+{ success: true, connection_id, connection_type: 'fqdn' }
+
+Do not change any other voice logic, webhooks, or prompts.
