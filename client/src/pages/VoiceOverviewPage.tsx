@@ -13,7 +13,6 @@ interface VoiceConfig {
   phone_number: string;
   telnyx_number: string;
   telnyx_number_id: string;
-  telnyx_connection_id?: string;
   is_live: boolean;
   onboarding_step: number;
   voice?: string;
@@ -38,8 +37,6 @@ export default function VoiceOverviewPage() {
   const [calls, setCalls] = useState<VoiceCall[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
-  const [fixingPhone, setFixingPhone] = useState(false);
-  const [fixError, setFixError] = useState('');
 
   const fetchData = useCallback(async () => {
     if (!tenant?.id) return;
@@ -87,31 +84,8 @@ export default function VoiceOverviewPage() {
     });
   };
 
-  const handleFixPhoneSetup = async () => {
-    if (!tenant?.id) return;
-    setFixingPhone(true);
-    setFixError('');
-    try {
-      const res = await fetch('/api/voice/assign-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant_id: tenant.id }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        await fetchData();
-      } else {
-        setFixError(data.error || 'Failed to fix phone setup. Please try again.');
-      }
-    } catch {
-      setFixError('Network error. Please try again.');
-    } finally {
-      setFixingPhone(false);
-    }
-  };
-
   const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '—';
+    if (!seconds) return '\u2014';
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${String(s).padStart(2, '0')}`;
@@ -143,20 +117,12 @@ export default function VoiceOverviewPage() {
     : null;
   const avgDurationLabel = avgDuration
     ? `${Math.floor(avgDuration / 60)}:${String(avgDuration % 60).padStart(2, '0')}`
-    : '—';
+    : '\u2014';
 
   const recentCalls = calls.slice(0, 5);
   const voiceName = config?.voice ?? (config?.retell_agent_id_brooke ? 'brooke' : 'jake');
   const isJake = voiceName === 'jake';
-  const displayNumber = config?.telnyx_number || config?.phone_number || '—';
-
-  const forwardingCodes: Record<string, string> = {
-    Telstra: `*21*${displayNumber}#`,
-    Optus: `*21*${displayNumber}#`,
-    TPG: `*21*${displayNumber}#`,
-    iiNet: `*21*${displayNumber}#`,
-    Vonex: 'Login to your Vonex portal → Call Forwarding → enter your SolarOps number',
-  };
+  const displayNumber = config?.telnyx_number || config?.phone_number || '\u2014';
 
   return (
     <div className="va-page">
@@ -182,14 +148,14 @@ export default function VoiceOverviewPage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '1.4rem',
               }}>
-                {isJake ? '👨' : '👩'}
+                {isJake ? '\u{1F468}' : '\u{1F469}'}
               </div>
               <div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1d1d1f' }}>
                   {isJake ? 'Jake' : 'Brooke'}
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#6e6e73' }}>
-                  {isJake ? 'Male · Friendly · Aussie' : 'Female · Warm · Aussie'}
+                  {isJake ? 'Male \u00B7 Friendly \u00B7 Aussie' : 'Female \u00B7 Warm \u00B7 Aussie'}
                 </div>
               </div>
             </div>
@@ -197,39 +163,33 @@ export default function VoiceOverviewPage() {
               <span style={{ fontSize: '0.82rem', color: '#6e6e73' }}>Phone number</span>
               <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1d1d1f', marginLeft: 'auto' }}>{displayNumber}</span>
             </div>
-            {config.telnyx_connection_id ? (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  className="va-btn primary"
-                  style={{ flex: 1 }}
-                  onClick={() => navigate('/voice-agent/inbound')}
-                >
-                  Configure Inbound
-                </button>
-                <button
-                  className="va-btn primary"
-                  style={{ flex: 1, background: '#1d1d1f' }}
-                  onClick={() => navigate('/outbound')}
-                >
-                  Manage Campaigns
-                </button>
-              </div>
-            ) : (
-              <div style={{ fontSize: '0.85rem', color: '#6e6e73', padding: '10px 0' }}>
-                Complete your phone setup to enable inbound and outbound calling.
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="va-btn primary"
+                style={{ flex: 1 }}
+                onClick={() => navigate('/voice-agent/inbound')}
+              >
+                Agent Settings
+              </button>
+              <button
+                className="va-btn primary"
+                style={{ flex: 1, background: '#1d1d1f' }}
+                onClick={() => navigate('/outbound')}
+              >
+                Manage Campaigns
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="va-right">
           <div className="va-stats-row">
             <div className="va-card mini-stat">
-              <div className="mini-value">{totalCalls || '—'}</div>
+              <div className="mini-value">{totalCalls || '\u2014'}</div>
               <div className="mini-label">Total Calls</div>
             </div>
             <div className="va-card mini-stat">
-              <div className="mini-value">{callbackRequests || '—'}</div>
+              <div className="mini-value">{callbackRequests || '\u2014'}</div>
               <div className="mini-label">Callback Requests</div>
             </div>
             <div className="va-card mini-stat">
@@ -243,9 +203,7 @@ export default function VoiceOverviewPage() {
             {recentCalls.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: '#6e6e73', fontSize: '0.875rem' }}>
                 <p>No calls yet.</p>
-                {displayNumber !== '—' && (
-                  <p style={{ marginTop: 8 }}>Call <strong>{displayNumber}</strong> to test your agent.</p>
-                )}
+                <p style={{ marginTop: 8 }}>Use outbound campaigns to make your first calls.</p>
               </div>
             ) : (
               <div className="calls-table">
@@ -272,38 +230,17 @@ export default function VoiceOverviewPage() {
           </div>
 
           <div className="va-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="card-title">Phone Number Setup</div>
-            {config.telnyx_number && !config.telnyx_connection_id ? (
-              <>
-                <div className="info-box" style={{ background: 'rgba(255,69,58,0.08)', color: '#FF453A' }}>
-                  Your number <strong>{displayNumber}</strong> is not connected to a call routing application. Inbound calls won't reach the AI agent until this is fixed.
-                </div>
-                <button
-                  className="va-btn primary"
-                  onClick={handleFixPhoneSetup}
-                  disabled={fixingPhone}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  {fixingPhone ? 'Fixing…' : 'Fix phone setup'}
-                </button>
-                {fixError && <div className="va-error" style={{ marginTop: 8, color: '#FF453A', fontSize: 14 }}>{fixError}</div>}
-              </>
-            ) : (
-              <>
-                <div className="info-box">
-                  Your AI receptionist is configured and ready on <strong>{displayNumber}</strong>
-                </div>
-                <p style={{ fontSize: '0.82rem', color: '#6e6e73', margin: 0 }}>
-                  Forward your existing business number to your SolarOps number using the code below.
-                </p>
-                <div className="info-box" style={{ fontFamily: 'monospace', fontSize: '0.95rem', letterSpacing: 1 }}>
-                  {forwardingCodes['Telstra']}
-                </div>
-                <p style={{ fontSize: '0.78rem', color: '#aeaeb2', margin: 0 }}>
-                  Dial this code from your business phone. Works with Telstra, Optus, TPG, and iiNet.
-                </p>
-              </>
-            )}
+            <div className="card-title">Outbound Number</div>
+            <div className="info-box">
+              Your outbound number: <strong>{displayNumber}</strong>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: '#6e6e73', margin: 0 }}>
+              This number is used for outbound campaigns and callbacks.
+            </p>
+          </div>
+
+          <div style={{ padding: '12px 0', textAlign: 'center', fontSize: '0.78rem', color: '#aeaeb2' }}>
+            Inbound call answering coming soon — for now, use outbound campaigns to reach your customers proactively.
           </div>
         </div>
       </div>

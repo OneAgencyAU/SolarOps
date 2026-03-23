@@ -37,7 +37,6 @@ export default function VoiceSetupPage() {
   const [searchResults, setSearchResults] = useState<AvailableNumber[]>([]);
   const [searching, setSearching] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
-  const [assigning, setAssigning] = useState(false);
 
   const handleVoiceChange = (v: 'jake' | 'brooke') => {
     setVoice(v);
@@ -77,26 +76,6 @@ export default function VoiceSetupPage() {
     }
   };
 
-  const assignNumberToSip = async (phoneNumber: string) => {
-    if (!tenant?.id) return;
-    setAssigning(true);
-    try {
-      const res = await fetch('/api/voice/assign-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant_id: tenant.id, phone_number: phoneNumber }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.warn('[VoiceSetup] assign-number warning:', data.error);
-      }
-    } catch (err) {
-      console.warn('[VoiceSetup] assign-number error:', err);
-    } finally {
-      setAssigning(false);
-    }
-  };
-
   const handlePurchase = async () => {
     if (!selectedNumber || !tenant?.id) return;
     setPurchasing(true);
@@ -108,7 +87,6 @@ export default function VoiceSetupPage() {
       });
       const data = await res.json();
       if (data.success) {
-        await assignNumberToSip(selectedNumber);
         setStep(4);
       }
     } finally {
@@ -312,9 +290,9 @@ export default function VoiceSetupPage() {
                 <button
                   className="vs-btn primary"
                   onClick={selectedNumber ? handlePurchase : undefined}
-                  disabled={!selectedNumber || purchasing || assigning}
+                  disabled={!selectedNumber || purchasing}
                 >
-                  {purchasing || assigning ? 'Purchasing…' : selectedNumber ? 'Purchase & Continue' : 'Next'}
+                  {purchasing ? 'Purchasing…' : selectedNumber ? 'Purchase & Continue' : 'Next'}
                 </button>
               </div>
             </>

@@ -153,18 +153,18 @@ app.listen(PORT, async () => {
   startJobRunner();
 
   try {
-    const { data: orphanedConfigs } = await supabase
+    const { data: incompleteConfigs } = await supabase
       .from('voice_config')
-      .select('tenant_id, telnyx_number')
+      .select('tenant_id, telnyx_number, retell_agent_id')
       .not('telnyx_number', 'is', null)
-      .is('telnyx_connection_id', null);
+      .is('retell_agent_id', null);
 
-    if (orphanedConfigs && orphanedConfigs.length > 0) {
-      for (const cfg of orphanedConfigs) {
-        console.warn(`[Voice] Tenant ${cfg.tenant_id} has number ${cfg.telnyx_number} but no call routing app — run POST /api/voice/assign-number to fix`);
+    if (incompleteConfigs && incompleteConfigs.length > 0) {
+      for (const cfg of incompleteConfigs) {
+        console.warn(`[Voice] Tenant ${cfg.tenant_id} has number ${cfg.telnyx_number} but no Retell agent — setup incomplete`);
       }
     }
   } catch (err) {
-    // telnyx_connection_id column may not exist yet — ignore
+    // voice_config columns may not exist yet — ignore
   }
 });

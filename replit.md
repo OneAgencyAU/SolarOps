@@ -221,9 +221,7 @@ All required secrets are stored in Replit's Secrets pane:
 ### Voice Agent (`/api/voice`)
 - `GET /api/voice/numbers/search?state=SA` — Search available AU phone numbers on Telnyx by state.
 - `POST /api/voice/numbers/purchase` — Purchase a Telnyx number and save to `voice_config`.
-- `POST /api/voice/assign-number` — Assigns a Telnyx number to a Call Control Application with webhook-based call routing. Steps: delete old IP/FQDN/CCA connections → create Call Control Application (solarops-retell, webhook → `/api/voice/telnyx-webhook`) → list all numbers and match → PATCH connection_id → update `voice_config.telnyx_connection_id` + `telnyx_connection_type='call_control'`.
 - `POST /api/voice/setup` — Create/update Retell AI agent + LLM with system prompt. Imports Telnyx number to Retell.
-- `POST /api/voice/telnyx-webhook` — Telnyx Call Control webhook. Handles inbound call flow: call.initiated → answer → call.answered → register with Retell (`/v2/register-phone-call`) → transfer to Retell SIP URI → call.hangup → cleanup. Uses in-memory Map for call state tracking.
 - `POST /api/voice/webhook` — Retell webhook for `call_analyzed` events. Extracts caller details, logs to `voice_calls` and `api_usage_log`.
 - `GET /api/voice/calls?tenant_id=X` — List recent calls for a tenant.
 - `GET /api/voice/config?tenant_id=X` — Get voice config for a tenant.

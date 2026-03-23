@@ -1,0 +1,85 @@
+Simplify the Voice Agent to outbound-only for now. Remove all SIP 
+trunk / inbound routing complexity. Each user still gets their own 
+Telnyx number for outbound calls.
+
+=== 1. Clean up server/src/routes/voice.ts ===
+
+Remove or disable:
+- The POST /api/voice/assign-number endpoint entirely
+- The POST /api/voice/telnyx-webhook handler entirely  
+- Any FQDN connection creation code
+- Any Call Control Application creation code
+- Any IP connection creation code
+- The callStateMap and related in-memory state
+
+Keep:
+- POST /api/voice/numbers/search (search AU numbers)
+- POST /api/voice/numbers/purchase (buy number + save to voice_config)
+- POST /api/voice/setup (create Retell agent + import number to Retell)
+- POST /api/voice/webhook (Retell call_analyzed webhook — for post-call data)
+- GET /api/voice/config
+- GET /api/voice/calls
+- POST /api/voice/toggle
+- All campaign endpoints
+
+In POST /api/voice/numbers/purchase, REMOVE the IP/FQDN/Call Control 
+connection creation. Just purchase the number and save it to 
+voice_config. Nothing else.
+
+In POST /api/voice/setup, keep the Retell agent creation and the 
+Retell import-phone-number call. Remove any Telnyx SIP connection 
+logic. The import to Retell is all that's needed for outbound.
+
+=== 2. Clean up VoiceOverviewPage.tsx ===
+
+Remove:
+- The "Fix phone setup" button and all telnyx_connection_id checks
+- The SIP trunk warning banner
+- The phone forwarding codes section (call forwarding is inbound)
+- The handleFixPhoneSetup function
+
+Replace the "Phone Number Setup" card with a simpler card:
+- Show "Your outbound number: +61XXXXXXXXXX"
+- Show "This number is used for outbound campaigns and callbacks"
+- Remove all inbound-related messaging
+
+Keep:
+- The AI Receptionist card (voice name, number display)
+- Stats cards (Total Calls, Callback Requests, Avg Duration)
+- Recent Calls table
+- Configure Inbound button → rename to "Agent Settings" 
+- Manage Campaigns button (keep as-is)
+
+Always show the "Agent Settings" and "Manage Campaigns" buttons — 
+don't gate them behind telnyx_connection_id anymore.
+
+=== 3. Clean up VoiceSetupPage.tsx ===
+
+The 4-step wizard stays the same:
+1. Choose Voice (Jake/Brooke)
+2. Configure (business name, greeting, tone, email)
+3. Choose Number (search + purchase)
+4. Activate (create Retell agent + import number)
+
+No changes needed to the wizard itself — just make sure Step 4 
+(activate) doesn't try to create any SIP connections.
+
+=== 4. Update voice_config checks ===
+
+Everywhere that checks telnyx_connection_id to determine if setup 
+is complete, change it to check for retell_agent_id AND 
+telnyx_number instead. Setup is complete when:
+- retell_agent_id exists
+- telnyx_number exists
+- onboarding_step >= 3
+
+telnyx_connection_id is no longer relevant.
+
+=== 5. Add "Inbound Coming Soon" note ===
+
+On the Voice Agent overview page, add a subtle note at the bottom:
+"Inbound call answering coming soon — for now, use outbound 
+campaigns to reach your customers proactively."
+
+Do not change campaign endpoints, Retell webhook, or any AI 
+prompt logic.
