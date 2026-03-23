@@ -306,47 +306,72 @@ Rude caller: First warning then end call.`;
     const beginMessage = greeting || `Thanks for calling ${business_name}. You've reached our AI receptionist. I'm here to help — who am I speaking with today?`;
     const generalTools = [{ type: 'end_call' as const, name: 'end_call', description: 'End the call when conversation is complete' }];
 
+    // Discover available voices first
+    const voices = await retell.voice.list();
+    const voiceList = voices.map(v => ({ id: v.voice_id, name: v.voice_name, gender: v.gender, provider: v.provider }));
+    console.log('[Voice Setup] Available voices:', JSON.stringify(voiceList, null, 2));
+
+    const maleVoiceId =
+      voiceList.find(v => v.gender === 'male' && v.provider === 'elevenlabs')?.id ||
+      voiceList.find(v => v.gender === 'male')?.id ||
+      'retell-Cimo';
+
+    const femaleVoiceId =
+      voiceList.find(v => v.gender === 'female' && v.provider === 'elevenlabs')?.id ||
+      voiceList.find(v => v.gender === 'female')?.id ||
+      'retell-Aria';
+
+    console.log('[Voice Setup] Using voices:', { maleVoice: maleVoiceId, femaleVoice: femaleVoiceId });
+
     const [jakeLlm, brookeLlm] = await Promise.all([
       retell.llm.create({ model: 'gpt-4o-mini' as any, general_prompt: systemPrompt, begin_message: beginMessage, general_tools: generalTools }),
       retell.llm.create({ model: 'gpt-4o-mini' as any, general_prompt: systemPrompt, begin_message: beginMessage, general_tools: generalTools }),
     ]);
     console.log('[Retell LLM Jake]', jakeLlm.llm_id, '[Retell LLM Brooke]', brookeLlm.llm_id);
 
-    const voices = await retell.voice.list();
-    console.log('[Voice Setup] Available voices:', voices.map(v => ({ id: v.voice_id, name: v.voice_name, provider: v.provider, gender: v.gender })));
+    const existingJakeId = config?.retell_agent_id_jake;
+    const existingBrookeId = config?.retell_agent_id_brooke;
 
-    const maleVoice =
-      voices.find(v => v.gender === 'male' && /adrian/i.test(v.voice_name)) ||
-      voices.find(v => v.gender === 'male' && v.provider === 'elevenlabs') ||
-      voices.find(v => v.gender === 'male' && v.provider === 'platform') ||
-      voices.find(v => v.gender === 'male');
+    let jakeAgent: { agent_id: string };
+    let brookeAgent: { agent_id: string };
 
-    const femaleVoice =
-      voices.find(v => v.gender === 'female' && /rachel|aria|charlotte/i.test(v.voice_name)) ||
-      voices.find(v => v.gender === 'female' && v.provider === 'elevenlabs') ||
-      voices.find(v => v.gender === 'female' && v.provider === 'platform') ||
-      voices.find(v => v.gender === 'female');
-
-    const jakeVoiceId = maleVoice?.voice_id ?? '11labs-Adrian';
-    const brookeVoiceId = femaleVoice?.voice_id ?? '11labs-Charlotte';
-    console.log(`[Voice Setup] Jake voice: ${jakeVoiceId} (${maleVoice?.voice_name ?? 'fallback'}) | Brooke voice: ${brookeVoiceId} (${femaleVoice?.voice_name ?? 'fallback'})`);
-
-    const [jakeAgent, brookeAgent] = await Promise.all([
-      retell.agent.create({
-        voice_id: jakeVoiceId,
-        response_engine: { type: 'retell-llm', llm_id: jakeLlm.llm_id },
-        agent_name: `${business_name} - Jake`,
-        language: 'en-AU',
-        webhook_url: 'https://solarops.com.au/api/voice/webhook',
-      }),
-      retell.agent.create({
-        voice_id: brookeVoiceId,
-        response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
-        agent_name: `${business_name} - Brooke`,
-        language: 'en-AU',
-        webhook_url: 'https://solarops.com.au/api/voice/webhook',
-      }),
-    ]);
+    if (existingJakeId && existingBrookeId) {
+      console.log('[Voice Setup] Updating existing agents:', existingJakeId, existingBrookeId);
+      [jakeAgent, brookeAgent] = await Promise.all([
+        retell.agent.update(existingJakeId, {
+          voice_id: maleVoiceId,
+          response_engine: { type: 'retell-llm', llm_id: jakeLlm.llm_id },
+          agent_name: `${business_name} - Jake`,
+          language: 'en-AU',
+          webhook_url: 'https://solarops.com.au/api/voice/webhook',
+        }),
+        retell.agent.update(existingBrookeId, {
+          voice_id: femaleVoiceId,
+          response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
+          agent_name: `${business_name} - Brooke`,
+          language: 'en-AU',
+          webhook_url: 'https://solarops.com.au/api/voice/webhook',
+        }),
+      ]);
+    } else {
+      console.log('[Voice Setup] Creating new agents');
+      [jakeAgent, brookeAgent] = await Promise.all([
+        retell.agent.create({
+          voice_id: maleVoiceId,
+          response_engine: { type: 'retell-llm', llm_id: jakeLlm.llm_id },
+          agent_name: `${business_name} - Jake`,
+          language: 'en-AU',
+          webhook_url: 'https://solarops.com.au/api/voice/webhook',
+        }),
+        retell.agent.create({
+          voice_id: femaleVoiceId,
+          response_engine: { type: 'retell-llm', llm_id: brookeLlm.llm_id },
+          agent_name: `${business_name} - Brooke`,
+          language: 'en-AU',
+          webhook_url: 'https://solarops.com.au/api/voice/webhook',
+        }),
+      ]);
+    }
     console.log('[Retell Agent Jake]', jakeAgent.agent_id, '[Retell Agent Brooke]', brookeAgent.agent_id);
 
     if (config?.telnyx_number) {
