@@ -161,7 +161,7 @@ app.listen(PORT, async () => {
 
     if (orphanedConfigs && orphanedConfigs.length > 0) {
       for (const cfg of orphanedConfigs) {
-        console.warn(`[Voice] Tenant ${cfg.tenant_id} has number ${cfg.telnyx_number} but no SIP connection — run POST /api/voice/assign-number to fix`);
+        console.warn(`[Voice] Tenant ${cfg.tenant_id} has number ${cfg.telnyx_number} but no call routing app — run POST /api/voice/assign-number to fix`);
       }
     }
   } catch (err) {

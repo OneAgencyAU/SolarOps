@@ -11,6 +11,12 @@ const router = Router();
 const TELNYX_API_KEY = process.env.TELNYX_API_KEY!;
 const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
 
+const callStateMap = new Map<string, { callControlId: string; fromNumber: string; toNumber: string }>();
+
+function getWebhookUrl(): string {
+  return `${process.env.PRODUCTION_URL || 'https://solarops.com.au'}/api/voice/telnyx-webhook`;
+}
+
 router.get('/api/voice/numbers/available', async (req: Request, res: Response) => {
   try {
     const [telnyxRes, { data: configs }] = await Promise.all([
@@ -68,61 +74,57 @@ router.post('/api/voice/numbers/purchase', async (req: Request, res: Response) =
     const order = await orderRes.json() as { data: { id: string, phone_numbers: any[] } };
     console.log('[Telnyx Purchase] Order:', JSON.stringify(order));
 
-    let fqdnConnectionId: string | null = null;
+    let applicationId: string | null = null;
 
-    const fqdnListRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', { headers: telnyxHeaders });
-    const fqdnListData = await fqdnListRes.json() as { data: any[] };
-    const existingFqdn = (fqdnListData.data || []).find((c: any) => /solarops/i.test(c.connection_name || ''));
+    const ccaListRes = await fetch('https://api.telnyx.com/v2/call_control_applications', { headers: telnyxHeaders });
+    const ccaListData = await ccaListRes.json() as { data: any[] };
+    const existingCca = (ccaListData.data || []).find((c: any) => /solarops/i.test(c.application_name || ''));
 
-    if (existingFqdn) {
-      fqdnConnectionId = existingFqdn.id;
-      console.log(`[Telnyx Purchase] Reusing existing FQDN connection: ${fqdnConnectionId}`);
+    if (existingCca) {
+      applicationId = existingCca.id;
+      console.log(`[Telnyx Purchase] Reusing existing Call Control App: ${applicationId}`);
     } else {
-      console.log('[Telnyx Purchase] Creating new FQDN connection');
-      const fqdnConnRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', {
+      console.log('[Telnyx Purchase] Creating new Call Control Application');
+      const ccaRes = await fetch('https://api.telnyx.com/v2/call_control_applications', {
         method: 'POST',
         headers: telnyxHeaders,
         body: JSON.stringify({
-          connection_name: 'solarops-retell',
+          application_name: 'solarops-retell',
+          webhook_url: getWebhookUrl(),
+          webhook_api_version: '2',
           active: true,
-          transport_protocol: 'UDP',
+          inbound: { channel_limit: 10 },
+          outbound: { channel_limit: 10 },
         }),
       });
-      const fqdnConnData = await fqdnConnRes.json() as { data: { id: string } };
-      if (fqdnConnData.data?.id) {
-        fqdnConnectionId = fqdnConnData.data.id;
-        console.log(`[Telnyx Purchase] Created FQDN connection: ${fqdnConnectionId}`);
-
-        const fqdnTargetRes = await fetch('https://api.telnyx.com/v2/fqdns', {
-          method: 'POST',
-          headers: telnyxHeaders,
-          body: JSON.stringify({
-            fqdn_connection_id: fqdnConnectionId,
-            fqdn: 'sip.retellai.com',
-            port: 5060,
-          }),
-        });
-        console.log(`[Telnyx Purchase] Added FQDN target: ${fqdnTargetRes.status}`);
+      const ccaData = await ccaRes.json() as { data: { id: string } };
+      if (ccaData.data?.id) {
+        applicationId = ccaData.data.id;
+        console.log(`[Telnyx Purchase] Created Call Control App: ${applicationId}`);
       } else {
-        console.error('[Telnyx Purchase] Failed to create FQDN connection:', JSON.stringify(fqdnConnData));
+        console.error('[Telnyx Purchase] Failed to create Call Control App:', JSON.stringify(ccaData));
       }
     }
 
-    if (fqdnConnectionId) {
+    if (applicationId) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const lookupRes = await fetch(
-        `https://api.telnyx.com/v2/phone_numbers?filter[phone_number]=${encodeURIComponent(phone_number)}`,
+        `https://api.telnyx.com/v2/phone_numbers?page[size]=50`,
         { headers: telnyxHeaders }
       );
       const lookupData = await lookupRes.json() as { data: any[] };
-      const numberId = lookupData.data?.[0]?.id;
-      if (numberId) {
-        const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberId}`, {
+      const numberRec = (lookupData.data || []).find((n: any) =>
+        n.phone_number === phone_number ||
+        n.phone_number === phone_number.replace('+', '') ||
+        n.phone_number.replace(/[^0-9]/g, '') === phone_number.replace(/[^0-9]/g, '')
+      );
+      if (numberRec) {
+        const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberRec.id}`, {
           method: 'PATCH',
           headers: telnyxHeaders,
-          body: JSON.stringify({ connection_id: fqdnConnectionId }),
+          body: JSON.stringify({ connection_id: applicationId }),
         });
-        console.log(`[Telnyx Purchase] Assigned number to FQDN connection: ${patchRes.status}`);
+        console.log(`[Telnyx Purchase] Assigned number to Call Control App: ${patchRes.status}`);
       } else {
         console.warn('[Telnyx Purchase] Could not look up purchased number yet — assign-number will handle it');
       }
@@ -132,8 +134,8 @@ router.post('/api/voice/numbers/purchase', async (req: Request, res: Response) =
       tenant_id,
       telnyx_number: phone_number,
       telnyx_number_id: order.data?.id,
-      telnyx_connection_id: fqdnConnectionId,
-      telnyx_connection_type: fqdnConnectionId ? 'fqdn' : null,
+      telnyx_connection_id: applicationId,
+      telnyx_connection_type: applicationId ? 'call_control' : null,
       onboarding_step: 2,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
@@ -179,76 +181,61 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
       return;
     }
 
-    const voicePref = config?.voice ?? 'brooke';
-    const retellAgentId =
-      (voicePref === 'jake' ? config?.retell_agent_id_jake : config?.retell_agent_id_brooke)
-      || config?.retell_agent_id
-      || null;
-    console.log(`[Assign Number] Phone: ${phoneNumber}, voice: ${voicePref}, retell_agent_id: ${retellAgentId}`);
-
     const telnyxHeaders = { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' };
-    const retellHeaders = { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' };
 
-    // === Step 1: Delete old IP connections ===
-    if (config?.telnyx_connection_id) {
-      console.log(`[Assign Number] Deleting old connection from config: ${config.telnyx_connection_id}`);
-      const delRes = await fetch(`https://api.telnyx.com/v2/ip_connections/${config.telnyx_connection_id}`, {
-        method: 'DELETE',
-        headers: telnyxHeaders,
-      });
-      console.log(`[Assign Number] Deleted old IP connection: ${config.telnyx_connection_id} (status: ${delRes.status})`);
-    }
+    // === Step 1: Delete old IP, FQDN, and Call Control connections ===
+    const [ipListRes, fqdnListRes, ccaListRes] = await Promise.all([
+      fetch('https://api.telnyx.com/v2/ip_connections', { headers: telnyxHeaders }),
+      fetch('https://api.telnyx.com/v2/fqdn_connections', { headers: telnyxHeaders }),
+      fetch('https://api.telnyx.com/v2/call_control_applications', { headers: telnyxHeaders }),
+    ]);
+    const [ipListData, fqdnListData, ccaListData] = await Promise.all([
+      ipListRes.json() as Promise<{ data: any[] }>,
+      fqdnListRes.json() as Promise<{ data: any[] }>,
+      ccaListRes.json() as Promise<{ data: any[] }>,
+    ]);
 
-    const ipListRes = await fetch('https://api.telnyx.com/v2/ip_connections', { headers: telnyxHeaders });
-    const ipListData = await ipListRes.json() as { data: any[] };
-    const solaropsConns = (ipListData.data || []).filter((c: any) => /solarops/i.test(c.connection_name || ''));
-    for (const conn of solaropsConns) {
-      console.log(`[Assign Number] Deleting stale IP connection: ${conn.id} (${conn.connection_name})`);
+    const oldIpConns = (ipListData.data || []).filter((c: any) => /solarops/i.test(c.connection_name || ''));
+    for (const conn of oldIpConns) {
+      console.log(`[Assign Number] Deleting old IP connection: ${conn.id} (${conn.connection_name})`);
       await fetch(`https://api.telnyx.com/v2/ip_connections/${conn.id}`, { method: 'DELETE', headers: telnyxHeaders });
-      console.log(`[Assign Number] Deleted old IP connection: ${conn.id}`);
     }
 
-    // Also clean up any old FQDN connections with solarops name to avoid duplicates
-    const fqdnListRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', { headers: telnyxHeaders });
-    const fqdnListData = await fqdnListRes.json() as { data: any[] };
     const oldFqdnConns = (fqdnListData.data || []).filter((c: any) => /solarops/i.test(c.connection_name || ''));
     for (const conn of oldFqdnConns) {
       console.log(`[Assign Number] Deleting old FQDN connection: ${conn.id} (${conn.connection_name})`);
       await fetch(`https://api.telnyx.com/v2/fqdn_connections/${conn.id}`, { method: 'DELETE', headers: telnyxHeaders });
-      console.log(`[Assign Number] Deleted old FQDN connection: ${conn.id}`);
     }
 
-    // === Step 2: Create new FQDN connection ===
-    console.log('[Assign Number] Creating new FQDN connection');
-    const fqdnConnRes = await fetch('https://api.telnyx.com/v2/fqdn_connections', {
+    const oldCcaConns = (ccaListData.data || []).filter((c: any) => /solarops/i.test(c.application_name || ''));
+    for (const conn of oldCcaConns) {
+      console.log(`[Assign Number] Deleting old Call Control App: ${conn.id} (${conn.application_name})`);
+      await fetch(`https://api.telnyx.com/v2/call_control_applications/${conn.id}`, { method: 'DELETE', headers: telnyxHeaders });
+    }
+
+    // === Step 2: Create new Call Control Application ===
+    const webhookUrl = getWebhookUrl();
+    console.log(`[Assign Number] Creating Call Control Application with webhook: ${webhookUrl}`);
+    const ccaRes = await fetch('https://api.telnyx.com/v2/call_control_applications', {
       method: 'POST',
       headers: telnyxHeaders,
       body: JSON.stringify({
-        connection_name: 'solarops-retell',
+        application_name: 'solarops-retell',
+        webhook_url: webhookUrl,
+        webhook_api_version: '2',
         active: true,
-        transport_protocol: 'UDP',
+        inbound: { channel_limit: 10 },
+        outbound: { channel_limit: 10 },
       }),
     });
-    const fqdnConnData = await fqdnConnRes.json() as { data: { id: string } };
-    if (!fqdnConnData.data?.id) {
-      console.error('[Assign Number] Failed to create FQDN connection:', JSON.stringify(fqdnConnData));
-      res.status(500).json({ error: 'Failed to create FQDN connection on Telnyx' });
+    const ccaData = await ccaRes.json() as { data: { id: string } };
+    if (!ccaData.data?.id) {
+      console.error('[Assign Number] Failed to create Call Control App:', JSON.stringify(ccaData));
+      res.status(500).json({ error: 'Failed to create Call Control Application on Telnyx' });
       return;
     }
-    const fqdnConnectionId = fqdnConnData.data.id;
-    console.log(`[Assign Number] Created FQDN connection: ${fqdnConnectionId}`);
-
-    const fqdnTargetRes = await fetch('https://api.telnyx.com/v2/fqdns', {
-      method: 'POST',
-      headers: telnyxHeaders,
-      body: JSON.stringify({
-        fqdn_connection_id: fqdnConnectionId,
-        fqdn: 'sip.retellai.com',
-        port: 5060,
-      }),
-    });
-    const fqdnTargetData = await fqdnTargetRes.json();
-    console.log(`[Assign Number] Added FQDN target sip.retellai.com: ${fqdnTargetRes.status}`, JSON.stringify(fqdnTargetData));
+    const applicationId = ccaData.data.id;
+    console.log(`[Assign Number] Created Call Control App: ${applicationId}`);
 
     // === Step 3: Find phone number on Telnyx (list all and match) ===
     const allNumbersRes = await fetch(
@@ -278,53 +265,32 @@ router.post('/api/voice/assign-number', async (req: Request, res: Response) => {
     const numberId = numberRecord.id;
     console.log('[Assign Number] Found number:', numberRecord.phone_number, 'ID:', numberId);
 
+    // === Step 4: Assign number to Call Control Application ===
     const patchRes = await fetch(`https://api.telnyx.com/v2/phone_numbers/${numberId}`, {
       method: 'PATCH',
       headers: telnyxHeaders,
-      body: JSON.stringify({ connection_id: fqdnConnectionId }),
+      body: JSON.stringify({ connection_id: applicationId }),
     });
     const patchData = await patchRes.json();
-    console.log(`[Assign Number] Assigned number to FQDN connection: ${patchRes.status}`);
+    console.log(`[Assign Number] Assigned number to Call Control App: ${patchRes.status}`);
 
     if (!patchRes.ok) {
       console.error('[Assign Number] Failed to assign number:', JSON.stringify(patchData));
-      res.status(500).json({ error: 'Failed to assign number to FQDN connection' });
+      res.status(500).json({ error: 'Failed to assign number to Call Control Application' });
       return;
-    }
-
-    // === Step 4: Import number to Retell ===
-    if (retellAgentId) {
-      const importRes = await fetch('https://api.retellai.com/v2/import-phone-number', {
-        method: 'POST',
-        headers: retellHeaders,
-        body: JSON.stringify({
-          phone_number: phoneNumber,
-          termination_uri: 'sip.telnyx.com',
-          inbound_agent_id: retellAgentId,
-        }),
-      });
-      console.log(`[Assign Number] Retell import status: ${importRes.status}`);
-      if (importRes.status === 409) {
-        console.log('[Assign Number] Number already imported to Retell — continuing');
-      } else if (!importRes.ok) {
-        const importErr = await importRes.text();
-        console.warn('[Assign Number] Retell import warning:', importErr);
-      }
-    } else {
-      console.log('[Assign Number] No retell_agent_id yet — skipping Retell import');
     }
 
     // === Step 5: Update Supabase ===
     await supabase.from('voice_config').upsert({
       tenant_id,
       telnyx_number: phoneNumber,
-      telnyx_connection_id: fqdnConnectionId,
-      telnyx_connection_type: 'fqdn',
+      telnyx_connection_id: applicationId,
+      telnyx_connection_type: 'call_control',
       updated_at: new Date().toISOString(),
     }, { onConflict: 'tenant_id' });
 
     console.log(`[Assign Number] Complete for tenant ${tenant_id}`);
-    res.json({ success: true, connection_id: fqdnConnectionId, connection_type: 'fqdn' });
+    res.json({ success: true, connection_id: applicationId, connection_type: 'call_control' });
   } catch (err: any) {
     console.error('[Assign Number] Error:', err);
     res.status(500).json({ error: err.message });
@@ -494,6 +460,120 @@ Rude caller: First warning then end call.`;
   } catch (err: any) {
     console.error('[Voice Setup]', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/voice/telnyx-webhook', async (req: Request, res: Response) => {
+  res.status(200).json({ received: true });
+
+  try {
+    const event = req.body?.data;
+    const eventType = event?.event_type;
+    const payload = event?.payload;
+
+    console.log('[Telnyx Webhook] Event:', eventType, 'Direction:', payload?.direction);
+
+    if (!eventType || !payload) return;
+
+    const callControlId = payload.call_control_id;
+    const telnyxHeaders = { 'Authorization': `Bearer ${TELNYX_API_KEY}`, 'Content-Type': 'application/json' };
+
+    if (eventType === 'call.initiated' && payload.direction === 'incoming') {
+      console.log('[Telnyx Webhook] Incoming call from', payload.from, 'to', payload.to);
+
+      callStateMap.set(callControlId, {
+        callControlId,
+        fromNumber: payload.from,
+        toNumber: payload.to,
+      });
+
+      const answerRes = await fetch(
+        `https://api.telnyx.com/v2/calls/${callControlId}/actions/answer`,
+        {
+          method: 'POST',
+          headers: telnyxHeaders,
+          body: JSON.stringify({}),
+        }
+      );
+      console.log('[Telnyx Webhook] Answer response:', answerRes.status);
+
+    } else if (eventType === 'call.answered') {
+      const callState = callStateMap.get(callControlId);
+      if (!callState) {
+        console.log('[Telnyx Webhook] No call state for answered event, call_control_id:', callControlId);
+        return;
+      }
+
+      console.log('[Telnyx Webhook] Call answered, registering with Retell for', callState.toNumber);
+
+      const calledDigits = callState.toNumber.replace(/[^0-9]/g, '');
+      const { data: configs } = await supabase
+        .from('voice_config')
+        .select('retell_agent_id, retell_agent_id_jake, retell_agent_id_brooke, voice, tenant_id, telnyx_number');
+
+      const voiceConfig = (configs || []).find((c: any) => {
+        if (!c.telnyx_number) return false;
+        return c.telnyx_number === callState.toNumber ||
+          c.telnyx_number.replace(/[^0-9]/g, '') === calledDigits;
+      });
+
+      if (!voiceConfig) {
+        console.error('[Telnyx Webhook] No voice config found for number:', callState.toNumber);
+        callStateMap.delete(callControlId);
+        return;
+      }
+
+      const voicePref = voiceConfig.voice ?? 'brooke';
+      const retellAgentId =
+        (voicePref === 'jake' ? voiceConfig.retell_agent_id_jake : voiceConfig.retell_agent_id_brooke)
+        || voiceConfig.retell_agent_id;
+
+      if (!retellAgentId) {
+        console.error('[Telnyx Webhook] No retell agent ID for tenant:', voiceConfig.tenant_id);
+        callStateMap.delete(callControlId);
+        return;
+      }
+
+      console.log('[Telnyx Webhook] Registering call with Retell agent:', retellAgentId);
+      const registerRes = await fetch('https://api.retellai.com/v2/register-phone-call', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.RETELL_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agent_id: retellAgentId,
+          from_number: callState.fromNumber,
+          to_number: callState.toNumber,
+          direction: 'inbound',
+        }),
+      });
+
+      const registerData = await registerRes.json();
+      console.log('[Telnyx Webhook] Retell register response:', registerRes.status, JSON.stringify(registerData));
+
+      if (!registerRes.ok || !registerData.sip_uri) {
+        console.error('[Telnyx Webhook] Failed to register call with Retell');
+        callStateMap.delete(callControlId);
+        return;
+      }
+
+      console.log('[Telnyx Webhook] Transferring call to SIP URI:', registerData.sip_uri);
+      const transferRes = await fetch(
+        `https://api.telnyx.com/v2/calls/${callControlId}/actions/transfer`,
+        {
+          method: 'POST',
+          headers: telnyxHeaders,
+          body: JSON.stringify({ to: registerData.sip_uri }),
+        }
+      );
+      console.log('[Telnyx Webhook] Transfer response:', transferRes.status);
+
+      callStateMap.delete(callControlId);
+
+    } else if (eventType === 'call.hangup') {
+      console.log('[Telnyx Webhook] Call hung up:', callControlId);
+      callStateMap.delete(callControlId);
+    }
+  } catch (err: any) {
+    console.error('[Telnyx Webhook] Error processing event:', err);
   }
 });
 

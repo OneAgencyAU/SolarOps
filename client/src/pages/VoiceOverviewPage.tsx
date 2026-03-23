@@ -276,7 +276,7 @@ export default function VoiceOverviewPage() {
             {config.telnyx_number && !config.telnyx_connection_id ? (
               <>
                 <div className="info-box" style={{ background: 'rgba(255,69,58,0.08)', color: '#FF453A' }}>
-                  Your number <strong>{displayNumber}</strong> is not connected to a SIP trunk. Inbound calls won't reach the AI agent until this is fixed.
+                  Your number <strong>{displayNumber}</strong> is not connected to a call routing application. Inbound calls won't reach the AI agent until this is fixed.
                 </div>
                 <button
                   className="va-btn primary"

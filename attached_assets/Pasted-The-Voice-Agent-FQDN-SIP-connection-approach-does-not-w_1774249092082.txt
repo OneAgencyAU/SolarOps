@@ -1,0 +1,107 @@
+The Voice Agent FQDN SIP connection approach does not work for 
+routing Telnyx calls to Retell AI. Retell requires a webhook-based 
+call registration flow for custom telephony.
+
+The correct flow is:
+1. Call comes into Telnyx
+2. Telnyx sends a webhook to our server
+3. Our server registers the call with Retell via POST /v2/register-phone-call
+4. Retell returns a SIP URI to bridge to
+5. Our server tells Telnyx to transfer/bridge the call to that SIP URI
+
+Implement this:
+
+=== Step 1: Create a Telnyx Call Control Application ===
+
+In server/src/routes/voice.ts, update the POST /api/voice/assign-number 
+endpoint. Instead of creating an FQDN connection, create a Telnyx 
+Call Control Application (Programmable Voice):
+
+POST https://api.telnyx.com/v2/call_control_applications
+{
+  "application_name": "solarops-retell",
+  "webhook_url": "https://solarops.com.au/api/voice/telnyx-webhook",
+  "webhook_api_version": "2",
+  "active": true,
+  "inbound": {
+    "channel_limit": 10
+  },
+  "outbound": {
+    "channel_limit": 10
+  }
+}
+
+Then assign the phone number to this application:
+PATCH https://api.telnyx.com/v2/phone_numbers/{number_id}
+{ "connection_id": "<application_id>" }
+
+Delete any old FQDN or IP connections named "solarops".
+
+=== Step 2: Handle Telnyx inbound webhook ===
+
+Add a new route: POST /api/voice/telnyx-webhook
+
+This receives Telnyx call events. When event_type is "call.initiated" 
+with direction "incoming":
+
+1. Answer the call first:
+   POST https://api.telnyx.com/v2/calls/{call_control_id}/actions/answer
+   Headers: Authorization: Bearer TELNYX_API_KEY
+   Body: {}
+
+2. Wait for "call.answered" event, then register with Retell:
+   
+   Look up the called number (event.payload.to) in voice_config 
+   to find the tenant's retell_agent_id.
+
+   POST https://api.retellai.com/v2/register-phone-call
+   {
+     "agent_id": "<retell_agent_id>",
+     "from_number": "<caller_number>",
+     "to_number": "<called_number>",
+     "direction": "inbound"
+   }
+   Headers: Authorization: Bearer RETELL_API_KEY
+
+   This returns { "call_id": "...", "sip_uri": "sip:..." }
+
+3. Bridge/transfer the Telnyx call to Retell's SIP URI:
+   POST https://api.telnyx.com/v2/calls/{call_control_id}/actions/transfer
+   {
+     "to": "<sip_uri_from_retell>"
+   }
+   Headers: Authorization: Bearer TELNYX_API_KEY
+
+4. Return 200 for all webhook events (Telnyx requires fast responses).
+
+=== Step 3: Handle the full event flow ===
+
+Telnyx will send multiple events. Handle these:
+- "call.initiated" → answer the call
+- "call.answered" → register with Retell, then transfer to SIP URI
+- "call.hangup" → log it (optional)
+- All other events → respond 200 and ignore
+
+Use a simple in-memory Map to track call_control_id → state so 
+you know when to register vs transfer.
+
+=== Step 4: Update the assign-number endpoint ===
+
+Replace the FQDN connection creation with Call Control Application 
+creation. Store the application_id in voice_config as 
+telnyx_connection_id. Update telnyx_connection_type to 
+'call_control'.
+
+=== Step 5: Keep existing Retell webhook ===
+
+Do NOT change the existing POST /api/voice/webhook (Retell webhook 
+for call_analyzed events). The new POST /api/voice/telnyx-webhook 
+is separate — it handles the Telnyx side of the call setup.
+
+=== Important ===
+- All Telnyx webhook responses must return 200 within 10 seconds
+- Log every step with [Telnyx Webhook] prefix
+- The Retell register-phone-call response contains the SIP URI — 
+  use it exactly as returned
+- Answer the call BEFORE registering with Retell
+- Do not touch the existing Retell webhook or voice setup logic
