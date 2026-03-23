@@ -14,6 +14,7 @@ const retell = new Retell({ apiKey: process.env.RETELL_API_KEY! });
 const router = Router();
 
 router.post('/api/campaigns/create', async (req: Request, res: Response) => {
+  console.log('[Campaign Create] Request received:', req.body);
   try {
     const { tenant_id, name, campaign_type, script, leads, voice = 'brooke' } = req.body;
     if (!tenant_id || !name || !leads || !Array.isArray(leads)) {
@@ -102,15 +103,25 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
 });
 
 router.get('/api/campaigns/list', async (req: Request, res: Response) => {
-  const { tenant_id } = req.query;
-  if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
-  const { data, error } = await supabase
-    .from('outbound_campaigns')
-    .select('*')
-    .eq('tenant_id', tenant_id as string)
-    .order('created_at', { ascending: false });
-  if (error) { res.status(500).json({ error: error.message }); return; }
-  res.json(data || []);
+  console.log('[Campaign List] Request received:', req.query);
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    const { data, error } = await supabase
+      .from('outbound_campaigns')
+      .select('*')
+      .eq('tenant_id', tenant_id as string)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[Campaign List] Supabase error:', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.json(data || []);
+  } catch (error: any) {
+    console.error('[Campaign List] Error:', error);
+    res.status(500).json({ error: error.message || 'Unknown error' });
+  }
 });
 
 router.get('/api/campaigns/:id', async (req: Request, res: Response) => {
