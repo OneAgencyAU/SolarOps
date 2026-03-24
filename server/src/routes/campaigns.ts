@@ -1076,7 +1076,7 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
 
   // Create or update the LLM response engine
   const llmParams: any = {
-    model: 'claude-4.5-sonnet' as any,
+    model: 'gpt-realtime-mini' as any,
     general_prompt: scriptPrompt,
     begin_message: null, // Agent speaks first based on prompt
     general_tools: generalTools,
