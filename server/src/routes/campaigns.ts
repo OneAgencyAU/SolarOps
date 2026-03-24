@@ -17,17 +17,24 @@ const router = Router();
 // Phone number validation (AU mobile + landline)
 // ──────────────────────────────────────────────────────────────
 function normaliseAUPhone(raw: string): { valid: boolean; e164: string; reason?: string } {
-  const cleaned = raw.replace(/[\s\-()]/g, '');
+  // Strip spaces, dashes, brackets, dots, and any non-digit except leading +
+  const stripped = raw.replace(/[\s\-().]/g, '');
+  const cleaned = stripped.startsWith('+') ? '+' + stripped.slice(1).replace(/\D/g, '') : stripped.replace(/\D/g, '');
 
-  // Already E.164
+  // Already E.164: +614XXXXXXXX (mobile) or +61[2378]XXXXXXXX (landline)
   if (/^\+614\d{8}$/.test(cleaned)) return { valid: true, e164: cleaned };
   if (/^\+61[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: cleaned };
 
-  // Local mobile 04XX
-  if (/^04\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
+  // 10-digit starting with 0: local format (04XX mobile, 02/03/07/08 landline)
+  if (/^0[234578]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
 
-  // Local landline 02/03/07/08
-  if (/^0[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
+  // 9-digit: Excel stripped the leading 0 (e.g. 437834999 → +61437834999)
+  if (/^4\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned}` };
+  if (/^[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned}` };
+
+  // 11-digit starting with 61: missing + prefix (e.g. 61437834999 → +61437834999)
+  if (/^614\d{8}$/.test(cleaned)) return { valid: true, e164: `+${cleaned}` };
+  if (/^61[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+${cleaned}` };
 
   return { valid: false, e164: '', reason: `Invalid AU number: ${raw}` };
 }
@@ -750,6 +757,13 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
     .eq('tenant_id', tenantId)
     .single();
 
+  console.error('[ensureOutboundAgent] voice_config lookup for tenant:', tenantId);
+  console.error('[ensureOutboundAgent] result:', config ? {
+    retell_agent_id_outbound: config.retell_agent_id_outbound || '(null)',
+    business_name: config.business_name || '(null)',
+    telnyx_number: config.telnyx_number || '(null)',
+  } : 'NOT FOUND', 'error:', cfgErr?.message || 'none');
+
   if (cfgErr || !config) {
     return { agentId: '', error: 'Voice config not found for tenant' };
   }
@@ -918,6 +932,8 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
     const businessName = voiceConfig.business_name || 'the team';
 
     // Ensure outbound agent exists
+    console.error('[Campaign Launch] tenant_id:', tenant_id, 'callerNumber:', callerNumber);
+
     const { agentId, error: agentErr } = await ensureOutboundAgent(
       tenant_id,
       campaign.script_prompt,
@@ -925,15 +941,16 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
       campaign.transfer_number,
     );
 
+    console.error('[Campaign Launch] ensureOutboundAgent result — agentId:', agentId, 'error:', agentErr || 'none');
+
     if (!agentId) {
       res.status(500).json({ error: `Failed to create outbound agent: ${agentErr}` });
       return;
     }
 
-    // Build batch call tasks
+    // Build batch call tasks — use retell_llm_dynamic_variables per task for personalisation
     const tasks = contacts.map((c: any) => ({
       to_number: c.phone_number,
-      override_agent_id: agentId,
       retell_llm_dynamic_variables: {
         customer_name: c.customer_name || 'there',
         business_name: businessName,
@@ -970,14 +987,16 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
       }
     }
 
-    // Launch via Retell SDK
+    // Launch via Retell SDK — agent_id at top level, not per-task override
+    console.error('[Campaign Launch] Creating batch call with agentId:', agentId, 'from:', callerNumber, 'tasks:', tasks.length);
     const batchResult = await retell.batchCall.createBatchCall({
       from_number: callerNumber,
+      agent_id: agentId,
       name: campaign.name,
       tasks,
       ...(callTimeWindow ? { call_time_window: callTimeWindow } : {}),
       ...(campaign.scheduled_at ? { trigger_timestamp: new Date(campaign.scheduled_at).getTime() } : {}),
-    });
+    } as any);
 
     // Update campaign status
     await supabase
