@@ -112,6 +112,18 @@ export default function CampaignDetailPage() {
   const [filterOutcome, setFilterOutcome] = useState('all');
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Delete state
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Retry state
+  const [retryingAll, setRetryingAll] = useState(false);
+  const [retryingContact, setRetryingContact] = useState<string | null>(null);
+  const [retryingSelected, setRetryingSelected] = useState(false);
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const fetchCampaign = useCallback(async () => {
     if (!tenantId || !id) return;
     try {
@@ -218,6 +230,92 @@ export default function CampaignDetailPage() {
     } catch { /* ignore */ }
   };
 
+  // Delete campaign
+  const handleDelete = async () => {
+    if (!tenantId || !id) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/campaigns/${id}?tenant_id=${tenantId}`, { method: 'DELETE' });
+      if (res.ok) {
+        navigate('/outbound');
+      }
+    } catch { /* ignore */ }
+    finally { setDeleting(false); setConfirmDelete(false); }
+  };
+
+  // Retry All — reset all contacts and re-launch
+  const handleRetryAll = async () => {
+    if (!tenantId || !id) return;
+    setRetryingAll(true);
+    try {
+      const res = await fetch(`/api/campaigns/${id}/contacts/retry-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenantId }),
+      });
+      if (res.ok) {
+        fetchCampaign();
+        fetchContacts();
+      }
+    } catch { /* ignore */ }
+    finally { setRetryingAll(false); }
+  };
+
+  // Retry single contact
+  const handleRetryContact = async (contactId: string) => {
+    if (!tenantId || !id) return;
+    setRetryingContact(contactId);
+    try {
+      const res = await fetch(`/api/campaigns/${id}/contacts/retry-selected`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenantId, contact_ids: [contactId] }),
+      });
+      if (res.ok) {
+        fetchCampaign();
+        fetchContacts();
+      }
+    } catch { /* ignore */ }
+    finally { setRetryingContact(null); }
+  };
+
+  // Retry selected contacts
+  const handleRetrySelected = async () => {
+    if (!tenantId || !id || selectedIds.size === 0) return;
+    setRetryingSelected(true);
+    try {
+      const res = await fetch(`/api/campaigns/${id}/contacts/retry-selected`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenantId, contact_ids: Array.from(selectedIds) }),
+      });
+      if (res.ok) {
+        setSelectedIds(new Set());
+        fetchCampaign();
+        fetchContacts();
+      }
+    } catch { /* ignore */ }
+    finally { setRetryingSelected(false); }
+  };
+
+  // Multi-select helpers
+  const toggleSelect = (contactId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(contactId)) next.delete(contactId);
+      else next.add(contactId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredContacts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredContacts.map(c => c.id)));
+    }
+  };
+
   const filteredContacts = filterOutcome === 'all'
     ? contacts
     : contacts.filter(c => c.outcome === filterOutcome || c.status === filterOutcome);
@@ -245,6 +343,7 @@ export default function CampaignDetailPage() {
   const progress = campaign.total_contacts > 0
     ? Math.round((campaign.calls_made / campaign.total_contacts) * 100)
     : 0;
+  const canRetryAll = campaign.status !== 'active' && campaign.status !== 'draft';
 
   return (
     <div className="cd-page">
@@ -259,6 +358,23 @@ export default function CampaignDetailPage() {
           {campaign.status === 'active' && (
             <span className="cd-polling-dot" title="Auto-refreshing every 10s" />
           )}
+        </div>
+        <div className="cd-header-actions">
+          {canRetryAll && (
+            <button
+              className="cd-btn-sm primary"
+              disabled={retryingAll}
+              onClick={handleRetryAll}
+            >
+              {retryingAll ? 'Retrying...' : 'Retry All'}
+            </button>
+          )}
+          <button
+            className="cd-btn-sm danger"
+            onClick={() => setConfirmDelete(true)}
+          >
+            Delete
+          </button>
         </div>
       </div>
 
@@ -318,15 +434,41 @@ export default function CampaignDetailPage() {
         })}
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="cd-bulk-bar">
+          <span className="cd-bulk-count">{selectedIds.size} selected</span>
+          <button
+            className="cd-btn-sm primary"
+            disabled={retryingSelected}
+            onClick={handleRetrySelected}
+          >
+            {retryingSelected ? 'Retrying...' : `Retry Selected (${selectedIds.size})`}
+          </button>
+          <button className="cd-btn-sm" onClick={() => setSelectedIds(new Set())}>
+            Clear Selection
+          </button>
+        </div>
+      )}
+
       {/* Contacts table */}
       <div className="cd-card">
         <div className="cd-table-header">
+          <span className="cd-col-check">
+            <input
+              type="checkbox"
+              className="cd-checkbox"
+              checked={filteredContacts.length > 0 && selectedIds.size === filteredContacts.length}
+              onChange={toggleSelectAll}
+            />
+          </span>
           <span>Name</span>
           <span>Phone</span>
           <span>Status</span>
           <span>Outcome</span>
           <span>Duration</span>
           <span>Sentiment</span>
+          <span className="cd-col-action">Retry</span>
         </div>
         {filteredContacts.length === 0 ? (
           <div className="cd-table-empty">No contacts match the current filter.</div>
@@ -334,16 +476,26 @@ export default function CampaignDetailPage() {
           filteredContacts.map(c => {
             const oc = OUTCOME_CONFIG[c.outcome || ''] || OUTCOME_CONFIG[c.status] || null;
             const sc = SENTIMENT_CONFIG[c.sentiment || ''] || null;
+            const isRetrying = retryingContact === c.id;
+            const canRetry = !c.excluded && c.status !== 'calling' && c.status !== 'pending';
             return (
               <div
                 key={c.id}
-                className={`cd-table-row ${selectedContact?.id === c.id ? 'selected' : ''}`}
+                className={`cd-table-row ${selectedContact?.id === c.id ? 'selected' : ''} ${selectedIds.has(c.id) ? 'checked' : ''}`}
                 onClick={() => {
                   setSelectedContact(c);
                   setShowTranscript(false);
                   setNoteText(c.notes || '');
                 }}
               >
+                <span className="cd-col-check" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className="cd-checkbox"
+                    checked={selectedIds.has(c.id)}
+                    onChange={() => toggleSelect(c.id)}
+                  />
+                </span>
                 <span className="cd-cell-name">{c.customer_name || '—'}</span>
                 <span className="cd-cell-phone">{c.phone_number}</span>
                 <span>
@@ -369,6 +521,18 @@ export default function CampaignDetailPage() {
                     </span>
                   ) : '—'}
                 </span>
+                <span className="cd-col-action" onClick={e => e.stopPropagation()}>
+                  {canRetry && (
+                    <button
+                      className="cd-retry-btn"
+                      disabled={isRetrying}
+                      onClick={() => handleRetryContact(c.id)}
+                      title="Retry this contact"
+                    >
+                      {isRetrying ? '...' : 'Retry'}
+                    </button>
+                  )}
+                </span>
               </div>
             );
           })
@@ -377,6 +541,30 @@ export default function CampaignDetailPage() {
           <div className="cd-table-more">Showing {contacts.length} of {totalContacts} contacts</div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <>
+          <div className="cd-overlay" onClick={() => !deleting && setConfirmDelete(false)} />
+          <div className="cd-delete-modal">
+            <h3 className="cd-delete-modal-title">Delete Campaign</h3>
+            <p className="cd-delete-modal-text">
+              Are you sure you want to delete <strong>{campaign.name}</strong>? This cannot be undone.
+            </p>
+            {campaign.status === 'active' && (
+              <p className="cd-delete-modal-warning">
+                This campaign is currently active. Deleting it will stop all pending calls.
+              </p>
+            )}
+            <div className="cd-delete-modal-actions">
+              <button className="cd-btn-sm" disabled={deleting} onClick={() => setConfirmDelete(false)}>Cancel</button>
+              <button className="cd-btn-sm danger" disabled={deleting} onClick={handleDelete}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Call Detail Drawer */}
       {selectedContact && (
@@ -534,6 +722,15 @@ export default function CampaignDetailPage() {
 
               {/* Action buttons */}
               <div className="cd-drawer-actions">
+                {!selectedContact.excluded && selectedContact.status !== 'calling' && selectedContact.status !== 'pending' && (
+                  <button
+                    className="cd-btn-sm primary"
+                    disabled={retryingContact === selectedContact.id}
+                    onClick={() => handleRetryContact(selectedContact.id)}
+                  >
+                    {retryingContact === selectedContact.id ? 'Retrying...' : 'Retry Call'}
+                  </button>
+                )}
                 {!selectedContact.followed_up && (
                   <button className="cd-btn-sm primary" onClick={handleMarkFollowedUp}>
                     Mark Followed Up

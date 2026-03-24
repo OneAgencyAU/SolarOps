@@ -150,15 +150,13 @@ export default function OutboundCampaignsPage() {
                     <span className="oc-status-pill" style={{ color: status.color, background: status.bg }}>
                       {status.label}
                     </span>
-                    {isDraft && (
-                      <button
-                        className="oc-delete-btn"
-                        title="Delete draft"
-                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
-                      >
-                        {'\u{1F5D1}'}
-                      </button>
-                    )}
+                    <button
+                      className="oc-delete-btn"
+                      title="Delete campaign"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
+                    >
+                      {'\u{1F5D1}'}
+                    </button>
                   </div>
                 </div>
                 <div className="oc-campaign-meta">
@@ -186,6 +184,11 @@ export default function OutboundCampaignsPage() {
             <p className="oc-delete-modal-text">
               Are you sure you want to delete <strong>{confirmDelete.name}</strong>? This cannot be undone.
             </p>
+            {confirmDelete.status === 'active' && (
+              <p className="oc-delete-modal-text" style={{ color: '#FF9500', fontWeight: 500, marginTop: 8 }}>
+                This campaign is currently active. Deleting it will stop all pending calls.
+              </p>
+            )}
             <div className="oc-delete-modal-actions">
               <button className="oc-btn" disabled={deleting} onClick={() => setConfirmDelete(null)}>Cancel</button>
               <button className="oc-btn danger" disabled={deleting} onClick={handleDeleteCampaign}>

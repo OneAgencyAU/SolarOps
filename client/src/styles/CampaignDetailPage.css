@@ -177,7 +177,7 @@
 /* ── Table ── */
 .cd-table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1.2fr 0.9fr 1.1fr 0.7fr 0.8fr;
+  grid-template-columns: 36px 1.5fr 1.2fr 0.9fr 1.1fr 0.7fr 0.8fr 60px;
   padding: 12px 20px;
   background: #f9f9fb;
   font-size: 0.72rem;
@@ -190,7 +190,7 @@
 
 .cd-table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1.2fr 0.9fr 1.1fr 0.7fr 0.8fr;
+  grid-template-columns: 36px 1.5fr 1.2fr 0.9fr 1.1fr 0.7fr 0.8fr 60px;
   padding: 12px 20px;
   font-size: 0.85rem;
   color: #1d1d1f;
@@ -206,6 +206,10 @@
 
 .cd-table-row.selected {
   background: rgba(79,142,247,0.06);
+}
+
+.cd-table-row.checked {
+  background: rgba(79,142,247,0.04);
 }
 
 .cd-table-row:last-child {
@@ -587,6 +591,122 @@
   cursor: not-allowed;
 }
 
+/* ── Header actions ── */
+.cd-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Checkbox column ── */
+.cd-col-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cd-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4F8EF7;
+}
+
+/* ── Action column ── */
+.cd-col-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cd-retry-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: rgba(79,142,247,0.08);
+  color: #4F8EF7;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.cd-retry-btn:hover:not(:disabled) {
+  background: rgba(79,142,247,0.18);
+}
+
+.cd-retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Bulk action bar ── */
+.cd-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  padding: 10px 20px;
+}
+
+.cd-bulk-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+/* ── Delete confirmation modal ── */
+.cd-delete-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  padding: 28px 32px;
+  z-index: 100;
+  max-width: 400px;
+  width: 90vw;
+}
+
+.cd-delete-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 10px;
+}
+
+.cd-delete-modal-text {
+  font-size: 0.88rem;
+  color: #6e6e73;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.cd-delete-modal-warning {
+  font-size: 0.85rem;
+  color: #FF9500;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  background: rgba(255,149,0,0.06);
+  border: 1px solid rgba(255,149,0,0.12);
+  border-radius: 10px;
+}
+
+.cd-delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .cd-stats-row {
@@ -594,12 +714,13 @@
   }
   .cd-table-header,
   .cd-table-row {
-    grid-template-columns: 1.5fr 1.2fr 1fr 1fr;
+    grid-template-columns: 36px 1.5fr 1.2fr 1fr 1fr 60px;
   }
-  .cd-table-header span:nth-child(5),
+  /* Hide Duration + Sentiment columns */
   .cd-table-header span:nth-child(6),
-  .cd-table-row span:nth-child(5),
-  .cd-table-row span:nth-child(6) {
+  .cd-table-header span:nth-child(7),
+  .cd-table-row span:nth-child(6),
+  .cd-table-row span:nth-child(7) {
     display: none;
   }
 }
@@ -616,14 +737,15 @@
   }
   .cd-table-header,
   .cd-table-row {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 36px 1fr 1fr 1fr 60px;
   }
-  .cd-table-header span:nth-child(4),
+  /* Hide Outcome, Duration, Sentiment columns */
   .cd-table-header span:nth-child(5),
   .cd-table-header span:nth-child(6),
-  .cd-table-row span:nth-child(4),
+  .cd-table-header span:nth-child(7),
   .cd-table-row span:nth-child(5),
-  .cd-table-row span:nth-child(6) {
+  .cd-table-row span:nth-child(6),
+  .cd-table-row span:nth-child(7) {
     display: none;
   }
 }
