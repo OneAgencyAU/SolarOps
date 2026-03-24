@@ -812,10 +812,23 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
         await retell.llm.update(llmId, llmParams);
       }
 
-      // Update agent voice if changed
+      // Update agent voice, language, post-call analysis, and guardrails
       await retell.agent.update(config.retell_agent_id_outbound, {
         voice_id: voiceId,
         agent_name: `${businessName} - Outbound`,
+        language: 'en-AU',
+        post_call_analysis_data: [
+          { type: 'boolean' as const, name: 'spoke_with_target', description: 'Did we reach and speak with the intended person?' },
+          { type: 'enum' as const, name: 'customer_interest', description: 'Customer interest level', choices: ['interested', 'not_interested', 'already_has_battery', 'wants_more_info', 'do_not_call'] },
+          { type: 'enum' as const, name: 'outcome', description: 'Call outcome', choices: ['callback_booked', 'transferred_live', 'not_interested', 'voicemail_left', 'no_answer', 'wrong_number', 'do_not_call'] },
+          { type: 'string' as const, name: 'callback_preference', description: 'When the customer wants a callback (e.g. "Tomorrow afternoon", "Wednesday morning")' },
+          { type: 'string' as const, name: 'questions_asked', description: 'Questions the customer asked during the call' },
+          { type: 'string' as const, name: 'call_summary', description: '1-2 sentence summary of the call' },
+          { type: 'enum' as const, name: 'sentiment', description: 'Customer sentiment', choices: ['positive', 'neutral', 'negative'] },
+        ],
+        guardrail_config: {
+          output_topics: ['regulated_professional_advice'],
+        },
       });
 
       // Bind outbound agent to the Telnyx phone number in Retell
