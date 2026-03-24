@@ -59,7 +59,8 @@ export default function OutboundCampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
   const [editingDraft, setEditingDraft] = useState<Campaign | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchCampaigns = useCallback(async () => {
     if (!tenantId) return;
@@ -73,15 +74,14 @@ export default function OutboundCampaignsPage() {
 
   useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
 
-  const handleDeleteCampaign = async (e: React.MouseEvent, campaignId: string) => {
-    e.stopPropagation();
-    if (!confirm('Delete this draft campaign?')) return;
-    setDeleting(campaignId);
+  const handleDeleteCampaign = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}?tenant_id=${tenantId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/campaigns/${confirmDelete.id}?tenant_id=${tenantId}`, { method: 'DELETE' });
       if (res.ok) fetchCampaigns();
     } catch { /* ignore */ }
-    finally { setDeleting(null); }
+    finally { setDeleting(false); setConfirmDelete(null); }
   };
 
   const handleOpenDraft = (campaign: Campaign) => {
@@ -154,10 +154,9 @@ export default function OutboundCampaignsPage() {
                       <button
                         className="oc-delete-btn"
                         title="Delete draft"
-                        disabled={deleting === c.id}
-                        onClick={(e) => handleDeleteCampaign(e, c.id)}
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
                       >
-                        {deleting === c.id ? '...' : '\u{1F5D1}'}
+                        {'\u{1F5D1}'}
                       </button>
                     )}
                   </div>
@@ -177,6 +176,23 @@ export default function OutboundCampaignsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="oc-wizard-overlay" onClick={() => !deleting && setConfirmDelete(null)}>
+          <div className="oc-delete-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="oc-delete-modal-title">Delete Campaign</h3>
+            <p className="oc-delete-modal-text">
+              Are you sure you want to delete <strong>{confirmDelete.name}</strong>? This cannot be undone.
+            </p>
+            <div className="oc-delete-modal-actions">
+              <button className="oc-btn" disabled={deleting} onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="oc-btn danger" disabled={deleting} onClick={handleDeleteCampaign}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

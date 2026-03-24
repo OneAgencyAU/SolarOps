@@ -257,6 +257,51 @@
   cursor: not-allowed;
 }
 
+.oc-delete-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px 28px 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20);
+}
+
+.oc-delete-modal-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.oc-delete-modal-text {
+  margin: 0 0 20px;
+  font-size: 0.88rem;
+  color: #6e6e73;
+  line-height: 1.5;
+}
+
+.oc-delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.oc-btn.danger {
+  background: #FF453A;
+  color: #ffffff;
+  border-color: #FF453A;
+}
+
+.oc-btn.danger:hover {
+  background: #e03e34;
+  border-color: #e03e34;
+}
+
+.oc-btn.danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .oc-campaign-preview {
   font-size: 0.82rem;
   color: #6e6e73;
