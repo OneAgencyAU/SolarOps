@@ -10,6 +10,7 @@ import VoiceSetupPage from './pages/VoiceSetupPage';
 import VoiceOverviewPage from './pages/VoiceOverviewPage';
 import InboundPage from './pages/InboundPage';
 import OutboundCampaignsPage from './pages/OutboundCampaignsPage';
+import CampaignDetailPage from './pages/CampaignDetailPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
 import ConnectionsPage from './pages/ConnectionsPage';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/voice-agent/setup" element={<VoiceSetupPage />} />
             <Route path="/voice-agent/inbound" element={<InboundPage />} />
             <Route path="/outbound" element={<OutboundCampaignsPage />} />
+            <Route path="/outbound/:id" element={<CampaignDetailPage />} />
             <Route path="/inbox-assistant" element={<InboxAssistantPage />} />
             <Route path="/bill-reader" element={<BillReaderPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />

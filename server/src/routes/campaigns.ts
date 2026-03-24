@@ -653,6 +653,92 @@ router.post('/api/campaigns/:id/contacts/retry', async (req: Request, res: Respo
 });
 
 // ──────────────────────────────────────────────────────────────
+// Contact Actions: Follow-up, Note, Exclude
+// ──────────────────────────────────────────────────────────────
+
+// Mark contact as followed up
+router.post('/api/campaigns/:id/contacts/:contactId/follow-up', async (req: Request, res: Response) => {
+  try {
+    const { id, contactId } = req.params;
+    const { tenant_id } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+
+    const { error } = await supabase
+      .from('outbound_contacts')
+      .update({ followed_up: true })
+      .eq('id', contactId)
+      .eq('campaign_id', id)
+      .eq('tenant_id', tenant_id);
+
+    if (error) {
+      console.error('[Contact Follow-up]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Contact Follow-up]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add note to contact
+router.post('/api/campaigns/:id/contacts/:contactId/note', async (req: Request, res: Response) => {
+  try {
+    const { id, contactId } = req.params;
+    const { tenant_id, note } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    if (!note || !note.trim()) { res.status(400).json({ error: 'note is required' }); return; }
+
+    const { error } = await supabase
+      .from('outbound_contacts')
+      .update({ notes: note.trim() })
+      .eq('id', contactId)
+      .eq('campaign_id', id)
+      .eq('tenant_id', tenant_id);
+
+    if (error) {
+      console.error('[Contact Note]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Contact Note]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Exclude contact from future campaigns
+router.post('/api/campaigns/:id/contacts/:contactId/exclude', async (req: Request, res: Response) => {
+  try {
+    const { id, contactId } = req.params;
+    const { tenant_id } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+
+    const { error } = await supabase
+      .from('outbound_contacts')
+      .update({ excluded: true })
+      .eq('id', contactId)
+      .eq('campaign_id', id)
+      .eq('tenant_id', tenant_id);
+
+    if (error) {
+      console.error('[Contact Exclude]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[Contact Exclude]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
 // Campaign Actions: Launch, Pause, Resume, Cancel
 // ──────────────────────────────────────────────────────────────
 
