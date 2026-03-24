@@ -966,84 +966,129 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
       return;
     }
 
-    // Build batch call tasks — use retell_llm_dynamic_variables per task for personalisation
-    const tasks = contacts.map((c: any) => ({
-      to_number: c.phone_number,
-      retell_llm_dynamic_variables: {
-        customer_name: c.customer_name || 'there',
-        business_name: businessName,
-        agent_name: 'the team',
-        transfer_number: campaign.transfer_number || '',
-        agent_number: callerNumber,
-        ...(c.custom_data || {}),
-      },
-      metadata: {
-        campaign_id: id,
-        contact_id: c.id,
-        tenant_id,
-      },
-    }));
+    // ── Individual outbound calls via createPhoneCall ──────────
+    // Using individual calls instead of batch because the imported
+    // SIP/Telnyx number doesn't bind to agents via phoneNumber.update().
+    // 2-second delay between calls to respect Telnyx CPS limits.
+    console.error('[Campaign Launch] Starting individual calls — agentId:', agentId, 'from:', callerNumber, 'contacts:', contacts.length);
 
-    // Build call time window if configured
-    let callTimeWindow: any = undefined;
-    if (campaign.call_window_start && campaign.call_window_end) {
-      const startMin = timeToMinutes(campaign.call_window_start);
-      const endMin = timeToMinutes(campaign.call_window_end);
-
-      if (startMin < endMin) {
-        const dayMap: Record<string, string> = {
-          mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday',
-          thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
-        };
-        const days = campaign.call_window_days?.map((d: string) => dayMap[d]).filter(Boolean);
-
-        callTimeWindow = {
-          timezone: 'Australia/Sydney',
-          windows: [{ start: startMin, end: endMin }],
-          ...(days && days.length > 0 ? { day: days } : {}),
-        };
-      }
-    }
-
-    // Launch via Retell SDK — agent_id at top level, not per-task override
-    console.error('[Campaign Launch] Creating batch call with agentId:', agentId, 'from:', callerNumber, 'tasks:', tasks.length);
-    const batchResult = await retell.batchCall.createBatchCall({
-      from_number: callerNumber,
-      agent_id: agentId,
-      name: campaign.name,
-      tasks,
-      ...(callTimeWindow ? { call_time_window: callTimeWindow } : {}),
-      ...(campaign.scheduled_at ? { trigger_timestamp: new Date(campaign.scheduled_at).getTime() } : {}),
-    } as any);
-
-    // Update campaign status
+    // Mark campaign as active immediately so the UI reflects status
     await supabase
       .from('outbound_campaigns')
       .update({
         status: 'active',
-        retell_batch_call_id: batchResult.batch_call_id,
         caller_id: callerNumber,
         started_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', id);
 
-    // Mark contacts as calling
-    await supabase
-      .from('outbound_contacts')
-      .update({ status: 'calling' })
-      .eq('campaign_id', id)
-      .eq('status', 'pending');
-
+    // Respond immediately — calls will be placed asynchronously
     res.json({
       success: true,
-      batch_call_id: batchResult.batch_call_id,
-      total_tasks: batchResult.total_task_count,
       contacts_queued: contacts.length,
     });
+
+    // Fire off calls in background (after response is sent)
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    let callsPlaced = 0;
+
+    for (const contact of contacts) {
+      try {
+        await (retell.call as any).createPhoneCall({
+          from_number: callerNumber,
+          to_number: contact.phone_number,
+          agent_id: agentId,
+          retell_llm_dynamic_variables: {
+            customer_name: contact.customer_name || 'there',
+            business_name: businessName,
+            agent_name: 'the team',
+            transfer_number: campaign.transfer_number || '',
+            agent_number: callerNumber,
+            ...(contact.custom_data || {}),
+          },
+          metadata: {
+            campaign_id: id,
+            contact_id: contact.id,
+            tenant_id,
+          },
+        });
+
+        // Mark contact as calling
+        await supabase
+          .from('outbound_contacts')
+          .update({ status: 'calling' })
+          .eq('id', contact.id);
+
+        callsPlaced++;
+        console.error(`[Campaign Launch] Call placed ${callsPlaced}/${contacts.length} — contact: ${contact.id}`);
+      } catch (callErr: any) {
+        console.error(`[Campaign Launch] Failed to call contact ${contact.id}:`, callErr.message);
+        await supabase
+          .from('outbound_contacts')
+          .update({ status: 'failed' })
+          .eq('id', contact.id);
+      }
+
+      // 2-second delay between calls to respect Telnyx CPS limits
+      if (contact !== contacts[contacts.length - 1]) {
+        await delay(2000);
+      }
+    }
+
+    // Update calls_made count after all calls are placed
+    await supabase
+      .from('outbound_campaigns')
+      .update({
+        calls_made: callsPlaced,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    console.error(`[Campaign Launch] Complete — ${callsPlaced}/${contacts.length} calls placed for campaign ${id}`);
+
+    // ── Batch call code (kept for reference) ────────────────
+    // const tasks = contacts.map((c: any) => ({
+    //   to_number: c.phone_number,
+    //   retell_llm_dynamic_variables: {
+    //     customer_name: c.customer_name || 'there',
+    //     business_name: businessName,
+    //     agent_name: 'the team',
+    //     transfer_number: campaign.transfer_number || '',
+    //     agent_number: callerNumber,
+    //     ...(c.custom_data || {}),
+    //   },
+    //   metadata: { campaign_id: id, contact_id: c.id, tenant_id },
+    // }));
+    //
+    // let callTimeWindow: any = undefined;
+    // if (campaign.call_window_start && campaign.call_window_end) {
+    //   const startMin = timeToMinutes(campaign.call_window_start);
+    //   const endMin = timeToMinutes(campaign.call_window_end);
+    //   if (startMin < endMin) {
+    //     const dayMap: Record<string, string> = {
+    //       mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday',
+    //       thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+    //     };
+    //     const days = campaign.call_window_days?.map((d: string) => dayMap[d]).filter(Boolean);
+    //     callTimeWindow = {
+    //       timezone: 'Australia/Sydney',
+    //       windows: [{ start: startMin, end: endMin }],
+    //       ...(days && days.length > 0 ? { day: days } : {}),
+    //     };
+    //   }
+    // }
+    //
+    // const batchResult = await retell.batchCall.createBatchCall({
+    //   from_number: callerNumber, agent_id: agentId, name: campaign.name, tasks,
+    //   ...(callTimeWindow ? { call_time_window: callTimeWindow } : {}),
+    //   ...(campaign.scheduled_at ? { trigger_timestamp: new Date(campaign.scheduled_at).getTime() } : {}),
+    // } as any);
   } catch (err: any) {
     console.error('[Campaign Launch]', err);
-    res.status(500).json({ error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
