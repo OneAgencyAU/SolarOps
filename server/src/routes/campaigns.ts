@@ -176,7 +176,7 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
         status: 'draft',
         script_template: script_template || null,
         script_prompt: script_prompt || null,
-        voice_id: voice_id || '11labs-Adrian',
+        voice_id: voice_id || 'openai-Cimo',
         caller_id: caller_id || null,
         call_window_start: call_window_start || null,
         call_window_end: call_window_end || null,
@@ -717,7 +717,7 @@ router.post('/api/campaigns/:id/contacts/retry-all', async (req: Request, res: R
     const { agentId, error: agentErr } = await ensureOutboundAgent(
       tenant_id,
       campaign.script_prompt,
-      campaign.voice_id || '11labs-Adrian',
+      campaign.voice_id || 'openai-Cimo',
       campaign.transfer_number,
     );
 
@@ -849,7 +849,7 @@ router.post('/api/campaigns/:id/contacts/retry-selected', async (req: Request, r
     const { agentId, error: agentErr } = await ensureOutboundAgent(
       tenant_id,
       campaign.script_prompt,
-      campaign.voice_id || '11labs-Adrian',
+      campaign.voice_id || 'openai-Cimo',
       campaign.transfer_number,
     );
 
@@ -1265,7 +1265,7 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
     const { agentId, error: agentErr } = await ensureOutboundAgent(
       tenant_id,
       campaign.script_prompt,
-      campaign.voice_id || '11labs-Adrian',
+      campaign.voice_id || 'openai-Cimo',
       campaign.transfer_number,
     );
 
