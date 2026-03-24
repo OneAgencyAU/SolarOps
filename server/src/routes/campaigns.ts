@@ -1074,9 +1074,8 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
     });
   }
 
-  // Create or update the LLM response engine
-  const llmParams: any = {
-    model: 'gpt-realtime-mini' as any,
+  // Shared LLM fields (prompt, tools, variables) — used by both create and update
+  const llmPromptFields: any = {
     general_prompt: scriptPrompt,
     begin_message: null, // Agent speaks first based on prompt
     general_tools: generalTools,
@@ -1089,20 +1088,26 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
     },
   };
 
+  // Full params for creating a new LLM (includes model)
+  const llmCreateParams: any = {
+    model: 'gpt-5.4-nano' as any,
+    ...llmPromptFields,
+  };
+
   if (config.retell_agent_id_outbound) {
-    // Update existing agent — always update LLM prompt + voice on every launch
+    // Update existing agent — update prompt + voice on every launch, preserve model
     try {
       const agent = await retell.agent.retrieve(config.retell_agent_id_outbound);
       let llmId = (agent.response_engine as any)?.llm_id;
 
       if (llmId) {
-        // Update existing LLM with the campaign's script_prompt
-        await retell.llm.update(llmId, llmParams);
+        // Update existing LLM with only prompt fields — preserves model set in dashboard
+        await retell.llm.update(llmId, llmPromptFields);
         console.error('[Outbound Agent] Updated existing LLM:', llmId);
       } else {
         // LLM ID not found on agent — create a new LLM
         console.error('[Outbound Agent] No llm_id on existing agent, creating new LLM');
-        const newLlm = await retell.llm.create(llmParams);
+        const newLlm = await retell.llm.create(llmCreateParams);
         llmId = newLlm.llm_id;
         console.error('[Outbound Agent] Created new LLM:', llmId);
       }
@@ -1145,7 +1150,7 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
 
   // Create new LLM + agent
   try {
-    const llm = await retell.llm.create(llmParams);
+    const llm = await retell.llm.create(llmCreateParams);
 
     const agent = await retell.agent.create({
       voice_id: voiceId,
