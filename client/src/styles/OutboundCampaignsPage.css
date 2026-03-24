@@ -29,20 +29,7 @@
   margin: 4px 0 0;
 }
 
-/* ── Columns ── */
-.oc-columns {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 20px;
-  align-items: start;
-}
-
-.oc-left,
-.oc-right {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* ── Stats row (updated to 4 columns) ── */
 
 /* ── Cards ── */
 .oc-card {
@@ -164,7 +151,7 @@
 /* ── Stats row ── */
 .oc-stats-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
@@ -425,13 +412,313 @@
   color: #34C759;
 }
 
+/* ── Progress bar (campaign cards) ── */
+.oc-progress-bar {
+  margin-top: 10px;
+  height: 4px;
+  background: #f0f0f2;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.oc-progress-fill {
+  height: 100%;
+  background: #4F8EF7;
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+
+/* ── Wizard overlay ── */
+.oc-wizard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.oc-wizard {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.oc-wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.oc-wizard-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.oc-wizard-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #aeaeb2;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.oc-wizard-close:hover {
+  color: #1d1d1f;
+}
+
+/* ── Wizard steps indicator ── */
+.oc-wizard-steps {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px;
+}
+
+.oc-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #aeaeb2;
+  font-weight: 500;
+  flex: 1;
+}
+
+.oc-wizard-step.active {
+  color: #4F8EF7;
+  font-weight: 600;
+}
+
+.oc-wizard-step.done {
+  color: #34C759;
+}
+
+.oc-wizard-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f5f5f7;
+  color: #aeaeb2;
+  flex-shrink: 0;
+}
+
+.oc-wizard-step.active .oc-wizard-step-num {
+  background: #4F8EF7;
+  color: #fff;
+}
+
+.oc-wizard-step.done .oc-wizard-step-num {
+  background: #34C759;
+  color: #fff;
+}
+
+/* ── Wizard body ── */
+.oc-wizard-body {
+  padding: 0 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.oc-wizard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oc-wizard-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.oc-wizard-actions .oc-btn {
+  width: auto;
+  padding: 10px 20px;
+  margin-top: 0;
+}
+
+.oc-wizard-actions .oc-btn:not(.primary) {
+  background: #f5f5f7;
+  color: #6e6e73;
+}
+
+.oc-wizard-actions .oc-btn:not(.primary):hover {
+  background: #e5e5e7;
+}
+
+/* ── Dropzone ── */
+.oc-dropzone {
+  border: 2px dashed #d1d1d6;
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  color: #6e6e73;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.oc-dropzone:hover,
+.oc-dropzone.dragover {
+  border-color: #4F8EF7;
+  background: rgba(79, 142, 247, 0.04);
+}
+
+/* ── Upload summary ── */
+.oc-upload-summary {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+}
+
+/* ── Preview table ── */
+.oc-preview-table {
+  margin-top: 10px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+
+.oc-preview-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 8px 14px;
+  background: #f5f5f7;
+  font-weight: 600;
+  color: #6e6e73;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.oc-preview-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 8px 14px;
+  border-top: 1px solid #f0f0f2;
+  color: #1d1d1f;
+}
+
+.oc-preview-more {
+  padding: 8px 14px;
+  text-align: center;
+  color: #aeaeb2;
+  font-size: 0.78rem;
+  border-top: 1px solid #f0f0f2;
+}
+
+/* ── Invalid rows ── */
+.oc-invalid-list {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #FF453A;
+}
+
+.oc-invalid-row {
+  padding: 4px 0;
+}
+
+/* ── Days picker ── */
+.oc-days-picker {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.oc-day-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e7;
+  background: #f5f5f7;
+  color: #6e6e73;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.oc-day-btn.active {
+  background: #4F8EF7;
+  color: #fff;
+  border-color: #4F8EF7;
+}
+
+.oc-day-btn:hover:not(.active) {
+  background: #e5e5e7;
+}
+
+/* ── Review card ── */
+.oc-review-card {
+  background: #f9f9fb;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #e5e5e7;
+}
+
+.oc-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.oc-review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.oc-review-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #aeaeb2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.oc-review-value {
+  font-size: 0.88rem;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+.oc-review-script {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: #3a3a3c;
+  line-height: 1.6;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .oc-columns {
-    grid-template-columns: 1fr;
-  }
   .oc-stats-row {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -441,5 +728,8 @@
   }
   .oc-stats-row {
     grid-template-columns: 1fr;
+  }
+  .oc-wizard {
+    max-width: 100%;
   }
 }
