@@ -518,6 +518,8 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
                   <label className="oc-label">Voice</label>
                   <select className="oc-select" value={voiceId} onChange={e => setVoiceId(e.target.value)}>
                     <option value="11labs-Adrian">Adrian (Male, AU)</option>
+                    <option value="11labs-Charlotte">Charlotte (Female, AU)</option>
+                    <option value="11labs-Matilda">Matilda (Female, AU)</option>
                     <option value="11labs-Aria">Aria (Female)</option>
                   </select>
                 </div>
@@ -594,7 +596,12 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
                   </div>
                   <div className="oc-review-item">
                     <span className="oc-review-label">Voice</span>
-                    <span className="oc-review-value">{voiceId === '11labs-Adrian' ? 'Adrian (Male)' : 'Aria (Female)'}</span>
+                    <span className="oc-review-value">{
+                      voiceId === '11labs-Adrian' ? 'Adrian (Male, AU)' :
+                      voiceId === '11labs-Charlotte' ? 'Charlotte (Female, AU)' :
+                      voiceId === '11labs-Matilda' ? 'Matilda (Female, AU)' :
+                      'Aria (Female)'
+                    }</span>
                   </div>
                   <div className="oc-review-item">
                     <span className="oc-review-label">Call window</span>
