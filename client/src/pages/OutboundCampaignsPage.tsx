@@ -7,9 +7,9 @@ interface Campaign {
   id: string;
   name: string;
   status: string;
-  script_template: string | null;
-  script_prompt: string | null;
-  voice_id: string | null;
+  script_template: string;
+  script_prompt: string;
+  voice_id: string;
   total_contacts: number;
   calls_made: number;
   calls_answered: number;
@@ -58,6 +58,8 @@ export default function OutboundCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
+  const [editingDraft, setEditingDraft] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const fetchCampaigns = useCallback(async () => {
     if (!tenantId) return;
@@ -70,6 +72,22 @@ export default function OutboundCampaignsPage() {
   }, [tenantId]);
 
   useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+
+  const handleDeleteCampaign = async (e: React.MouseEvent, campaignId: string) => {
+    e.stopPropagation();
+    if (!confirm('Delete this draft campaign?')) return;
+    setDeleting(campaignId);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}?tenant_id=${tenantId}`, { method: 'DELETE' });
+      if (res.ok) fetchCampaigns();
+    } catch { /* ignore */ }
+    finally { setDeleting(null); }
+  };
+
+  const handleOpenDraft = (campaign: Campaign) => {
+    setEditingDraft(campaign);
+    setShowWizard(true);
+  };
 
   const totalContacts = campaigns.reduce((a, c) => a + (c.total_contacts || 0), 0);
   const totalAnswered = campaigns.reduce((a, c) => a + (c.calls_answered || 0), 0);
@@ -123,13 +141,26 @@ export default function OutboundCampaignsPage() {
           {campaigns.map(c => {
             const status = STATUS_CONFIG[c.status] || STATUS_CONFIG.draft;
             const progress = c.total_contacts > 0 ? Math.round((c.calls_made / c.total_contacts) * 100) : 0;
+            const isDraft = c.status === 'draft';
             return (
-              <div key={c.id} className="oc-campaign-card" onClick={() => navigate(`/outbound/${c.id}`)}>
+              <div key={c.id} className="oc-campaign-card" onClick={() => isDraft ? handleOpenDraft(c) : navigate(`/outbound/${c.id}`)}>
                 <div className="oc-campaign-top">
                   <p className="oc-campaign-name">{c.name}</p>
-                  <span className="oc-status-pill" style={{ color: status.color, background: status.bg }}>
-                    {status.label}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="oc-status-pill" style={{ color: status.color, background: status.bg }}>
+                      {status.label}
+                    </span>
+                    {isDraft && (
+                      <button
+                        className="oc-delete-btn"
+                        title="Delete draft"
+                        disabled={deleting === c.id}
+                        onClick={(e) => handleDeleteCampaign(e, c.id)}
+                      >
+                        {deleting === c.id ? '...' : '\u{1F5D1}'}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="oc-campaign-meta">
                   <span className="oc-lead-tag">{c.total_contacts} contacts</span>
@@ -152,9 +183,11 @@ export default function OutboundCampaignsPage() {
       {showWizard && (
         <CampaignWizard
           tenantId={tenantId}
-          onClose={() => setShowWizard(false)}
+          existingDraft={editingDraft}
+          onClose={() => { setShowWizard(false); setEditingDraft(null); }}
           onCreated={(id) => {
             setShowWizard(false);
+            setEditingDraft(null);
             fetchCampaigns();
             navigate(`/outbound/${id}`);
           }}
@@ -167,23 +200,25 @@ export default function OutboundCampaignsPage() {
 // ──────────────────────────────────────────────────────────────
 // Campaign Creation Wizard (3 steps)
 // ──────────────────────────────────────────────────────────────
-function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; onClose: () => void; onCreated: (id: string) => void }) {
-  const [step, setStep] = useState(1);
+function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenantId: string; existingDraft?: Campaign | null; onClose: () => void; onCreated: (id: string) => void }) {
+  const isEditing = !!existingDraft;
+  const [step, setStep] = useState(isEditing ? 3 : 1);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(isEditing);
 
   // Step 1: Upload
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(existingDraft?.id ?? null);
 
   // Step 2: Configure
-  const [name, setName] = useState('');
+  const [name, setName] = useState(existingDraft?.name ?? '');
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [scriptPrompt, setScriptPrompt] = useState('');
-  const [voiceId, setVoiceId] = useState('11labs-Adrian');
+  const [selectedTemplate, setSelectedTemplate] = useState(existingDraft?.script_template ?? '');
+  const [scriptPrompt, setScriptPrompt] = useState(existingDraft?.script_prompt ?? '');
+  const [voiceId, setVoiceId] = useState(existingDraft?.voice_id ?? '11labs-Adrian');
   const [callWindowStart, setCallWindowStart] = useState('09:00');
   const [callWindowEnd, setCallWindowEnd] = useState('17:00');
   const [callWindowDays, setCallWindowDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -191,6 +226,32 @@ function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; on
   const [transferNumber, setTransferNumber] = useState('');
   const [maxConcurrent, setMaxConcurrent] = useState(3);
   const [voicemailAction, setVoicemailAction] = useState('leave_message');
+  const [contactCount, setContactCount] = useState(existingDraft?.total_contacts ?? 0);
+
+  // Load full draft data from API when editing
+  useEffect(() => {
+    if (!existingDraft) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/campaigns/${existingDraft.id}?tenant_id=${tenantId}`);
+        if (!res.ok) { setLoadingDraft(false); return; }
+        const data = await res.json();
+        setName(data.name || '');
+        setSelectedTemplate(data.script_template || '');
+        setScriptPrompt(data.script_prompt || '');
+        setVoiceId(data.voice_id || '11labs-Adrian');
+        setCallWindowStart(data.call_window_start || '09:00');
+        setCallWindowEnd(data.call_window_end || '17:00');
+        setCallWindowDays(data.call_window_days || ['mon', 'tue', 'wed', 'thu', 'fri']);
+        setOnInterest(data.on_interest || 'offer_choice');
+        setTransferNumber(data.transfer_number || '');
+        setMaxConcurrent(data.max_concurrent ?? 3);
+        setVoicemailAction(data.voicemail_action || 'leave_message');
+        setContactCount(data.total_contacts || 0);
+      } catch { /* ignore */ }
+      finally { setLoadingDraft(false); }
+    })();
+  }, [existingDraft, tenantId]);
 
   // Load templates
   useEffect(() => {
@@ -311,7 +372,7 @@ function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; on
     <div className="oc-wizard-overlay" onClick={onClose}>
       <div className="oc-wizard" onClick={e => e.stopPropagation()}>
         <div className="oc-wizard-header">
-          <h2 className="oc-wizard-title">New Campaign</h2>
+          <h2 className="oc-wizard-title">{isEditing ? 'Review Draft' : 'New Campaign'}</h2>
           <button className="oc-wizard-close" onClick={onClose}>&times;</button>
         </div>
 
@@ -327,7 +388,13 @@ function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; on
         <div className="oc-wizard-body">
           {error && <div className="oc-error">{error}</div>}
 
-          {step === 1 && (
+          {loadingDraft && (
+            <div className="oc-wizard-section" style={{ textAlign: 'center', padding: '40px 0', color: '#6e6e73' }}>
+              Loading draft...
+            </div>
+          )}
+
+          {!loadingDraft && step === 1 && (
             <div className="oc-wizard-section">
               <label className="oc-label">Campaign name</label>
               <input className="oc-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Battery Rebate — March 2026" />
@@ -411,7 +478,7 @@ function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; on
             </div>
           )}
 
-          {step === 2 && (
+          {!loadingDraft && step === 2 && (
             <div className="oc-wizard-section">
               <label className="oc-label">Script template</label>
               <select className="oc-select" value={selectedTemplate} onChange={e => handleTemplateSelect(e.target.value)}>
@@ -500,14 +567,14 @@ function CampaignWizard({ tenantId, onClose, onCreated }: { tenantId: string; on
             </div>
           )}
 
-          {step === 3 && (
+          {!loadingDraft && step === 3 && (
             <div className="oc-wizard-section">
               <div className="oc-review-card">
                 <h3 style={{ margin: '0 0 16px', color: '#1d1d1f', fontSize: '1.05rem' }}>{name}</h3>
                 <div className="oc-review-grid">
                   <div className="oc-review-item">
                     <span className="oc-review-label">Contacts</span>
-                    <span className="oc-review-value">{uploadResult?.valid_count || 0}</span>
+                    <span className="oc-review-value">{uploadResult?.valid_count || contactCount || 0}</span>
                   </div>
                   <div className="oc-review-item">
                     <span className="oc-review-label">Voice</span>
