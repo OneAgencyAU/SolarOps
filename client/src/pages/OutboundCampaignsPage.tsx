@@ -150,15 +150,13 @@ export default function OutboundCampaignsPage() {
                     <span className="oc-status-pill" style={{ color: status.color, background: status.bg }}>
                       {status.label}
                     </span>
-                    {isDraft && (
-                      <button
-                        className="oc-delete-btn"
-                        title="Delete draft"
-                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
-                      >
-                        {'\u{1F5D1}'}
-                      </button>
-                    )}
+                    <button
+                      className="oc-delete-btn"
+                      title="Delete campaign"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
+                    >
+                      {'\u{1F5D1}'}
+                    </button>
                   </div>
                 </div>
                 <div className="oc-campaign-meta">
@@ -186,6 +184,11 @@ export default function OutboundCampaignsPage() {
             <p className="oc-delete-modal-text">
               Are you sure you want to delete <strong>{confirmDelete.name}</strong>? This cannot be undone.
             </p>
+            {confirmDelete.status === 'active' && (
+              <p className="oc-delete-modal-text" style={{ color: '#FF9500', fontWeight: 500, marginTop: 8 }}>
+                This campaign is currently active. Deleting it will stop all pending calls.
+              </p>
+            )}
             <div className="oc-delete-modal-actions">
               <button className="oc-btn" disabled={deleting} onClick={() => setConfirmDelete(null)}>Cancel</button>
               <button className="oc-btn danger" disabled={deleting} onClick={handleDeleteCampaign}>
@@ -234,7 +237,7 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState(existingDraft?.script_template ?? '');
   const [scriptPrompt, setScriptPrompt] = useState(existingDraft?.script_prompt ?? '');
-  const [voiceId, setVoiceId] = useState(existingDraft?.voice_id ?? '11labs-Adrian');
+  const [voiceId, setVoiceId] = useState(existingDraft?.voice_id ?? 'openai-Cimo');
   const [callWindowStart, setCallWindowStart] = useState('09:00');
   const [callWindowEnd, setCallWindowEnd] = useState('17:00');
   const [callWindowDays, setCallWindowDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -255,7 +258,7 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
         setName(data.name || '');
         setSelectedTemplate(data.script_template || '');
         setScriptPrompt(data.script_prompt || '');
-        setVoiceId(data.voice_id || '11labs-Adrian');
+        setVoiceId(data.voice_id || 'openai-Cimo');
         setCallWindowStart(data.call_window_start || '09:00');
         setCallWindowEnd(data.call_window_end || '17:00');
         setCallWindowDays(data.call_window_days || ['mon', 'tue', 'wed', 'thu', 'fri']);
@@ -517,10 +520,8 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
                 <div>
                   <label className="oc-label">Voice</label>
                   <select className="oc-select" value={voiceId} onChange={e => setVoiceId(e.target.value)}>
-                    <option value="11labs-Adrian">Adrian (Male, AU)</option>
-                    <option value="11labs-Charlotte">Charlotte (Female, AU)</option>
-                    <option value="11labs-Matilda">Matilda (Female, AU)</option>
-                    <option value="11labs-Aria">Aria (Female)</option>
+                    <option value="openai-Cimo">Brooke (Female)</option>
+                    <option value="11labs-Adrian">Jake (Male)</option>
                   </select>
                 </div>
                 <div>
@@ -597,10 +598,7 @@ function CampaignWizard({ tenantId, existingDraft, onClose, onCreated }: { tenan
                   <div className="oc-review-item">
                     <span className="oc-review-label">Voice</span>
                     <span className="oc-review-value">{
-                      voiceId === '11labs-Adrian' ? 'Adrian (Male, AU)' :
-                      voiceId === '11labs-Charlotte' ? 'Charlotte (Female, AU)' :
-                      voiceId === '11labs-Matilda' ? 'Matilda (Female, AU)' :
-                      'Aria (Female)'
+                      voiceId === 'openai-Cimo' ? 'Brooke (Female)' : 'Jake (Male)'
                     }</span>
                   </div>
                   <div className="oc-review-item">

@@ -176,7 +176,7 @@ router.post('/api/campaigns/create', async (req: Request, res: Response) => {
         status: 'draft',
         script_template: script_template || null,
         script_prompt: script_prompt || null,
-        voice_id: voice_id || '11labs-Adrian',
+        voice_id: voice_id || 'openai-Cimo',
         caller_id: caller_id || null,
         call_window_start: call_window_start || null,
         call_window_end: call_window_end || null,
@@ -265,7 +265,7 @@ router.put('/api/campaigns/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Delete campaign (draft only)
+// Delete campaign (any status)
 router.delete('/api/campaigns/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -288,11 +288,6 @@ router.delete('/api/campaigns/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    if (existing.status !== 'draft') {
-      res.status(400).json({ error: `Cannot delete campaign with status "${existing.status}"` });
-      return;
-    }
-
     // Contacts cascade-delete via FK
     const { error } = await supabase
       .from('outbound_campaigns')
@@ -306,7 +301,7 @@ router.delete('/api/campaigns/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    res.json({ success: true });
+    res.json({ success: true, was_active: existing.status === 'active' });
   } catch (err: any) {
     console.error('[Campaign Delete]', err);
     res.status(500).json({ error: err.message });
@@ -646,8 +641,8 @@ router.post('/api/campaigns/:id/contacts/export', async (req: Request, res: Resp
   }
 });
 
-// Retry failed contacts (no_answer, busy)
-router.post('/api/campaigns/:id/contacts/retry', async (req: Request, res: Response) => {
+// Retry ALL contacts — reset every contact to pending and re-launch the campaign
+router.post('/api/campaigns/:id/contacts/retry-all', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { tenant_id } = req.body;
@@ -655,7 +650,7 @@ router.post('/api/campaigns/:id/contacts/retry', async (req: Request, res: Respo
 
     const { data: campaign, error: campErr } = await supabase
       .from('outbound_campaigns')
-      .select('status')
+      .select('*')
       .eq('id', id)
       .eq('tenant_id', tenant_id)
       .single();
@@ -665,62 +660,289 @@ router.post('/api/campaigns/:id/contacts/retry', async (req: Request, res: Respo
       return;
     }
 
-    if (!['completed', 'paused'].includes(campaign.status)) {
-      res.status(400).json({ error: `Cannot retry contacts for campaign with status "${campaign.status}"` });
+    if (campaign.status === 'active') {
+      res.status(400).json({ error: 'Campaign is already active' });
       return;
     }
 
-    const { data: retryable, error: countErr } = await supabase
+    if (!campaign.script_prompt) {
+      res.status(400).json({ error: 'Campaign has no script prompt configured' });
+      return;
+    }
+
+    // Reset ALL non-excluded contacts to pending
+    const resetFields = {
+      status: 'pending',
+      outcome: null,
+      retell_call_id: null,
+      call_duration: null,
+      call_cost: null,
+      called_at: null,
+      transcript: null,
+      recording_url: null,
+      call_summary: null,
+      sentiment: null,
+      callback_preference: null,
+      questions_asked: null,
+    };
+
+    const { error: resetErr } = await supabase
       .from('outbound_contacts')
-      .select('id', { count: 'exact' })
+      .update(resetFields)
       .eq('campaign_id', id)
-      .in('status', ['no_answer', 'busy', 'failed']);
+      .eq('excluded', false);
 
-    if (countErr) {
-      res.status(500).json({ error: countErr.message });
+    if (resetErr) {
+      console.error('[Retry All]', resetErr);
+      res.status(500).json({ error: resetErr.message });
       return;
     }
 
-    const { error: updateErr } = await supabase
+    // Get voice config
+    const { data: voiceConfig } = await supabase
+      .from('voice_config')
+      .select('telnyx_number, business_name')
+      .eq('tenant_id', tenant_id)
+      .single();
+
+    if (!voiceConfig?.telnyx_number) {
+      res.status(400).json({ error: 'No Telnyx number configured for this tenant' });
+      return;
+    }
+
+    const callerNumber = campaign.caller_id || voiceConfig.telnyx_number;
+    const businessName = voiceConfig.business_name || 'the team';
+
+    // Ensure outbound agent
+    const { agentId, error: agentErr } = await ensureOutboundAgent(
+      tenant_id,
+      campaign.script_prompt,
+      campaign.voice_id || 'openai-Cimo',
+      campaign.transfer_number,
+    );
+
+    if (!agentId) {
+      res.status(500).json({ error: `Failed to create outbound agent: ${agentErr}` });
+      return;
+    }
+
+    // Fetch all pending contacts
+    const { data: contacts, error: contactErr } = await supabase
       .from('outbound_contacts')
+      .select('*')
+      .eq('campaign_id', id)
+      .eq('status', 'pending');
+
+    if (contactErr || !contacts || contacts.length === 0) {
+      res.status(400).json({ error: 'No contacts to retry' });
+      return;
+    }
+
+    // Mark campaign as active
+    await supabase
+      .from('outbound_campaigns')
       .update({
-        status: 'pending',
-        outcome: null,
-        retell_call_id: null,
-        call_duration: null,
-        call_cost: null,
-        called_at: null,
-        transcript: null,
-        recording_url: null,
-        call_summary: null,
-        sentiment: null,
+        status: 'active',
+        calls_made: 0,
+        calls_answered: 0,
+        calls_interested: 0,
+        callbacks_booked: 0,
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
-      .eq('campaign_id', id)
-      .in('status', ['no_answer', 'busy', 'failed']);
+      .eq('id', id);
 
-    if (updateErr) {
-      console.error('[Contact Retry]', updateErr);
-      res.status(500).json({ error: updateErr.message });
+    res.json({ success: true, contacts_queued: contacts.length });
+
+    // Fire off calls in background
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    let callsPlaced = 0;
+
+    for (const contact of contacts) {
+      try {
+        await (retell.call as any).createPhoneCall({
+          from_number: callerNumber,
+          to_number: contact.phone_number,
+          agent_id: agentId,
+          retell_llm_dynamic_variables: {
+            customer_name: contact.customer_name || 'there',
+            business_name: businessName,
+            agent_name: 'the team',
+            transfer_number: campaign.transfer_number || '',
+            agent_number: callerNumber,
+            ...(contact.custom_data || {}),
+          },
+          metadata: { campaign_id: id, contact_id: contact.id, tenant_id },
+        });
+
+        await supabase.from('outbound_contacts').update({ status: 'calling' }).eq('id', contact.id);
+        callsPlaced++;
+        console.error(`[Retry All] Call placed ${callsPlaced}/${contacts.length} — contact: ${contact.id}`);
+      } catch (callErr: any) {
+        console.error(`[Retry All] Failed to call contact ${contact.id}:`, callErr.message);
+        await supabase.from('outbound_contacts').update({ status: 'failed' }).eq('id', contact.id);
+      }
+
+      if (contact !== contacts[contacts.length - 1]) {
+        await delay(2000);
+      }
+    }
+
+    await supabase
+      .from('outbound_campaigns')
+      .update({ calls_made: callsPlaced, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    console.error(`[Retry All] Complete — ${callsPlaced}/${contacts.length} calls placed for campaign ${id}`);
+  } catch (err: any) {
+    console.error('[Retry All]', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+// Retry selected contacts — place new calls for specific contact IDs
+router.post('/api/campaigns/:id/contacts/retry-selected', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { tenant_id, contact_ids } = req.body;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+    if (!Array.isArray(contact_ids) || contact_ids.length === 0) {
+      res.status(400).json({ error: 'contact_ids array is required' });
       return;
     }
 
-    const retryCount = retryable?.length || 0;
+    const { data: campaign, error: campErr } = await supabase
+      .from('outbound_campaigns')
+      .select('*')
+      .eq('id', id)
+      .eq('tenant_id', tenant_id)
+      .single();
 
-    // Reset campaign status to allow re-launch
-    if (retryCount > 0) {
+    if (campErr || !campaign) {
+      res.status(404).json({ error: 'Campaign not found' });
+      return;
+    }
+
+    if (!campaign.script_prompt) {
+      res.status(400).json({ error: 'Campaign has no script prompt configured' });
+      return;
+    }
+
+    // Get voice config
+    const { data: voiceConfig } = await supabase
+      .from('voice_config')
+      .select('telnyx_number, business_name')
+      .eq('tenant_id', tenant_id)
+      .single();
+
+    if (!voiceConfig?.telnyx_number) {
+      res.status(400).json({ error: 'No Telnyx number configured for this tenant' });
+      return;
+    }
+
+    const callerNumber = campaign.caller_id || voiceConfig.telnyx_number;
+    const businessName = voiceConfig.business_name || 'the team';
+
+    // Ensure outbound agent
+    const { agentId, error: agentErr } = await ensureOutboundAgent(
+      tenant_id,
+      campaign.script_prompt,
+      campaign.voice_id || 'openai-Cimo',
+      campaign.transfer_number,
+    );
+
+    if (!agentId) {
+      res.status(500).json({ error: `Failed to create outbound agent: ${agentErr}` });
+      return;
+    }
+
+    // Fetch the specified contacts
+    const { data: contacts, error: contactErr } = await supabase
+      .from('outbound_contacts')
+      .select('*')
+      .eq('campaign_id', id)
+      .eq('tenant_id', tenant_id)
+      .in('id', contact_ids)
+      .eq('excluded', false);
+
+    if (contactErr || !contacts || contacts.length === 0) {
+      res.status(400).json({ error: 'No valid contacts found for retry' });
+      return;
+    }
+
+    // Reset selected contacts to calling
+    const resetFields = {
+      status: 'calling',
+      outcome: null,
+      retell_call_id: null,
+      call_duration: null,
+      call_cost: null,
+      called_at: null,
+      transcript: null,
+      recording_url: null,
+      call_summary: null,
+      sentiment: null,
+      callback_preference: null,
+      questions_asked: null,
+    };
+
+    await supabase
+      .from('outbound_contacts')
+      .update(resetFields)
+      .in('id', contact_ids)
+      .eq('campaign_id', id);
+
+    // Mark campaign as active if it isn't already
+    if (campaign.status !== 'active') {
       await supabase
         .from('outbound_campaigns')
-        .update({
-          status: 'draft',
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: 'active', updated_at: new Date().toISOString() })
         .eq('id', id);
     }
 
-    res.json({ success: true, retry_count: retryCount });
+    res.json({ success: true, contacts_queued: contacts.length });
+
+    // Fire off calls in background
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    let callsPlaced = 0;
+
+    for (const contact of contacts) {
+      try {
+        await (retell.call as any).createPhoneCall({
+          from_number: callerNumber,
+          to_number: contact.phone_number,
+          agent_id: agentId,
+          retell_llm_dynamic_variables: {
+            customer_name: contact.customer_name || 'there',
+            business_name: businessName,
+            agent_name: 'the team',
+            transfer_number: campaign.transfer_number || '',
+            agent_number: callerNumber,
+            ...(contact.custom_data || {}),
+          },
+          metadata: { campaign_id: id, contact_id: contact.id, tenant_id },
+        });
+
+        callsPlaced++;
+        console.error(`[Retry Selected] Call placed ${callsPlaced}/${contacts.length} — contact: ${contact.id}`);
+      } catch (callErr: any) {
+        console.error(`[Retry Selected] Failed to call contact ${contact.id}:`, callErr.message);
+        await supabase.from('outbound_contacts').update({ status: 'failed' }).eq('id', contact.id);
+      }
+
+      if (contact !== contacts[contacts.length - 1]) {
+        await delay(2000);
+      }
+    }
+
+    console.error(`[Retry Selected] Complete — ${callsPlaced}/${contacts.length} calls placed for campaign ${id}`);
   } catch (err: any) {
-    console.error('[Contact Retry]', err);
-    res.status(500).json({ error: err.message });
+    console.error('[Retry Selected]', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
@@ -1043,7 +1265,7 @@ router.post('/api/campaigns/:id/launch', async (req: Request, res: Response) => 
     const { agentId, error: agentErr } = await ensureOutboundAgent(
       tenant_id,
       campaign.script_prompt,
-      campaign.voice_id || '11labs-Adrian',
+      campaign.voice_id || 'openai-Cimo',
       campaign.transfer_number,
     );
 
