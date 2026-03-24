@@ -86,6 +86,71 @@ function parseCSVLine(line: string): string[] {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Templates (MUST be registered before :id parameterized routes)
+// ──────────────────────────────────────────────────────────────
+
+// List templates (system + tenant custom)
+router.get('/api/campaigns/templates', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
+
+    const { data, error } = await supabase
+      .from('campaign_templates')
+      .select('*')
+      .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
+      .order('is_system', { ascending: false })
+      .order('name');
+
+    if (error) {
+      console.error('[Templates List]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json(data || []);
+  } catch (err: any) {
+    console.error('[Templates List]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create custom template
+router.post('/api/campaigns/templates', async (req: Request, res: Response) => {
+  try {
+    const { tenant_id, name, description, prompt_template, category } = req.body;
+    if (!tenant_id || !name || !prompt_template) {
+      res.status(400).json({ error: 'tenant_id, name, and prompt_template are required' });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('campaign_templates')
+      .insert({
+        tenant_id,
+        name,
+        description: description || null,
+        prompt_template,
+        category: category || 'custom',
+        is_system: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Template Create]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json(data);
+  } catch (err: any) {
+    console.error('[Template Create]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
 // Campaign CRUD
 // ──────────────────────────────────────────────────────────────
 
@@ -803,18 +868,27 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
   };
 
   if (config.retell_agent_id_outbound) {
-    // Update existing agent's LLM
+    // Update existing agent — always update LLM prompt + voice on every launch
     try {
       const agent = await retell.agent.retrieve(config.retell_agent_id_outbound);
-      const llmId = (agent.response_engine as any)?.llm_id;
+      let llmId = (agent.response_engine as any)?.llm_id;
 
       if (llmId) {
+        // Update existing LLM with the campaign's script_prompt
         await retell.llm.update(llmId, llmParams);
+        console.error('[Outbound Agent] Updated existing LLM:', llmId);
+      } else {
+        // LLM ID not found on agent — create a new LLM
+        console.error('[Outbound Agent] No llm_id on existing agent, creating new LLM');
+        const newLlm = await retell.llm.create(llmParams);
+        llmId = newLlm.llm_id;
+        console.error('[Outbound Agent] Created new LLM:', llmId);
       }
 
-      // Update agent voice, language, post-call analysis, and guardrails
+      // Update agent: voice, response_engine, language, post-call analysis, guardrails
       await retell.agent.update(config.retell_agent_id_outbound, {
         voice_id: voiceId,
+        response_engine: { type: 'retell-llm', llm_id: llmId },
         agent_name: `${businessName} - Outbound`,
         language: 'en-AU',
         post_call_analysis_data: [
@@ -830,6 +904,7 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
           output_topics: ['regulated_professional_advice'],
         },
       });
+      console.error('[Outbound Agent] Updated agent voice_id:', voiceId, 'llm_id:', llmId);
 
       // Bind outbound agent to the Telnyx phone number in Retell
       try {
@@ -1361,71 +1436,6 @@ router.post('/api/campaigns/webhook', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('[Campaign Webhook]', err);
     res.status(200).json({ received: true });
-  }
-});
-
-// ──────────────────────────────────────────────────────────────
-// Templates
-// ──────────────────────────────────────────────────────────────
-
-// List templates (system + tenant custom)
-router.get('/api/campaigns/templates', async (req: Request, res: Response) => {
-  try {
-    const { tenant_id } = req.query;
-    if (!tenant_id) { res.status(400).json({ error: 'tenant_id required' }); return; }
-
-    const { data, error } = await supabase
-      .from('campaign_templates')
-      .select('*')
-      .or(`tenant_id.is.null,tenant_id.eq.${tenant_id}`)
-      .order('is_system', { ascending: false })
-      .order('name');
-
-    if (error) {
-      console.error('[Templates List]', error);
-      res.status(500).json({ error: error.message });
-      return;
-    }
-
-    res.json(data || []);
-  } catch (err: any) {
-    console.error('[Templates List]', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Create custom template
-router.post('/api/campaigns/templates', async (req: Request, res: Response) => {
-  try {
-    const { tenant_id, name, description, prompt_template, category } = req.body;
-    if (!tenant_id || !name || !prompt_template) {
-      res.status(400).json({ error: 'tenant_id, name, and prompt_template are required' });
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('campaign_templates')
-      .insert({
-        tenant_id,
-        name,
-        description: description || null,
-        prompt_template,
-        category: category || 'custom',
-        is_system: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[Template Create]', error);
-      res.status(500).json({ error: error.message });
-      return;
-    }
-
-    res.json(data);
-  } catch (err: any) {
-    console.error('[Template Create]', err);
-    res.status(500).json({ error: err.message });
   }
 });
 
