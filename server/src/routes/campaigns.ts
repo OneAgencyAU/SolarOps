@@ -818,6 +818,15 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
         agent_name: `${businessName} - Outbound`,
       });
 
+      // Bind outbound agent to the Telnyx phone number in Retell
+      try {
+        await (retell.phoneNumber as any).update(config.telnyx_number || '+61240727423', {
+          outbound_agents: [{ agent_id: config.retell_agent_id_outbound }],
+        });
+      } catch (phoneErr: any) {
+        console.error('[Outbound Agent] Failed to bind phone number:', phoneErr.message);
+      }
+
       return { agentId: config.retell_agent_id_outbound };
     } catch (err: any) {
       console.error('[Outbound Agent] Failed to update existing agent, creating new one:', err.message);
@@ -856,6 +865,15 @@ async function ensureOutboundAgent(tenantId: string, scriptPrompt: string, voice
         updated_at: new Date().toISOString(),
       })
       .eq('tenant_id', tenantId);
+
+    // Bind outbound agent to the Telnyx phone number in Retell
+    try {
+      await (retell.phoneNumber as any).update(config.telnyx_number || '+61240727423', {
+        outbound_agents: [{ agent_id: agent.agent_id }],
+      });
+    } catch (phoneErr: any) {
+      console.error('[Outbound Agent] Failed to bind phone number:', phoneErr.message);
+    }
 
     return { agentId: agent.agent_id };
   } catch (err: any) {
