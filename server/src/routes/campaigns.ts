@@ -17,17 +17,24 @@ const router = Router();
 // Phone number validation (AU mobile + landline)
 // ──────────────────────────────────────────────────────────────
 function normaliseAUPhone(raw: string): { valid: boolean; e164: string; reason?: string } {
-  const cleaned = raw.replace(/[\s\-()]/g, '');
+  // Strip spaces, dashes, brackets, dots, and any non-digit except leading +
+  const stripped = raw.replace(/[\s\-().]/g, '');
+  const cleaned = stripped.startsWith('+') ? '+' + stripped.slice(1).replace(/\D/g, '') : stripped.replace(/\D/g, '');
 
-  // Already E.164
+  // Already E.164: +614XXXXXXXX (mobile) or +61[2378]XXXXXXXX (landline)
   if (/^\+614\d{8}$/.test(cleaned)) return { valid: true, e164: cleaned };
   if (/^\+61[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: cleaned };
 
-  // Local mobile 04XX
-  if (/^04\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
+  // 10-digit starting with 0: local format (04XX mobile, 02/03/07/08 landline)
+  if (/^0[234578]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
 
-  // Local landline 02/03/07/08
-  if (/^0[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned.slice(1)}` };
+  // 9-digit: Excel stripped the leading 0 (e.g. 437834999 → +61437834999)
+  if (/^4\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned}` };
+  if (/^[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+61${cleaned}` };
+
+  // 11-digit starting with 61: missing + prefix (e.g. 61437834999 → +61437834999)
+  if (/^614\d{8}$/.test(cleaned)) return { valid: true, e164: `+${cleaned}` };
+  if (/^61[2378]\d{8}$/.test(cleaned)) return { valid: true, e164: `+${cleaned}` };
 
   return { valid: false, e164: '', reason: `Invalid AU number: ${raw}` };
 }
