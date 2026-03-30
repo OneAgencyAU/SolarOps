@@ -1,0 +1,562 @@
+/* ── Create Quote Page ── */
+.cq-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ── Top bar + progress ── */
+.cq-topbar {
+  padding: 20px 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cq-back {
+  background: none;
+  border: none;
+  color: #4F8EF7;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  align-self: flex-start;
+}
+
+.cq-back:hover { text-decoration: underline; }
+
+.cq-page-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+/* ── Progress bar ── */
+.cq-progress {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cq-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 980px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #aeaeb2;
+  cursor: default;
+  transition: all 150ms ease;
+}
+
+.cq-step.active {
+  background: #4F8EF7;
+  color: #fff;
+}
+
+.cq-step.done {
+  background: rgba(52,199,89,0.10);
+  color: #34C759;
+  cursor: pointer;
+}
+
+.cq-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f0f0f2;
+  color: #aeaeb2;
+  flex-shrink: 0;
+}
+
+.cq-step.active .cq-step-num {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+.cq-step.done .cq-step-num {
+  background: rgba(52,199,89,0.18);
+  color: #34C759;
+}
+
+.cq-step-label { white-space: nowrap; }
+
+/* ── Body: main + context panel ── */
+.cq-body {
+  display: flex;
+  gap: 20px;
+  padding: 0 32px 40px;
+  flex: 1;
+}
+
+.cq-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Card ── */
+.cq-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  padding: 28px 32px 24px;
+}
+
+.cq-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 20px;
+}
+
+/* ── Form elements ── */
+.cq-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cq-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cq-field.full { grid-column: 1 / -1; }
+
+.cq-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6e6e73;
+}
+
+.cq-input {
+  padding: 10px 14px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #1d1d1f;
+  background: #f9f9fb;
+  outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cq-input:focus {
+  border-color: #4F8EF7;
+  background: #fff;
+}
+
+.cq-input::placeholder { color: #aeaeb2; }
+
+.cq-textarea {
+  padding: 10px 14px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #1d1d1f;
+  background: #f9f9fb;
+  outline: none;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 60px;
+  line-height: 1.5;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.cq-textarea:focus {
+  border-color: #4F8EF7;
+  background: #fff;
+}
+
+.cq-select {
+  padding: 10px 14px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #aeaeb2;
+  background: #f5f5f7;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: not-allowed;
+}
+
+.cq-hint {
+  font-size: 0.75rem;
+  color: #6e6e73;
+  margin-top: 2px;
+}
+
+.cq-computed {
+  padding: 10px 14px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  background: #f5f5f7;
+}
+
+/* ── Buttons ── */
+.cq-btn {
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: #f5f5f7;
+  color: #6e6e73;
+  transition: all 150ms ease;
+}
+
+.cq-btn:hover { background: #e5e5e7; }
+
+.cq-btn.primary {
+  background: #4F8EF7;
+  color: #fff;
+}
+
+.cq-btn.primary:hover:not(:disabled) { background: #3a7de8; }
+
+.cq-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cq-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f2;
+}
+
+.cq-actions-final { flex-wrap: wrap; gap: 8px; }
+.cq-actions-right { display: flex; gap: 8px; }
+
+/* ── Search row ── */
+.cq-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cq-search-row .cq-input { flex: 1; }
+
+.cq-search-status {
+  font-size: 0.82rem;
+  color: #6e6e73;
+  padding: 10px 0;
+}
+
+/* ── Toggle (yes/no) ── */
+.cq-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #e5e5e7;
+  border: none;
+  border-radius: 14px;
+  padding: 4px 14px 4px 4px;
+  cursor: pointer;
+  transition: background 200ms ease;
+  height: 30px;
+  position: relative;
+  min-width: 80px;
+}
+
+.cq-toggle.on { background: #34C759; }
+
+.cq-toggle-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+.cq-toggle.on .cq-toggle-thumb { transform: translateX(24px); }
+
+.cq-toggle-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6e6e73;
+  margin-left: auto;
+}
+
+.cq-toggle.on .cq-toggle-label { color: #fff; }
+
+/* ── Toggle group (residential/commercial) ── */
+.cq-toggle-group {
+  display: flex;
+  background: #f5f5f7;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e5e7;
+}
+
+.cq-toggle-opt {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #6e6e73;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.cq-toggle-opt.active {
+  background: #4F8EF7;
+  color: #fff;
+}
+
+/* ── Map placeholder ── */
+.cq-map-placeholder {
+  background: #f5f5f7;
+  border: 2px dashed #e5e5e7;
+  border-radius: 16px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.cq-map-pin { font-size: 2rem; opacity: 0.4; }
+
+.cq-map-text {
+  font-size: 0.82rem;
+  color: #aeaeb2;
+  font-weight: 500;
+}
+
+/* ── Product sections ── */
+.cq-products {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.cq-product {
+  background: #f9f9fb;
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 1px solid #f0f0f2;
+}
+
+.cq-product-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 10px;
+}
+
+.cq-product-fields {
+  display: grid;
+  grid-template-columns: 1.5fr 0.7fr 0.8fr 0.8fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ── Quote total ── */
+.cq-quote-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: #f9f9fb;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  border: 1px solid #f0f0f2;
+}
+
+.cq-quote-total-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4F8EF7;
+}
+
+/* ── Financial cards ── */
+.cq-fin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.cq-fin-card {
+  background: #f9f9fb;
+  border-radius: 14px;
+  padding: 18px 16px;
+  text-align: center;
+  border: 1px solid #f0f0f2;
+}
+
+.cq-fin-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6e6e73;
+  margin-bottom: 6px;
+}
+
+.cq-fin-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.cq-fin-value.positive { color: #34C759; }
+
+/* ── Review sections ── */
+.cq-review-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.cq-review-heading {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cq-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cq-review-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.cq-review-label {
+  font-size: 0.82rem;
+  color: #6e6e73;
+}
+
+.cq-review-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+/* ── Context panel (right sidebar) ── */
+.cq-context {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cq-context-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6e6e73;
+  padding: 0 4px;
+}
+
+.cq-ctx-block {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  padding: 16px;
+}
+
+.cq-ctx-heading {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+}
+
+.cq-ctx-empty {
+  font-size: 0.78rem;
+  color: #aeaeb2;
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* ── Toast ── */
+.cq-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #fff;
+  background: #6e6e73;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  animation: cqToastIn 220ms ease;
+}
+
+@keyframes cqToastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .cq-context { width: 240px; }
+  .cq-fin-grid { grid-template-columns: repeat(2, 1fr); }
+  .cq-product-fields { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .cq-body {
+    flex-direction: column;
+    padding: 0 16px 32px;
+  }
+  .cq-topbar { padding: 16px 16px 12px; }
+  .cq-context { width: 100%; }
+  .cq-form-grid { grid-template-columns: 1fr; }
+  .cq-fin-grid { grid-template-columns: 1fr; }
+  .cq-product-fields { grid-template-columns: 1fr 1fr; }
+  .cq-review-grid { grid-template-columns: 1fr; }
+  .cq-card { padding: 20px 18px 18px; }
+}

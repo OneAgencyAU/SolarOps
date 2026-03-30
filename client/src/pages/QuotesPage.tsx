@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/QuotesPage.css';
 
@@ -44,6 +45,7 @@ function formatDate(iso: string): string {
 }
 
 export default function QuotesPage() {
+  const navigate = useNavigate();
   const { tenant } = useAuth();
   const tenantId = tenant?.id ?? '';
 
@@ -76,7 +78,7 @@ export default function QuotesPage() {
           <h1 className="qt-title">Quotes</h1>
           <p className="qt-subtitle">Manage solar installation quotes</p>
         </div>
-        <button className="qt-btn primary" disabled>
+        <button className="qt-btn primary" onClick={() => navigate('/quotes/new')}>
           + Create New Quote
         </button>
       </div>

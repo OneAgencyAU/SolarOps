@@ -14,6 +14,7 @@ import CampaignDetailPage from './pages/CampaignDetailPage';
 import InboxAssistantPage from './pages/InboxAssistantPage';
 import HelpdeskPage from './pages/HelpdeskPage';
 import QuotesPage from './pages/QuotesPage';
+import CreateQuotePage from './pages/CreateQuotePage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import ActivityLogPage from './pages/ActivityLogPage';
 import BillReaderPage from './pages/BillReaderPage';
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/bill-reader" element={<BillReaderPage />} />
             <Route path="/helpdesk" element={<HelpdeskPage />} />
             <Route path="/quotes" element={<QuotesPage />} />
+            <Route path="/quotes/new" element={<CreateQuotePage />} />
             <Route path="/activity-log" element={<ActivityLogPage />} />
             <Route path="/usage" element={<UsagePage />} />
             <Route path="/connections" element={<ConnectionsPage />} />

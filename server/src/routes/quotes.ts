@@ -82,4 +82,62 @@ router.get('/api/quotes/stats', async (req: Request, res: Response) => {
   }
 });
 
+// Create a new quote (draft)
+router.post('/api/quotes/create', async (req: Request, res: Response) => {
+  try {
+    const {
+      tenant_id, customer_name, customer_email, customer_phone,
+      property_address, system_size_kw, quote_value, expiry_date,
+      created_by, quote_data,
+    } = req.body;
+
+    if (!tenant_id) {
+      res.status(400).json({ error: 'tenant_id is required' });
+      return;
+    }
+
+    // Generate quote number
+    const { data: numResult, error: numErr } = await supabase
+      .rpc('generate_quote_number', { p_tenant_id: tenant_id });
+
+    if (numErr) {
+      console.error('[Quote Create] quote number generation failed:', numErr);
+      res.status(500).json({ error: numErr.message });
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('quotes')
+      .insert({
+        tenant_id,
+        quote_number: numResult,
+        customer_name: customer_name || null,
+        customer_email: customer_email || null,
+        customer_phone: customer_phone || null,
+        property_address: property_address || null,
+        system_size_kw: system_size_kw || null,
+        quote_value: quote_value || null,
+        status: 'Draft',
+        expiry_date: expiry_date || null,
+        created_by: created_by || null,
+        quote_data: quote_data || {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Quote Create]', error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.json(data);
+  } catch (err: any) {
+    console.error('[Quote Create]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
