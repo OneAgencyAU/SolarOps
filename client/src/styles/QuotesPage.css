@@ -1,0 +1,236 @@
+/* ── Quotes Page ── */
+.qt-page {
+  padding: 32px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+}
+
+/* ── Header ── */
+.qt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.qt-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.qt-subtitle {
+  font-size: 0.88rem;
+  color: #6e6e73;
+  margin: 4px 0 0;
+}
+
+.qt-btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: #f5f5f7;
+  color: #6e6e73;
+  transition: all 150ms ease;
+}
+
+.qt-btn.primary {
+  background: #4F8EF7;
+  color: #fff;
+}
+
+.qt-btn.primary:hover:not(:disabled) {
+  background: #3a7de8;
+}
+
+.qt-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Analytics bar (stat pills) ── */
+.qt-stats-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.qt-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e5e5e7;
+  border-radius: 980px;
+  padding: 8px 16px;
+}
+
+.qt-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.qt-stat-count {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.qt-stat-label {
+  font-size: 0.78rem;
+  color: #6e6e73;
+  font-weight: 500;
+}
+
+/* ── Card ── */
+.qt-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+/* ── Table ── */
+.qt-table-header {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr 1.5fr 0.8fr 0.9fr 0.8fr 0.8fr 0.8fr;
+  padding: 12px 20px;
+  background: #f9f9fb;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.qt-table-row {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr 1.5fr 0.8fr 0.9fr 0.8fr 0.8fr 0.8fr;
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  color: #1d1d1f;
+  align-items: center;
+  border-bottom: 1px solid #f5f5f7;
+  transition: background 100ms ease;
+}
+
+.qt-table-row:hover {
+  background: #f9f9fb;
+}
+
+.qt-table-row:last-child {
+  border-bottom: none;
+}
+
+.qt-cell-number {
+  font-weight: 600;
+  color: #4F8EF7;
+  font-size: 0.82rem;
+}
+
+.qt-cell-name {
+  font-weight: 500;
+}
+
+.qt-cell-address {
+  color: #6e6e73;
+  font-size: 0.82rem;
+}
+
+.qt-cell-value {
+  font-weight: 600;
+}
+
+.qt-cell-date {
+  color: #6e6e73;
+  font-size: 0.82rem;
+}
+
+/* ── Status pill ── */
+.qt-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 980px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Empty state ── */
+.qt-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6e6e73;
+  font-size: 0.9rem;
+}
+
+.qt-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.qt-empty-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 6px;
+}
+
+.qt-empty-sub {
+  font-size: 0.88rem;
+  color: #6e6e73;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .qt-table-header,
+  .qt-table-row {
+    grid-template-columns: 0.7fr 1.3fr 0.8fr 0.9fr 0.8fr 0.8fr;
+  }
+  /* Hide Property Address + System Size */
+  .qt-table-header span:nth-child(3),
+  .qt-table-header span:nth-child(4),
+  .qt-table-row span:nth-child(3),
+  .qt-table-row span:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .qt-page {
+    padding: 20px 16px 40px;
+  }
+  .qt-stats-row {
+    gap: 8px;
+  }
+  .qt-table-header,
+  .qt-table-row {
+    grid-template-columns: 0.7fr 1.3fr 0.9fr 0.8fr;
+  }
+  /* Hide Address, System Size, Created, Expiry */
+  .qt-table-header span:nth-child(3),
+  .qt-table-header span:nth-child(4),
+  .qt-table-header span:nth-child(7),
+  .qt-table-header span:nth-child(8),
+  .qt-table-row span:nth-child(3),
+  .qt-table-row span:nth-child(4),
+  .qt-table-row span:nth-child(7),
+  .qt-table-row span:nth-child(8) {
+    display: none;
+  }
+}

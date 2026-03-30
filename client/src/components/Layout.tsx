@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Inbox Assistant', path: '/inbox-assistant', icon: '✉' },
   { label: 'Bill Reader', path: '/bill-reader', icon: '⎘' },
   { label: 'Helpdesk', path: '/helpdesk', icon: '⊙' },
+  { label: 'Quotes', path: '/quotes', icon: '✎' },
   { label: 'Activity Log', path: '/activity-log', icon: '⏱' },
   { label: 'Usage & Costs', path: '/usage', icon: '◈' },
   { label: 'Connections', path: '/connections', icon: '⌘' },
