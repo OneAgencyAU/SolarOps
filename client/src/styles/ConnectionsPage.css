@@ -414,8 +414,37 @@
   transition: background 120ms ease;
 }
 
-.conn-modal-save:hover {
+.conn-modal-save:hover:not(:disabled) {
   background: #3d7de5;
+}
+
+.conn-modal-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.conn-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #e5e5e7;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-family: Inter, -apple-system, sans-serif;
+  color: #1d1d1f;
+  background: #f9f9fb;
+  outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+  margin-top: 6px;
+}
+
+.conn-modal-input:focus {
+  border-color: #4F8EF7;
+  background: #fff;
+}
+
+.conn-modal-input::placeholder {
+  color: #aeaeb2;
 }
 
 .conn-btn-connect--active {

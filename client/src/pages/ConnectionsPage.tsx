@@ -4,12 +4,6 @@ import '../styles/ConnectionsPage.css';
 
 const connectors = [
   {
-    logo: '⚡',
-    title: 'Simpro',
-    subtitle: 'Jobs · Customers · Quotes',
-    description: 'Sync customer records, job data, and quotes directly from Simpro into SolarOps.',
-  },
-  {
     logo: '📞',
     title: 'Voice Platform',
     subtitle: 'Vapi · Telnyx',
@@ -66,6 +60,17 @@ export default function ConnectionsPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // SimPro integration state
+  const [simproConnected, setSimproConnected] = useState(false);
+  const [simproSiteUrl, setSimproSiteUrl] = useState('');
+  const [simproClientId, setSimproClientId] = useState('');
+  const [simproConnectedAt, setSimproConnectedAt] = useState<string | null>(null);
+  const [simproModalOpen, setSimproModalOpen] = useState(false);
+  const [simproSaving, setSimproSaving] = useState(false);
+  const [simproFormUrl, setSimproFormUrl] = useState('');
+  const [simproFormClientId, setSimproFormClientId] = useState('');
+  const [simproFormSecret, setSimproFormSecret] = useState('');
+
   const toggleInbox = (idx: number) =>
     setInboxToggles((prev) => prev.map((v, i) => (i === idx ? !v : v)));
 
@@ -74,9 +79,16 @@ export default function ConnectionsPage() {
     Promise.all([
       fetch(`/api/auth/google/status?tenant_id=${tenant.id}`).then(r => r.json()),
       fetch(`/api/auth/microsoft/status?tenant_id=${tenant.id}`).then(r => r.json()),
-    ]).then(([gData, msData]) => {
+      fetch(`/api/integrations/status?tenant_id=${tenant.id}&provider=simpro`).then(r => r.json()),
+    ]).then(([gData, msData, simproData]) => {
       setGoogleStatus(gData);
       setMsStatus(msData);
+      if (simproData?.connected) {
+        setSimproConnected(true);
+        setSimproSiteUrl(simproData.site_url || '');
+        setSimproClientId(simproData.client_id || '');
+        setSimproConnectedAt(simproData.connected_at || null);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [tenant?.id]);
@@ -135,7 +147,64 @@ export default function ConnectionsPage() {
     }
   };
 
-  const connectedCount = (googleStatus.connected ? 1 : 0) + (msStatus.connected ? 1 : 0);
+  const handleSimproOpenModal = () => {
+    setSimproFormUrl(simproConnected ? simproSiteUrl : '');
+    setSimproFormClientId(simproConnected ? simproClientId : '');
+    setSimproFormSecret('');
+    setSimproModalOpen(true);
+  };
+
+  const handleSimproSave = async () => {
+    if (!tenant?.id || !simproFormUrl.trim() || !simproFormClientId.trim() || !simproFormSecret.trim()) return;
+    setSimproSaving(true);
+    try {
+      const res = await fetch('/api/integrations/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          provider: 'simpro',
+          site_url: simproFormUrl.trim(),
+          client_id: simproFormClientId.trim(),
+          client_secret: simproFormSecret.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSimproConnected(true);
+        setSimproSiteUrl(data.site_url || simproFormUrl.trim());
+        setSimproClientId(data.client_id || simproFormClientId.trim());
+        setSimproConnectedAt(data.connected_at || new Date().toISOString());
+        setSimproModalOpen(false);
+        setToast({ message: 'SimPro connected successfully', type: 'success' });
+      } else {
+        setToast({ message: data.error || 'Failed to save connection', type: 'error' });
+      }
+    } catch {
+      setToast({ message: 'Network error. Please try again.', type: 'error' });
+    }
+    finally { setSimproSaving(false); }
+  };
+
+  const handleSimproDisconnect = async () => {
+    if (!tenant?.id) return;
+    try {
+      await fetch('/api/integrations/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenant.id, provider: 'simpro' }),
+      });
+      setSimproConnected(false);
+      setSimproSiteUrl('');
+      setSimproClientId('');
+      setSimproConnectedAt(null);
+      setToast({ message: 'SimPro disconnected', type: 'success' });
+    } catch {
+      setToast({ message: 'Failed to disconnect. Please try again.', type: 'error' });
+    }
+  };
+
+  const connectedCount = (googleStatus.connected ? 1 : 0) + (msStatus.connected ? 1 : 0) + (simproConnected ? 1 : 0);
 
   return (
     <div className="conn-page">
@@ -145,7 +214,7 @@ export default function ConnectionsPage() {
         <p className="conn-stats">{connectedCount} connected · {connectors.length + (googleStatus.connected ? 0 : 1) + (msStatus.connected ? 0 : 1)} available</p>
       </div>
 
-      {(googleStatus.connected || msStatus.connected) && (
+      {(googleStatus.connected || msStatus.connected || simproConnected) && (
         <>
           <div className="conn-section-label">Connected</div>
           {googleStatus.connected && (
@@ -207,10 +276,38 @@ export default function ConnectionsPage() {
               </div>
             </div>
           )}
+          {simproConnected && (
+            <div className="conn-active-card" style={{ marginTop: (googleStatus.connected || msStatus.connected) ? 12 : 0 }}>
+              <div className="conn-active-left">
+                <div className="conn-logo-box" style={{ fontSize: '1.2rem' }}>⚡</div>
+                <div className="conn-active-info">
+                  <div className="conn-active-name">SimPro</div>
+                  <div className="conn-active-sub">Jobs · Customers · Quotes</div>
+                  <div className="conn-active-account">{simproSiteUrl}</div>
+                  <div className="conn-active-meta">
+                    <span className="conn-status-pill">
+                      <span className="conn-status-dot" />
+                      Connected
+                    </span>
+                    {simproConnectedAt && (
+                      <span className="conn-last-sync">Connected {timeAgo(simproConnectedAt)}</span>
+                    )}
+                  </div>
+                  <div className="conn-active-account" style={{ marginTop: 4, fontSize: '0.78rem' }}>
+                    Client ID: {simproClientId} · Secret: ••••••••
+                  </div>
+                </div>
+              </div>
+              <div className="conn-active-actions">
+                <button className="conn-btn-outline" onClick={handleSimproOpenModal}>Update</button>
+                <button className="conn-btn-disconnect" onClick={handleSimproDisconnect}>Disconnect</button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      <div className="conn-section-label" style={{ marginTop: (googleStatus.connected || msStatus.connected) ? 32 : 0 }}>Available</div>
+      <div className="conn-section-label" style={{ marginTop: (googleStatus.connected || msStatus.connected || simproConnected) ? 32 : 0 }}>Available</div>
       <div className="conn-grid">
         {!googleStatus.connected && !loading && (
           <div className="conn-card">
@@ -246,6 +343,17 @@ export default function ConnectionsPage() {
             <div className="conn-card-sub">Outlook · Calendar</div>
             <div className="conn-card-desc">Connect your Outlook inbox to enable the Inbox Assistant for Microsoft 365 users.</div>
             <button className="conn-btn-connect conn-btn-connect--active" onClick={handleMsConnect}>Connect</button>
+          </div>
+        )}
+        {!simproConnected && !loading && (
+          <div className="conn-card">
+            <div className="conn-card-top">
+              <div className="conn-card-logo">⚡</div>
+            </div>
+            <div className="conn-card-title">SimPro</div>
+            <div className="conn-card-sub">Jobs · Customers · Quotes</div>
+            <div className="conn-card-desc">Connect SimPro to pull customer records, job history, and product pricing into your quotes.</div>
+            <button className="conn-btn-connect conn-btn-connect--active" onClick={handleSimproOpenModal}>Connect</button>
           </div>
         )}
         {connectors.map((c) => (
@@ -297,6 +405,54 @@ export default function ConnectionsPage() {
             <div className="conn-modal-actions">
               <button className="conn-modal-close" onClick={() => setManageOpen(false)}>Close</button>
               <button className="conn-modal-save" onClick={() => setManageOpen(false)}>Save Changes</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {simproModalOpen && (
+        <>
+          <div className="conn-overlay" onClick={() => !simproSaving && setSimproModalOpen(false)} />
+          <div className="conn-modal">
+            <h2 className="conn-modal-title">Connect SimPro</h2>
+            <p className="conn-modal-account">Enter your SimPro API credentials</p>
+
+            <div className="conn-modal-section-label">SimPro Site URL</div>
+            <input
+              className="conn-modal-input"
+              type="text"
+              value={simproFormUrl}
+              onChange={e => setSimproFormUrl(e.target.value)}
+              placeholder="https://yourcompany.simprosuite.com"
+            />
+
+            <div className="conn-modal-section-label" style={{ marginTop: 16 }}>Client ID</div>
+            <input
+              className="conn-modal-input"
+              type="text"
+              value={simproFormClientId}
+              onChange={e => setSimproFormClientId(e.target.value)}
+              placeholder="Your SimPro Client ID"
+            />
+
+            <div className="conn-modal-section-label" style={{ marginTop: 16 }}>Client Secret</div>
+            <input
+              className="conn-modal-input"
+              type="password"
+              value={simproFormSecret}
+              onChange={e => setSimproFormSecret(e.target.value)}
+              placeholder={simproConnected ? '•••••••• (enter new secret to update)' : 'Your SimPro Client Secret'}
+            />
+
+            <div className="conn-modal-actions" style={{ marginTop: 24 }}>
+              <button className="conn-modal-close" disabled={simproSaving} onClick={() => setSimproModalOpen(false)}>Cancel</button>
+              <button
+                className="conn-modal-save"
+                disabled={simproSaving || !simproFormUrl.trim() || !simproFormClientId.trim() || !simproFormSecret.trim()}
+                onClick={handleSimproSave}
+              >
+                {simproSaving ? 'Saving...' : 'Save Connection'}
+              </button>
             </div>
           </div>
         </>

@@ -14,6 +14,7 @@ import microsoftRouter from './routes/microsoft';
 import webhooksRouter from './routes/webhooks';
 import activityLogRouter from './routes/activityLog';
 import quotesRouter from './routes/quotes';
+import integrationsRouter from './routes/integrations';
 import { startJobRunner } from './services/jobRunner';
 
 const app = express();
@@ -48,6 +49,7 @@ app.use(microsoftRouter);
 app.use(webhooksRouter);
 app.use(activityLogRouter);
 app.use(quotesRouter);
+app.use(integrationsRouter);
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', service: 'SolarOps API' });
